@@ -1,0 +1,446 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Image,
+  Dimensions
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../App';
+import { useAuth } from '../contexts/AuthContext';
+import Icon from 'react-native-vector-icons/Feather';
+import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome } from '@expo/vector-icons';
+import { PARROTSPEAK_LOGO_URI } from '../assets/parrotspeak-logo';
+
+type AuthScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Auth'>;
+
+// Email validation regex
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Password must be at least 8 characters with at least one uppercase, one lowercase, and one number
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+const AuthScreen: React.FC = () => {
+  const navigation = useNavigation<AuthScreenNavigationProp>();
+  const { login, register, loginWithGoogle, loginWithApple, isLoading } = useAuth();
+  
+  // Get screen dimensions to size the logo appropriately
+  const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
+  
+  // Calculate logo size based on screen width
+  const logoSize = screenWidth * 0.4; // Logo takes 40% of screen width
+  
+  // Update dimensions when screen size changes (e.g., rotation)
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', () => {
+      setScreenWidth(Dimensions.get('window').width);
+    });
+    return () => subscription.remove();
+  }, []);
+  
+  // State for form
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [usernameError, setUsernameError] = useState('');
+  
+  // Toggle between login and register
+  const toggleAuthMode = () => {
+    setIsLogin(!isLogin);
+    // Clear form errors when switching modes
+    setEmailError('');
+    setPasswordError('');
+    setUsernameError('');
+  };
+  
+  // Validate form fields
+  const validateForm = (): boolean => {
+    let isValid = true;
+    
+    // Validate email
+    if (!email.trim()) {
+      setEmailError('Email is required');
+      isValid = false;
+    } else if (!emailRegex.test(email)) {
+      setEmailError('Please enter a valid email');
+      isValid = false;
+    } else {
+      setEmailError('');
+    }
+    
+    // Validate password
+    if (!password) {
+      setPasswordError('Password is required');
+      isValid = false;
+    } else if (!isLogin && !passwordRegex.test(password)) {
+      setPasswordError(
+        'Password must be at least 8 characters with at least one uppercase letter, one lowercase letter, and one number'
+      );
+      isValid = false;
+    } else {
+      setPasswordError('');
+    }
+    
+    // Validate username for registration
+    if (!isLogin && !username.trim()) {
+      setUsernameError('Username is required');
+      isValid = false;
+    } else if (!isLogin && username.trim().length < 3) {
+      setUsernameError('Username must be at least 3 characters');
+      isValid = false;
+    } else {
+      setUsernameError('');
+    }
+    
+    return isValid;
+  };
+  
+  // Handle form submission
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+    
+    try {
+      if (isLogin) {
+        await login({ email, password });
+        navigation.navigate('Home');
+      } else {
+        await register({ email, username, password });
+        navigation.navigate('Home');
+      }
+    } catch (error) {
+      Alert.alert(
+        isLogin ? 'Login Failed' : 'Registration Failed',
+        error instanceof Error ? error.message : 'An unexpected error occurred'
+      );
+    }
+  };
+  
+  // Handle Google Sign In
+  const handleGoogleSignIn = async () => {
+    try {
+      await loginWithGoogle();
+      navigation.navigate('Home');
+    } catch (error) {
+      Alert.alert(
+        'Google Sign In Failed',
+        error instanceof Error ? error.message : 'An unexpected error occurred'
+      );
+    }
+  };
+  
+  // Handle Apple Sign In
+  const handleAppleSignIn = async () => {
+    try {
+      await loginWithApple();
+      navigation.navigate('Home');
+    } catch (error) {
+      Alert.alert(
+        'Apple Sign In Failed',
+        error instanceof Error ? error.message : 'An unexpected error occurred'
+      );
+    }
+  };
+  
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Logo Container */}
+        <View style={styles.logoContainer}>
+          <Image 
+            source={{ uri: PARROTSPEAK_LOGO_URI }}
+            style={{ 
+              width: logoSize, 
+              height: logoSize,
+              resizeMode: 'contain', 
+            }} 
+          />
+          <Text style={styles.appName}>ParrotSpeak</Text>
+          <Text style={styles.tagline}>Voice-to-voice translation made simple</Text>
+        </View>
+      
+        <View style={styles.formContainer}>
+          <Text style={styles.headerText}>{isLogin ? 'Sign In' : 'Create Account'}</Text>
+          
+          {/* Email Input */}
+          <View style={styles.inputContainer}>
+            <Icon name="mail" size={18} color="#888" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+          {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+          
+          {/* Username Input (Registration only) */}
+          {!isLogin && (
+            <>
+              <View style={styles.inputContainer}>
+                <Icon name="user" size={18} color="#888" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Username"
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+              {usernameError ? <Text style={styles.errorText}>{usernameError}</Text> : null}
+            </>
+          )}
+          
+          {/* Password Input */}
+          <View style={styles.inputContainer}>
+            <Icon name="lock" size={18} color="#888" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+          {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+          
+          {/* Submit Button */}
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleSubmit}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.buttonText}>{isLogin ? 'Sign In' : 'Sign Up'}</Text>
+            )}
+          </TouchableOpacity>
+          
+          {/* Forgot Password Link - Only show for login */}
+          {isLogin && (
+            <TouchableOpacity 
+              style={styles.forgotPasswordContainer}
+              onPress={() => navigation.navigate('PasswordReset')}
+            >
+              <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
+            </TouchableOpacity>
+          )}
+          
+          {/* Social Sign In Options */}
+          <View style={styles.orContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.orText}>OR</Text>
+            <View style={styles.divider} />
+          </View>
+          
+          <View style={styles.socialButtonsContainer}>
+            {/* Google Sign In Button */}
+            <TouchableOpacity 
+              style={[styles.socialButton, styles.googleButton]} 
+              onPress={handleGoogleSignIn}
+            >
+              <FontAwesome name="google" size={18} color="#DB4437" />
+              <Text style={styles.socialButtonText}>Google</Text>
+            </TouchableOpacity>
+            
+            {/* Apple Sign In Button */}
+            <TouchableOpacity 
+              style={[styles.socialButton, styles.appleButton]} 
+              onPress={handleAppleSignIn}
+            >
+              <FontAwesome name="apple" size={18} color="#000" />
+              <Text style={styles.socialButtonText}>Apple</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {/* Toggle between Login and Register */}
+          <TouchableOpacity onPress={toggleAuthMode} style={styles.toggleContainer}>
+            <Text style={styles.toggleText}>
+              {isLogin
+                ? "New user? Sign Up"
+                : 'Have an account? Sign In'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    padding: 16,
+    paddingBottom: 40, // Add more bottom padding to ensure the form is fully visible
+  },
+  logoContainer: {
+    alignItems: 'center',
+    marginTop: 20, 
+    marginBottom: 16, 
+  },
+  logo: {
+    fontSize: 26, 
+    fontWeight: 'bold',
+    color: '#3366FF',
+    marginBottom: 4, 
+  },
+  tagline: {
+    fontSize: 14, 
+    color: '#666',
+    textAlign: 'center',
+  },
+  appName: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginTop: 8,
+    color: '#3366FF',
+    textAlign: 'center',
+  },
+  formContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 16, 
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 }, 
+    shadowOpacity: 0.1,
+    shadowRadius: 3, 
+    elevation: 2, 
+    marginBottom: 16, 
+  },
+  headerText: {
+    fontSize: 18, 
+    fontWeight: 'bold',
+    marginBottom: 14, 
+    textAlign: 'center',
+    color: '#333',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    marginBottom: 8, 
+    backgroundColor: '#f9f9f9',
+    height: 45, // Fixed height for better mobile display
+  },
+  inputIcon: {
+    padding: 10,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 8, 
+    paddingRight: 10,
+    fontSize: 14, 
+  },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 12,
+    marginBottom: 8, 
+    marginLeft: 5,
+  },
+  button: {
+    backgroundColor: '#3366FF',
+    borderRadius: 5,
+    paddingVertical: 10, 
+    alignItems: 'center',
+    marginTop: 8, 
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 14, 
+    fontWeight: 'bold',
+  },
+  orContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 12, 
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#ddd',
+  },
+  orText: {
+    marginHorizontal: 8, 
+    color: '#666',
+    fontSize: 12,
+  },
+  socialButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  socialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    paddingVertical: 10, 
+    paddingHorizontal: 16,
+    flex: 1,
+  },
+  googleButton: {
+    marginRight: 8,
+    backgroundColor: '#ffffff',
+  },
+  appleButton: {
+    marginLeft: 8,
+    backgroundColor: '#f9f9f9',
+  },
+  socialButtonText: {
+    marginLeft: 8, 
+    fontSize: 14, 
+    color: '#333',
+  },
+  toggleContainer: {
+    marginTop: 12, 
+    alignItems: 'center',
+  },
+  toggleText: {
+    color: '#3366FF',
+    fontSize: 14,
+  },
+  forgotPasswordContainer: {
+    alignItems: 'center',
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  forgotPasswordText: {
+    color: '#3366FF',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+});
+
+export default AuthScreen;
