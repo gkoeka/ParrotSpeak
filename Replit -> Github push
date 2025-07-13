@@ -1,2 +1,2 @@
 Command for Replit Shell
-./push-to-github.sh
+./push-to-github.sh "add this if you want to name the push"
