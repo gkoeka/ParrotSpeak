@@ -33,7 +33,7 @@ export function useCamera(): UseCameraReturn {
     input.capture = 'environment'; // Suggests using the back camera on mobile devices
     
     input.onchange = (e) => {
-      if (e.target) {
+      if (e && e.target) {
         handleImageCapture(e as unknown as React.ChangeEvent<HTMLInputElement>);
       }
     };
@@ -50,6 +50,11 @@ export function useCamera(): UseCameraReturn {
 
   // Handle the image capture from input element
   const handleImageCapture = (event: React.ChangeEvent<HTMLInputElement>): void => {
+    if (!event || !event.target) {
+      setIsCapturing(false);
+      return;
+    }
+    
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
       
