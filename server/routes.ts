@@ -71,6 +71,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Mobile app preview routes - simple status pages since web app was removed
+  app.get('/mobile-app-preview', (req: Request, res: Response) => {
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>ParrotSpeak Mobile App</title>
+        <style>
+          body { 
+            font-family: Arial, sans-serif; 
+            margin: 40px; 
+            text-align: center;
+            background: #f8f9fa;
+          }
+          .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          }
+          h1 { color: #3366FF; }
+          .status { 
+            background: #d4edda; 
+            color: #155724; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin: 20px 0;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>🦜 ParrotSpeak</h1>
+          <div class="status">
+            <strong>Mobile-Only Application</strong><br>
+            This project is now a pure React Native mobile app.
+          </div>
+          <p>The web app has been removed as requested. ParrotSpeak is now exclusively a mobile application built with React Native and Expo.</p>
+          <h3>Development Status:</h3>
+          <ul style="text-align: left; display: inline-block;">
+            <li>✅ API Server Running (Port 5000)</li>
+            <li>✅ React Native App Structure Complete</li>
+            <li>✅ PNG Logo Implemented</li>
+            <li>✅ Mobile-Only Architecture</li>
+          </ul>
+          <p><em>Use the React Native app for the full ParrotSpeak experience.</em></p>
+        </div>
+      </body>
+      </html>
+    `);
+  });
+
+  app.get('/mobile-preview', (req: Request, res: Response) => {
+    res.redirect('/mobile-app-preview');
+  });
+
 
 
   // API Routes
