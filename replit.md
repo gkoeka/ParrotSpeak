@@ -42,6 +42,7 @@ Dark mode preference: Should persist when selected.
 - ✓ **GitHub Push Workflow Setup (July 13, 2025)**: **COMPLETED** - Created automated push script `push-to-github.sh` and documentation for easy future code uploads to GitHub repository.
 - ✓ **In-App Purchase Integration (July 14, 2025)**: **PHASE 1 & 2 COMPLETE** - Implemented comprehensive IAP system for both Google Play Store and Apple App Store. Created IAP service, updated checkout screen, built backend receipt validation, and prepared complete store deployment documentation. Ready for store account setup with DUNS number.
 - ✓ **Subscription Modal UI/UX Improvements (July 14, 2025)**: **VERIFIED WORKING** - Updated subscription prompt messaging for clearer business terminology and improved user experience. Implemented proper navigation to checkout page and fixed dialog close functionality across both chat and camera features.
+- ✓ **IAP-Based Checkout System (July 14, 2025)**: **IMPLEMENTED** - Completely replaced Stripe payment system with In-App Purchase (IAP) based checkout for app store distribution. Mobile users see IAP purchase flow, web users see mobile app download prompts. Aligns with native app store monetization strategy.
 
 ### Technical Improvements
 - Enhanced voice selection logic for better cross-language support
@@ -74,7 +75,7 @@ Dark mode preference: Should persist when selected.
 ### Core Technologies
 - **UI Framework**: shadcn/ui components with Tailwind CSS
 - **Authentication**: Passport.js with local and Google OAuth strategies
-- **Payment Processing**: Stripe for subscription management
+- **Payment Processing**: In-App Purchases (IAP) for mobile app stores
 - **Speech Services**: OpenAI Whisper API for transcription
 - **Translation**: Custom translation service with multiple provider support
 - **Analytics**: Mixpanel integration for user behavior tracking

@@ -28,21 +28,8 @@ export function SubscriptionPrompt({
   const [, setLocation] = useLocation();
 
   const handleUpgrade = () => {
-    console.log('handleUpgrade called, navigating to /checkout');
     onClose?.(); // Close modal first
-    
-    // Try multiple navigation methods for reliability
-    setLocation('/checkout');
-    
-    // Fallback: direct navigation if wouter fails
-    setTimeout(() => {
-      if (window.location.pathname !== '/checkout') {
-        console.log('wouter navigation failed, using window.location');
-        window.location.href = '/checkout';
-      }
-    }, 100);
-    
-    console.log('Navigation attempted to /checkout');
+    setLocation('/checkout?plan=monthly'); // Go to checkout page with default plan
   };
 
   const handleClose = () => {
