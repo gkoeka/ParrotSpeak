@@ -20,7 +20,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Icon from 'react-native-vector-icons/Feather';
 import { Ionicons } from '@expo/vector-icons';
 import { FontAwesome } from '@expo/vector-icons';
-import { PARROTSPEAK_LOGO_URI } from '../assets/parrotspeak-logo';
+import ParrotSpeakLogo from '../components/ParrotSpeakLogo';
 
 type AuthScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Auth'>;
 
@@ -164,16 +164,9 @@ const AuthScreen: React.FC = () => {
       >
         {/* Logo Container */}
         <View style={styles.logoContainer}>
-          <Image 
-            source={{ uri: PARROTSPEAK_LOGO_URI }}
-            style={{ 
-              width: logoSize, 
-              height: logoSize,
-              resizeMode: 'contain', 
-            }} 
-          />
+          <ParrotSpeakLogo width={logoSize} height={logoSize} />
           <Text style={styles.appName}>ParrotSpeak</Text>
-          <Text style={styles.tagline}>Voice-to-voice translation made simple</Text>
+          <Text style={styles.tagline}>Breaking down language barriers, one conversation at a time</Text>
         </View>
       
         <View style={styles.formContainer}>

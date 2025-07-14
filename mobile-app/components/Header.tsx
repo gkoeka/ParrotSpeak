@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
-import { PARROTSPEAK_LOGO_URI } from '../assets/parrotspeak-logo';
+import ParrotSpeakLogo from './ParrotSpeakLogo';
 
 interface HeaderProps {
   onNewConversation?: () => void;
@@ -36,11 +36,7 @@ export default function Header({
         onPress={handleNewConversation}
         accessibilityLabel="New conversation"
       >
-        <Image 
-          source={{ uri: PARROTSPEAK_LOGO_URI }}
-          style={styles.logoImage}
-          resizeMode="contain"
-        />
+        <ParrotSpeakLogo width={35} height={35} />
       </TouchableOpacity>
       
       <Text style={styles.title}>ParrotSpeak</Text>
@@ -155,8 +151,5 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     overflow: 'hidden',
   },
-  logoImage: {
-    width: 35,
-    height: 35,
-  },
+
 });
