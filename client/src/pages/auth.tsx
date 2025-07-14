@@ -80,11 +80,9 @@ export default function AuthPage() {
       <div className="w-full py-8 px-4">
         <div className="text-center">
           <div className="inline-flex items-center justify-center mb-4">
-            <img 
-              src="/parrotspeak-logo.svg"
-              alt="ParrotSpeak Logo"
-              className="w-16 h-16 rounded-full"
-            />
+            <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center border-2 border-gray-800">
+              <span className="text-white text-2xl font-bold">🦜</span>
+            </div>
           </div>
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl md:text-6xl">
             ParrotSpeak
