@@ -108,40 +108,12 @@ export default function CheckoutScreen() {
     return currentPlan ? currentPlan.price : `$${formatAmount(amount)}`;
   };
 
-  const handleContinueToPayment = () => {
-    // For mobile implementation, we'll redirect to web checkout
-    // This ensures secure payment processing using the existing web flow
-    Alert.alert(
-      'Continue to Payment',
-      'You will be redirected to complete your payment securely in your browser.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Continue', 
-          onPress: () => {
-            // This would open the web checkout in a secure browser
-            // For now, we'll navigate back with a message
-            Alert.alert(
-              'Payment Required',
-              'Please use the web version to complete your subscription payment. Your account will be updated automatically.',
-              [
-                { text: 'OK', onPress: () => navigation.goBack() }
-              ]
-            );
-          }
-        }
-      ]
-    );
+  const currentPlan = getCurrentPlan() || { 
+    name: plan, 
+    description: 'Subscription plan',
+    price: `$${formatAmount(amount)}`,
+    duration: interval
   };
-
-  const planDetails = {
-    premium_monthly: { name: 'Premium Monthly', description: 'Unlimited translations, premium features' },
-    premium_yearly: { name: 'Premium Yearly', description: 'Unlimited translations, premium features, best value' },
-    pro_monthly: { name: 'Pro Monthly', description: 'Advanced features for power users' },
-    pro_yearly: { name: 'Pro Yearly', description: 'Advanced features for power users, best value' }
-  };
-
-  const currentPlan = planDetails[plan as keyof typeof planDetails] || { name: plan, description: 'Subscription plan' };
 
   return (
     <View style={styles.container}>

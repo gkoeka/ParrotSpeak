@@ -3,22 +3,22 @@
  * Handles subscription management, receipt validation, and purchase flows
  */
 
-// TODO: Import when react-native-iap is installed
-// import {
-//   initConnection,
-//   getSubscriptions,
-//   requestSubscription,
-//   getAvailablePurchases,
-//   finishTransaction,
-//   purchaseErrorListener,
-//   purchaseUpdatedListener,
-//   Product,
-//   Purchase,
-//   PurchaseError,
-//   SubscriptionPurchase,
-// } from 'react-native-iap';
+import {
+  initConnection,
+  getSubscriptions,
+  requestSubscription,
+  getAvailablePurchases,
+  finishTransaction,
+  purchaseErrorListener,
+  purchaseUpdatedListener,
+  Product,
+  Purchase,
+  PurchaseError,
+  SubscriptionPurchase,
+} from 'react-native-iap';
 
 import { Platform } from 'react-native';
+import { API_BASE_URL } from '../constants/api';
 
 // Subscription product IDs for each platform
 export const SUBSCRIPTION_PRODUCTS = {
@@ -71,7 +71,7 @@ export const getSubscriptionPlans = (): SubscriptionPlan[] => {
       id: 'monthly',
       name: 'Monthly',
       description: 'Most popular choice',
-      price: '$14.99',
+      price: '$9.99',
       duration: '1 month',
       productId: productIds.monthly,
       popular: true,
@@ -80,7 +80,7 @@ export const getSubscriptionPlans = (): SubscriptionPlan[] => {
       id: 'threeMonth',
       name: '3 Months',
       description: 'Great value package',
-      price: '$39.99',
+      price: '$24.99',
       duration: '3 months',
       productId: productIds.threeMonth,
     },
@@ -88,7 +88,7 @@ export const getSubscriptionPlans = (): SubscriptionPlan[] => {
       id: 'sixMonth',
       name: '6 Months',
       description: 'Best value for extended use',
-      price: '$69.99',
+      price: '$44.99',
       duration: '6 months',
       productId: productIds.sixMonth,
     },
@@ -96,7 +96,7 @@ export const getSubscriptionPlans = (): SubscriptionPlan[] => {
       id: 'annual',
       name: 'Annual',
       description: 'Maximum savings',
-      price: '$149.99',
+      price: '$79.99',
       duration: '1 year',
       productId: productIds.annual,
     },
@@ -124,17 +124,16 @@ export class IAPService {
     try {
       console.log('Initializing IAP service...');
       
-      // TODO: Uncomment when react-native-iap is installed
-      // await initConnection();
+      await initConnection();
       
       // Set up purchase listeners
-      // this.purchaseUpdateSubscription = purchaseUpdatedListener(
-      //   this.handlePurchaseUpdate.bind(this)
-      // );
-      // 
-      // this.purchaseErrorSubscription = purchaseErrorListener(
-      //   this.handlePurchaseError.bind(this)
-      // );
+      this.purchaseUpdateSubscription = purchaseUpdatedListener(
+        this.handlePurchaseUpdate.bind(this)
+      );
+      
+      this.purchaseErrorSubscription = purchaseErrorListener(
+        this.handlePurchaseError.bind(this)
+      );
 
       await this.loadProducts();
       this.isInitialized = true;
@@ -153,9 +152,8 @@ export class IAPService {
       const productIds = getProductIds();
       console.log('Loading products:', productIds);
       
-      // TODO: Uncomment when react-native-iap is installed
-      // this.availableProducts = await getSubscriptions(productIds);
-      // console.log('Available products:', this.availableProducts);
+      this.availableProducts = await getSubscriptions(productIds);
+      console.log('Available products:', this.availableProducts);
     } catch (error) {
       console.error('Failed to load products:', error);
       throw error;
@@ -180,8 +178,7 @@ export class IAPService {
 
       console.log('Purchasing subscription:', productId);
       
-      // TODO: Uncomment when react-native-iap is installed
-      // await requestSubscription(productId);
+      await requestSubscription(productId);
       
       // For now, simulate purchase for testing
       console.log('Simulating purchase for:', productId);
@@ -203,8 +200,7 @@ export class IAPService {
       const isValid = await this.validateReceipt(purchase);
       
       if (isValid) {
-        // TODO: Uncomment when react-native-iap is installed
-        // await finishTransaction(purchase);
+        await finishTransaction(purchase);
         console.log('Purchase completed successfully');
       } else {
         console.error('Receipt validation failed');
@@ -228,7 +224,7 @@ export class IAPService {
     try {
       console.log('Validating receipt with backend...');
       
-      const response = await fetch('/api/iap/validate', {
+      const response = await fetch(`${API_BASE_URL}/api/iap/validate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -260,14 +256,13 @@ export class IAPService {
     try {
       console.log('Restoring purchases...');
       
-      // TODO: Uncomment when react-native-iap is installed
-      // const purchases = await getAvailablePurchases();
-      // console.log('Available purchases:', purchases);
+      const purchases = await getAvailablePurchases();
+      console.log('Available purchases:', purchases);
       
       // Validate each purchase with backend
-      // for (const purchase of purchases) {
-      //   await this.validateReceipt(purchase);
-      // }
+      for (const purchase of purchases) {
+        await this.validateReceipt(purchase);
+      }
     } catch (error) {
       console.error('Failed to restore purchases:', error);
       throw error;
