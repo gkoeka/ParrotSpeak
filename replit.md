@@ -10,6 +10,7 @@ Preferred communication style: Simple, everyday language.
 Preferred preview mode: Mobile app preview only (not web app preview).
 Dark mode preference: Should persist when selected.
 **Change Management**: Always check with user before making extensive changes, especially to core functionality. No rapid bulk changes without approval.
+**Business Terminology**: Use "Customer" for anyone who has ever paid (past subscribers, expired plans, one-time purchases). "Subscriber" implies ongoing subscription which may not apply to all payment models.
 
 ## Recent Changes (July 2025)
 

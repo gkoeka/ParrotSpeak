@@ -39,8 +39,7 @@ export function SubscriptionPrompt({
 
   // Determine user state and messaging
   const isNewUser = !hasEverSubscribed && !isExpired;
-  const isPastSubscriber = hasEverSubscribed && !isExpired;
-  const isExpiredSubscriber = isExpired;
+  const isReturningCustomer = hasEverSubscribed || isExpired;
   
   let title, description, buttonText;
   
@@ -48,14 +47,10 @@ export function SubscriptionPrompt({
     title = "Stay Connected";
     description = "Please subscribe to keep making meaningful connections worldwide";
     buttonText = "Subscribe";
-  } else if (isPastSubscriber) {
+  } else if (isReturningCustomer) {
     title = "Keep the Conversation Going";
     description = "Subscribe again to stay connected and grow your global network";
     buttonText = "Subscribe again";
-  } else if (isExpiredSubscriber) {
-    title = "Keep the Conversation Going";
-    description = "Renew to stay connected and grow your global network";
-    buttonText = "Renew";
   } else {
     // Fallback
     title = "Stay Connected";
