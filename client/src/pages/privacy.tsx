@@ -15,7 +15,7 @@ export default function PrivacyPage() {
             <ul>
               <li>Email address and account credentials</li>
               <li>Name and profile information</li>
-              <li>Payment and billing information (processed securely through Stripe)</li>
+              <li>Purchase information (processed securely through app store billing)</li>
             </ul>
             
             <h3>Usage Data</h3>
@@ -29,7 +29,7 @@ export default function PrivacyPage() {
             <h2>2. How We Use Your Information</h2>
             <ul>
               <li>Provide voice-to-voice translation services</li>
-              <li>Process payments and manage subscriptions</li>
+              <li>Process purchases and manage access</li>
               <li>Improve translation accuracy and app performance</li>
               <li>Send important service notifications</li>
               <li>Ensure platform security and prevent abuse</li>
@@ -49,7 +49,7 @@ export default function PrivacyPage() {
             <p>We do not sell or share your personal data with third parties except:</p>
             <ul>
               <li>OpenAI (for translation processing - data not retained by OpenAI)</li>
-              <li>Stripe (for payment processing)</li>
+              <li>App store platforms (for purchase processing and validation)</li>
               <li>Law enforcement when legally required</li>
             </ul>
 
