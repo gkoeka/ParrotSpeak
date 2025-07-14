@@ -71,54 +71,192 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Mobile app preview routes - simple status pages since web app was removed
+  // Mobile app preview - show the actual mobile interface
   app.get('/mobile-app-preview', (req: Request, res: Response) => {
+    const logoPath = path.join(process.cwd(), 'mobile-app/assets/logo.png');
+    const logoBase64 = fs.existsSync(logoPath) 
+      ? fs.readFileSync(logoPath).toString('base64')
+      : '';
+    
     res.send(`
       <!DOCTYPE html>
       <html>
       <head>
         <title>ParrotSpeak Mobile App</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
           body { 
-            font-family: Arial, sans-serif; 
-            margin: 40px; 
-            text-align: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f8f9fa;
+            height: 100vh;
+            overflow-y: auto;
           }
-          .container {
-            max-width: 600px;
+          .mobile-container {
+            max-width: 414px;
             margin: 0 auto;
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: #f8f9fa;
+            min-height: 100vh;
+            padding: 16px;
           }
-          h1 { color: #3366FF; }
-          .status { 
-            background: #d4edda; 
-            color: #155724; 
-            padding: 15px; 
-            border-radius: 5px; 
-            margin: 20px 0;
+          .logo-container {
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 16px;
+          }
+          .logo {
+            width: 160px;
+            height: 160px;
+            margin-bottom: 20px;
+          }
+          .app-name {
+            font-size: 28px;
+            font-weight: bold;
+            margin-top: 8px;
+            color: #3366FF;
+            text-align: center;
+          }
+          .tagline {
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+            margin-top: 8px;
+          }
+          .form-container {
+            background: #fff;
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 16px;
+          }
+          .header-text {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 14px;
+            text-align: center;
+            color: #333;
+          }
+          .input-container {
+            display: flex;
+            align-items: center;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            background: #f9f9f9;
+            height: 45px;
+          }
+          .input-icon {
+            padding: 10px;
+            color: #888;
+          }
+          .input {
+            flex: 1;
+            padding: 8px 10px 8px 0;
+            font-size: 14px;
+            border: none;
+            background: transparent;
+            outline: none;
+          }
+          .button {
+            background: #3366FF;
+            border-radius: 5px;
+            padding: 12px;
+            text-align: center;
+            margin-top: 8px;
+            border: none;
+            cursor: pointer;
+          }
+          .button-text {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+          }
+          .social-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+          }
+          .social-button {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #fff;
+            cursor: pointer;
+          }
+          .toggle-container {
+            text-align: center;
+            margin-top: 16px;
+          }
+          .toggle-text {
+            color: #3366FF;
+            text-decoration: underline;
+            cursor: pointer;
+          }
+          .status-badge {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #28a745;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
           }
         </style>
       </head>
       <body>
-        <div class="container">
-          <h1>🦜 ParrotSpeak</h1>
-          <div class="status">
-            <strong>Mobile-Only Application</strong><br>
-            This project is now a pure React Native mobile app.
+        <div class="status-badge">✓ Mobile App Ready</div>
+        <div class="mobile-container">
+          <!-- Logo Container -->
+          <div class="logo-container">
+            ${logoBase64 ? `<img src="data:image/png;base64,${logoBase64}" alt="ParrotSpeak Logo" class="logo">` : '<div class="logo" style="background: #3366FF; display: flex; align-items: center; justify-content: center; color: white;">🦜</div>'}
+            <div class="app-name">Welcome to ParrotSpeak</div>
+            <div class="tagline">Breaking down language barriers, one conversation at a time</div>
           </div>
-          <p>The web app has been removed as requested. ParrotSpeak is now exclusively a mobile application built with React Native and Expo.</p>
-          <h3>Development Status:</h3>
-          <ul style="text-align: left; display: inline-block;">
-            <li>✅ API Server Running (Port 5000)</li>
-            <li>✅ React Native App Structure Complete</li>
-            <li>✅ PNG Logo Implemented</li>
-            <li>✅ Mobile-Only Architecture</li>
-          </ul>
-          <p><em>Use the React Native app for the full ParrotSpeak experience.</em></p>
+          
+          <div class="form-container">
+            <div class="header-text">Sign In</div>
+            
+            <!-- Email Input -->
+            <div class="input-container">
+              <div class="input-icon">✉️</div>
+              <input class="input" placeholder="Email" type="email">
+            </div>
+            
+            <!-- Password Input -->
+            <div class="input-container">
+              <div class="input-icon">🔒</div>
+              <input class="input" placeholder="Password" type="password">
+            </div>
+            
+            <!-- Sign In Button -->
+            <div class="button">
+              <div class="button-text">Sign In</div>
+            </div>
+            
+            <!-- Social Buttons -->
+            <div class="social-container">
+              <div class="social-button">
+                <span>🔵</span>
+                <span>Google</span>
+              </div>
+              <div class="social-button">
+                <span>🍎</span>
+                <span>Apple</span>
+              </div>
+            </div>
+            
+            <!-- Toggle -->
+            <div class="toggle-container">
+              <div class="toggle-text">New user? Sign Up</div>
+            </div>
+          </div>
         </div>
       </body>
       </html>
