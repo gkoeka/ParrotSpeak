@@ -75,36 +75,69 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="container flex h-screen items-center justify-center">
-      <div className="grid w-full gap-6 md:grid-cols-2 lg:gap-12">
-        {/* Hero section */}
-        <div className="flex flex-col justify-center space-y-4">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-              Parrot Speak
-            </h1>
-            <p className="text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400">
-              Your voice-to-voice translation companion. Break down language barriers and communicate effortlessly with anyone, anywhere.
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
+      {/* Centered ParrotSpeak Header */}
+      <div className="w-full py-8 px-4">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-4">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+            </svg>
           </div>
-          <div className="flex flex-col gap-2">
-            <p className="text-gray-500 dark:text-gray-400">
-              • Real-time translation in 100+ languages
-            </p>
-            <p className="text-gray-500 dark:text-gray-400">
-              • AI-powered context awareness
-            </p>
-            <p className="text-gray-500 dark:text-gray-400">
-              • Voice profile customization
-            </p>
-            <p className="text-gray-500 dark:text-gray-400">
-              • Conversation tracking and history
-            </p>
-          </div>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl md:text-6xl">
+            ParrotSpeak
+          </h1>
+          <p className="mt-3 text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
+            Your voice-to-voice translation companion
+          </p>
         </div>
+      </div>
 
-        {/* Auth forms */}
-        <div>
+      {/* Main Content */}
+      <div className="container mx-auto px-4 pb-8">
+        <div className="grid gap-8 md:grid-cols-2 lg:gap-16 max-w-6xl mx-auto">
+          {/* Features section */}
+          <div className="flex flex-col justify-center space-y-6">
+            <div className="space-y-4">
+              <h2 className="text-2xl font-semibold text-slate-900 dark:text-white">
+                Break down language barriers
+              </h2>
+              <p className="text-slate-600 dark:text-slate-300 text-lg leading-relaxed">
+                Communicate effortlessly with anyone, anywhere. Our AI-powered platform makes real-time translation natural and intuitive.
+              </p>
+            </div>
+            
+            <div className="grid gap-4">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                <p className="text-slate-600 dark:text-slate-300">
+                  Real-time translation in 100+ languages
+                </p>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+                <p className="text-slate-600 dark:text-slate-300">
+                  AI-powered context awareness
+                </p>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                <p className="text-slate-600 dark:text-slate-300">
+                  Voice profile customization
+                </p>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
+                <p className="text-slate-600 dark:text-slate-300">
+                  Conversation tracking and history
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Auth forms */}
+          <div className="flex items-center justify-center">
+            <div className="w-full max-w-md">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="login">Login</TabsTrigger>
@@ -302,6 +335,8 @@ export default function AuthPage() {
               </Card>
             </TabsContent>
           </Tabs>
+            </div>
+          </div>
         </div>
       </div>
     </div>
