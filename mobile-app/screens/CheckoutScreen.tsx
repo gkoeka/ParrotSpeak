@@ -15,6 +15,8 @@ import { RootStackParamList } from '../App';
 import Icon from 'react-native-vector-icons/Feather';
 import Header from '../components/Header';
 import { API_BASE_URL } from '../constants/api';
+import IAPService, { getSubscriptionPlans, SUBSCRIPTION_PRODUCTS } from '../services/iap';
+import { Platform } from 'react-native';
 
 type CheckoutScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Checkout'>;
 type CheckoutScreenRouteProp = {
@@ -31,46 +33,80 @@ export default function CheckoutScreen() {
   const { plan, amount, interval } = route.params;
   
   const [isLoading, setIsLoading] = useState(false);
-  const [paymentIntent, setPaymentIntent] = useState<string | null>(null);
+  const [iapService] = useState(() => IAPService.getInstance());
+  const [subscriptionPlans] = useState(() => getSubscriptionPlans());
 
   const formatAmount = (amount: number) => {
     return (amount / 100).toFixed(2);
   };
 
-  const createPaymentIntent = async () => {
+  const getCurrentPlan = () => {
+    return subscriptionPlans.find(p => p.id === plan);
+  };
+
+  const initializeIAP = async () => {
     try {
       setIsLoading(true);
-      
-      const response = await fetch(`${API_BASE_URL}/api/create-payment-intent`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          plan,
-          amount,
-          interval
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create payment intent');
-      }
-
-      const data = await response.json();
-      setPaymentIntent(data.clientSecret);
+      await iapService.initialize();
     } catch (error) {
-      console.error('Error creating payment intent:', error);
-      Alert.alert('Error', 'Failed to initialize payment. Please try again.');
+      console.error('Error initializing IAP:', error);
+      Alert.alert('Error', 'Failed to initialize payment system. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    createPaymentIntent();
+    initializeIAP();
   }, []);
+
+  const handlePurchaseSubscription = async () => {
+    try {
+      setIsLoading(true);
+      
+      const currentPlan = getCurrentPlan();
+      if (!currentPlan) {
+        throw new Error('Invalid subscription plan');
+      }
+
+      await iapService.purchaseSubscription(currentPlan.productId);
+      
+      // Success handled by IAP service callback
+      Alert.alert(
+        'Success',
+        'Subscription purchased successfully! You now have access to all premium features.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('Home')
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Error purchasing subscription:', error);
+      Alert.alert('Error', 'Failed to purchase subscription. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRestorePurchases = async () => {
+    try {
+      setIsLoading(true);
+      await iapService.restorePurchases();
+      Alert.alert('Success', 'Purchases restored successfully!');
+    } catch (error) {
+      console.error('Error restoring purchases:', error);
+      Alert.alert('Error', 'Failed to restore purchases. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getCurrentPlanPrice = () => {
+    const currentPlan = getCurrentPlan();
+    return currentPlan ? currentPlan.price : `$${formatAmount(amount)}`;
+  };
 
   const handleContinueToPayment = () => {
     // For mobile implementation, we'll redirect to web checkout
@@ -123,12 +159,12 @@ export default function CheckoutScreen() {
 
         {/* Plan Summary */}
         <View style={styles.planSummary}>
-          <Text style={styles.planName}>{currentPlan.name}</Text>
-          <Text style={styles.planDescription}>{currentPlan.description}</Text>
+          <Text style={styles.planName}>{getCurrentPlan()?.name || plan}</Text>
+          <Text style={styles.planDescription}>{getCurrentPlan()?.description || 'Subscription plan'}</Text>
           
           <View style={styles.priceContainer}>
-            <Text style={styles.price}>${formatAmount(amount)}</Text>
-            <Text style={styles.interval}>/{interval}</Text>
+            <Text style={styles.price}>{getCurrentPlanPrice()}</Text>
+            <Text style={styles.interval}>/{getCurrentPlan()?.duration || interval}</Text>
           </View>
         </View>
 
@@ -173,31 +209,41 @@ export default function CheckoutScreen() {
           <View style={styles.securityText}>
             <Text style={styles.securityTitle}>Secure Payment</Text>
             <Text style={styles.securityDescription}>
-              Your payment is processed securely through Stripe. We never store your payment information.
+              Your payment is processed securely through {Platform.OS === 'ios' ? 'Apple App Store' : 'Google Play Store'}. We never store your payment information.
             </Text>
           </View>
         </View>
 
-        {/* Payment Button */}
+        {/* IAP Purchase Button */}
         <TouchableOpacity 
           style={[styles.paymentButton, isLoading && styles.paymentButtonDisabled]}
-          onPress={handleContinueToPayment}
+          onPress={handlePurchaseSubscription}
           disabled={isLoading}
         >
           {isLoading ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
             <>
-              <Icon name="credit-card" size={20} color="#fff" />
-              <Text style={styles.paymentButtonText}>Continue to Payment</Text>
+              <Icon name="shopping-cart" size={20} color="#fff" />
+              <Text style={styles.paymentButtonText}>Subscribe {getCurrentPlanPrice()}</Text>
             </>
           )}
+        </TouchableOpacity>
+
+        {/* Restore Purchases Button */}
+        <TouchableOpacity 
+          style={[styles.restoreButton, isLoading && styles.restoreButtonDisabled]}
+          onPress={handleRestorePurchases}
+          disabled={isLoading}
+        >
+          <Icon name="refresh-cw" size={16} color="#4F46E5" />
+          <Text style={styles.restoreButtonText}>Restore Purchases</Text>
         </TouchableOpacity>
 
         {/* Terms */}
         <Text style={styles.terms}>
           By continuing, you agree to our Terms of Service and Privacy Policy. 
-          Your subscription will renew automatically unless cancelled.
+          Your subscription will renew automatically unless cancelled through {Platform.OS === 'ios' ? 'App Store' : 'Google Play'}.
         </Text>
       </ScrollView>
     </View>
@@ -319,6 +365,26 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  restoreButton: {
+    backgroundColor: 'transparent',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#4F46E5',
+  },
+  restoreButtonDisabled: {
+    borderColor: '#9ca3af',
+  },
+  restoreButtonText: {
+    color: '#4F46E5',
+    fontSize: 16,
+    fontWeight: '500',
+    marginLeft: 6,
   },
   terms: {
     fontSize: 12,

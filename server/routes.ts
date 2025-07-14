@@ -20,6 +20,7 @@ import { users, conversations, messages, userFeedback } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import Stripe from "stripe";
 import passport from "passport";
+import iapRoutes from "./routes/iap";
 
 // Rate limiting configuration
 const generalLimiter = rateLimit({
@@ -260,6 +261,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Failed to update speech settings' });
     }
   });
+
+  // IAP routes
+  app.use('/api/iap', iapRoutes);
 
   // Authentication routes
   app.post('/api/auth/login', (req: Request, res: Response, next: NextFunction) => {
