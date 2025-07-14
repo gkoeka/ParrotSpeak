@@ -15,6 +15,7 @@ Dark mode preference: Should persist when selected.
 - New Users: "Connect with Others" / "Please purchase a plan that fits your needs..." / "Choose your plan"
 - Returning Customers: "Keep the Conversation Going" / "Choose a plan again to keep connecting..." / "Choose a plan again"
 **Modal Navigation**: Subscription prompts route to '/checkout' page for plan selection, with proper close functionality via X button or "Maybe later"
+**App Store Setup**: User will need DUNS number before setting up developer accounts. Must remember all app store setup information, credentials, and certificate processes for future reference when DUNS number is obtained.
 
 ## Recent Changes (July 2025)
 
@@ -45,6 +46,7 @@ Dark mode preference: Should persist when selected.
 - ✓ **IAP-Based Checkout System (July 14, 2025)**: **IMPLEMENTED** - Completely replaced Stripe payment system with In-App Purchase (IAP) based checkout for app store distribution. Mobile users see IAP purchase flow, web users see mobile app download prompts. Aligns with native app store monetization strategy.
 - ✓ **Production Receipt Validation (July 14, 2025)**: **IMPLEMENTED** - Replaced mock validation with real Google Play Developer API and Apple App Store receipt validation. Smart fallback system uses development mode until credentials are configured. Production-ready for immediate app store submission.
 - ✓ **Legal Documents Complete (July 14, 2025)**: **VERIFIED COMPLETE** - Created comprehensive Privacy Policy (18.8KB PDF) and Terms of Service (21.3KB PDF) covering IAP billing, GDPR/CCPA compliance, and app store requirements. Both available as web pages (/privacy, /terms) and PDF downloads. App store submission ready.
+- ✓ **App Store Setup Documentation (July 14, 2025)**: **COMPLETE GUIDES CREATED** - Documented complete process for app store submission including environment variable setup (docs/environment-setup.md), production certificate generation (docs/production-certificates-guide.md), and legal document summary. Ready for implementation once DUNS number obtained and developer accounts created.
 
 ### Technical Improvements
 - Enhanced voice selection logic for better cross-language support
