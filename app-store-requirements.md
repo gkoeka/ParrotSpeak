@@ -66,11 +66,12 @@
 - Content rating
 - Keywords for search optimization
 
-#### E. Technical Requirements
-**Code Signing:**
-- Production certificates for both platforms
-- Release build configurations
-- Obfuscation for Android
+#### E. Technical Requirements 📋 DOCUMENTED
+**Code Signing:** 📋 Step-by-step guide created
+- Production certificates guide: `docs/production-certificates-guide.md`
+- Android: Upload keystore generation and AAB signing
+- iOS: Distribution certificates and provisioning profiles
+- Security best practices and troubleshooting
 
 **Testing:**
 - Sandbox testing with real store accounts
