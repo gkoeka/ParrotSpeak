@@ -80,200 +80,231 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     res.send(`
       <!DOCTYPE html>
-      <html>
+      <html lang="en">
       <head>
-        <title>ParrotSpeak Mobile App</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f8f9fa;
-            height: 100vh;
-            overflow: hidden;
-            position: relative;
-          }
-          .mobile-frame {
-            max-width: 414px;
-            height: 100vh;
-            margin: 0 auto;
-            background: #fff;
-            position: relative;
-            box-shadow: 0 0 30px rgba(0,0,0,0.1);
-          }
-          .status-bar {
-            height: 44px;
-            background: #000;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-            color: #fff;
-            font-size: 14px;
-            font-weight: 600;
-          }
-          .app-content {
-            height: calc(100vh - 44px);
-            background: #f8f9fa;
-            overflow-y: auto;
-            padding: 20px 16px;
-          }
-          .logo-container {
-            text-align: center;
-            margin-bottom: 32px;
-          }
-          .logo {
-            width: 160px;
-            height: 160px;
-            margin: 0 auto 20px;
-            border-radius: 20px;
-          }
-          .app-title {
-            font-size: 28px;
-            font-weight: bold;
-            color: #3366FF;
-            margin-bottom: 8px;
-          }
-          .app-subtitle {
-            font-size: 16px;
-            color: #666;
-            margin-bottom: 40px;
-          }
-          .auth-form {
-            background: #fff;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 24px;
-          }
-          .form-title {
-            font-size: 20px;
-            font-weight: 600;
-            text-align: center;
-            margin-bottom: 24px;
-            color: #333;
-          }
-          .input-group {
-            margin-bottom: 16px;
-          }
-          .input-field {
-            width: 100%;
-            height: 50px;
-            border: 2px solid #e1e5e9;
-            border-radius: 12px;
-            padding: 0 16px;
-            font-size: 16px;
-            background: #f8f9fa;
-            transition: border-color 0.3s;
-          }
-          .input-field:focus {
-            outline: none;
-            border-color: #3366FF;
-            background: #fff;
-          }
-          .primary-button {
-            width: 100%;
-            height: 50px;
-            background: #3366FF;
-            border: none;
-            border-radius: 12px;
-            color: #fff;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 8px;
-            transition: background-color 0.3s;
-          }
-          .primary-button:hover {
-            background: #2851CC;
-          }
-          .social-buttons {
-            display: flex;
-            gap: 12px;
-            margin-top: 20px;
-          }
-          .social-button {
-            flex: 1;
-            height: 50px;
-            border: 2px solid #e1e5e9;
-            border-radius: 12px;
-            background: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: border-color 0.3s;
-          }
-          .social-button:hover {
-            border-color: #3366FF;
-          }
-          .link-text {
-            text-align: center;
-            margin-top: 20px;
-            color: #3366FF;
-            font-size: 14px;
-            cursor: pointer;
-          }
-          .ready-badge {
-            position: absolute;
-            top: 52px;
-            right: 16px;
-            background: #28a745;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 16px;
-            font-size: 12px;
-            font-weight: 600;
-            z-index: 1000;
-          }
-        </style>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>ParrotSpeak Mobile App</title>
+          <style>
+              * {
+                  margin: 0;
+                  padding: 0;
+                  box-sizing: border-box;
+              }
+              
+              body {
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                  background: #f8f9fa;
+                  height: 100vh;
+                  overflow: hidden;
+              }
+              
+              .mobile-container {
+                  max-width: 414px;
+                  height: 100vh;
+                  margin: 0 auto;
+                  background: #fff;
+                  position: relative;
+                  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+              }
+              
+              .status-bar {
+                  height: 44px;
+                  background: #000;
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  padding: 0 20px;
+                  color: #fff;
+                  font-size: 14px;
+                  font-weight: 600;
+              }
+              
+              .app-content {
+                  height: calc(100vh - 44px);
+                  background: #f8f9fa;
+                  overflow-y: auto;
+                  padding: 24px 20px;
+              }
+              
+              .logo-section {
+                  text-align: center;
+                  margin-bottom: 40px;
+                  margin-top: 20px;
+              }
+              
+              .logo {
+                  width: 160px;
+                  height: 160px;
+                  margin: 0 auto 24px;
+                  border-radius: 20px;
+                  ${logoBase64 ? `background: url('data:image/png;base64,${logoBase64}') center/cover;` : 'background: #3366FF; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;'}
+              }
+              
+              .app-title {
+                  font-size: 28px;
+                  font-weight: bold;
+                  color: #3366FF;
+                  margin-bottom: 8px;
+              }
+              
+              .app-subtitle {
+                  font-size: 16px;
+                  color: #666;
+                  line-height: 1.4;
+              }
+              
+              .auth-container {
+                  background: #fff;
+                  border-radius: 16px;
+                  padding: 28px 24px;
+                  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+              }
+              
+              .auth-title {
+                  font-size: 20px;
+                  font-weight: 600;
+                  text-align: center;
+                  margin-bottom: 28px;
+                  color: #333;
+              }
+              
+              .input-group {
+                  margin-bottom: 16px;
+              }
+              
+              .input-field {
+                  width: 100%;
+                  height: 52px;
+                  border: 2px solid #e1e5e9;
+                  border-radius: 12px;
+                  padding: 0 16px;
+                  font-size: 16px;
+                  background: #f8f9fa;
+                  transition: all 0.3s ease;
+              }
+              
+              .input-field:focus {
+                  outline: none;
+                  border-color: #3366FF;
+                  background: #fff;
+                  transform: translateY(-1px);
+              }
+              
+              .sign-in-btn {
+                  width: 100%;
+                  height: 52px;
+                  background: #3366FF;
+                  border: none;
+                  border-radius: 12px;
+                  color: #fff;
+                  font-size: 16px;
+                  font-weight: 600;
+                  cursor: pointer;
+                  margin-top: 12px;
+                  transition: all 0.3s ease;
+              }
+              
+              .sign-in-btn:hover {
+                  background: #2851CC;
+                  transform: translateY(-1px);
+              }
+              
+              .social-section {
+                  display: flex;
+                  gap: 12px;
+                  margin-top: 24px;
+              }
+              
+              .social-btn {
+                  flex: 1;
+                  height: 52px;
+                  border: 2px solid #e1e5e9;
+                  border-radius: 12px;
+                  background: #fff;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  gap: 8px;
+                  font-size: 14px;
+                  font-weight: 600;
+                  cursor: pointer;
+                  transition: all 0.3s ease;
+              }
+              
+              .social-btn:hover {
+                  border-color: #3366FF;
+                  transform: translateY(-1px);
+              }
+              
+              .signup-link {
+                  text-align: center;
+                  margin-top: 24px;
+                  color: #3366FF;
+                  font-size: 14px;
+                  cursor: pointer;
+                  text-decoration: underline;
+              }
+              
+              .ready-indicator {
+                  position: absolute;
+                  top: 52px;
+                  right: 16px;
+                  background: #28a745;
+                  color: white;
+                  padding: 8px 12px;
+                  border-radius: 20px;
+                  font-size: 12px;
+                  font-weight: 600;
+                  z-index: 100;
+              }
+          </style>
       </head>
       <body>
-        <div class="mobile-frame">
-          <div class="status-bar">
-            <span>9:41</span>
-            <span>ParrotSpeak</span>
-            <span>●●●</span>
+          <div class="mobile-container">
+              <div class="status-bar">
+                  <span>9:41</span>
+                  <span>ParrotSpeak</span>
+                  <span>●●●</span>
+              </div>
+              
+              <div class="ready-indicator">✓ Mobile App Ready</div>
+              
+              <div class="app-content">
+                  <div class="logo-section">
+                      <div class="logo">${!logoBase64 ? '🦜' : ''}</div>
+                      <div class="app-title">Welcome to ParrotSpeak</div>
+                      <div class="app-subtitle">Breaking down language barriers, one conversation at a time</div>
+                  </div>
+                  
+                  <div class="auth-container">
+                      <div class="auth-title">Sign In</div>
+                      
+                      <div class="input-group">
+                          <input type="email" class="input-field" placeholder="Email">
+                      </div>
+                      
+                      <div class="input-group">
+                          <input type="password" class="input-field" placeholder="Password">
+                      </div>
+                      
+                      <button class="sign-in-btn">Sign In</button>
+                      
+                      <div class="social-section">
+                          <div class="social-btn">
+                              <span style="color: #4285F4;">🔵</span>
+                              <span>Google</span>
+                          </div>
+                          <div class="social-btn">
+                              <span>🍎</span>
+                              <span>Apple</span>
+                          </div>
+                      </div>
+                      
+                      <div class="signup-link">New user? Sign Up</div>
+                  </div>
+              </div>
           </div>
-          <div class="ready-badge">Mobile App Ready</div>
-          <div class="app-content">
-            <div class="logo-container">
-              ${logoBase64 ? `<img src="data:image/png;base64,${logoBase64}" alt="ParrotSpeak Logo" class="logo">` : '<div class="logo" style="background: #3366FF; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;">🦜</div>'}
-              <div class="app-title">Welcome to ParrotSpeak</div>
-              <div class="app-subtitle">Breaking down language barriers, one conversation at a time</div>
-            </div>
-            
-            <div class="auth-form">
-              <div class="form-title">Sign In to Continue</div>
-              
-              <div class="input-group">
-                <input type="email" class="input-field" placeholder="Email address">
-              </div>
-              
-              <div class="input-group">
-                <input type="password" class="input-field" placeholder="Password">
-              </div>
-              
-              <button class="primary-button">Sign In</button>
-              
-              <div class="social-buttons">
-                <div class="social-button">
-                  <span style="color: #4285F4;">G</span>
-                  <span>Google</span>
-                </div>
-                <div class="social-button">
-                  <span>🍎</span>
-                  <span>Apple</span>
-                </div>
-              </div>
-              
-              <div class="link-text">New user? Sign up here</div>
-            </div>
-          </div>
-        </div>
       </body>
       </html>
     `);
