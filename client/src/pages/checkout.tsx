@@ -180,7 +180,7 @@ export default function CheckoutPage() {
   }
   
   // If user already has active access, show message
-  if (user?.subscription_status === 'active') {
+  if (user?.subscriptionStatus === 'active') {
     return (
       <div className="container max-w-md mx-auto py-16">
         <Card>
@@ -190,8 +190,8 @@ export default function CheckoutPage() {
           </CardHeader>
           <CardContent>
             <p className="mb-4">
-              You have active {user.subscription_tier} access until {user.subscription_expires_at 
-                ? new Date(user.subscription_expires_at).toLocaleDateString() 
+              You have active {user.subscriptionTier} access until {user.subscriptionExpiresAt 
+                ? new Date(user.subscriptionExpiresAt).toLocaleDateString() 
                 : 'unknown date'}.
             </p>
             <p className="mb-4">
