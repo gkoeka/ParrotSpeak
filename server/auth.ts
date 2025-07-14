@@ -147,22 +147,53 @@ export function requireAuth(req: Request, res: any, next: any) {
 }
 
 // Middleware to check subscription status
-export function requireSubscription(req: Request, res: any, next: any) {
+export async function requireSubscription(req: Request, res: any, next: any) {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: 'Authentication required' });
   }
   
   const user = req.user;
-  if (!user.subscription_status || user.subscription_status !== 'active') {
-    return res.status(403).json({ message: 'Active subscription required' });
-  }
   
-  // Also check if subscription has expired
-  if (user.subscription_expires_at && new Date(user.subscription_expires_at) < new Date()) {
-    return res.status(403).json({ message: 'Subscription has expired' });
+  // Get fresh subscription data from database to avoid session cache issues
+  try {
+    const { db } = await import("@db");
+    const { users } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    
+    const freshUser = await db.query.users.findFirst({
+      where: eq(users.id, user.id),
+      columns: {
+        subscription_status: true,
+        subscription_expires_at: true
+      }
+    });
+    
+    if (!freshUser) {
+      return res.status(403).json({ message: 'User not found' });
+    }
+    
+    // Debug logging to see what's in the fresh user data
+    console.log('Fresh subscription check for user:', {
+      id: user.id,
+      email: user.email,
+      subscription_status: freshUser.subscription_status,
+      subscription_expires_at: freshUser.subscription_expires_at
+    });
+    
+    if (!freshUser.subscription_status || freshUser.subscription_status !== 'active') {
+      return res.status(403).json({ message: 'Active subscription required' });
+    }
+    
+    // Also check if subscription has expired
+    if (freshUser.subscription_expires_at && new Date(freshUser.subscription_expires_at) < new Date()) {
+      return res.status(403).json({ message: 'Subscription has expired' });
+    }
+    
+    next();
+  } catch (error) {
+    console.error('Error checking subscription status:', error);
+    return res.status(500).json({ message: 'Failed to verify subscription' });
   }
-  
-  next();
 }
 
 // Function to check subscription status for WebSocket and other non-Express contexts
