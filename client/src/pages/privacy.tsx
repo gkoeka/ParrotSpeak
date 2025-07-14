@@ -76,7 +76,7 @@ export default function PrivacyPage() {
               <li>Conversation data: 2 years from last access</li>
               <li>Account data: Until account deletion</li>
               <li>Analytics data: 25 months (anonymized after 12 months)</li>
-              <li>Payment data: As required by law and Stripe policies</li>
+              <li>Payment data: As required by law and app store policies</li>
             </ul>
 
             <h2>7. Cookies and Tracking</h2>

@@ -60,7 +60,7 @@ export default function CookiesPage() {
             <h2>Third-Party Cookies</h2>
             <p>We may use third-party services that set their own cookies:</p>
             <ul>
-              <li><strong>Stripe:</strong> For secure payment processing (necessary for subscriptions)</li>
+              <li><strong>App Store:</strong> For secure payment processing (necessary for subscriptions)</li>
               <li><strong>Mixpanel:</strong> For analytics and user behavior tracking (with your consent)</li>
             </ul>
             

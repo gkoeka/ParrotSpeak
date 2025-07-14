@@ -47,6 +47,7 @@ Dark mode preference: Should persist when selected.
 - ✓ **Production Receipt Validation (July 14, 2025)**: **IMPLEMENTED** - Replaced mock validation with real Google Play Developer API and Apple App Store receipt validation. Smart fallback system uses development mode until credentials are configured. Production-ready for immediate app store submission.
 - ✓ **Legal Documents Complete (July 14, 2025)**: **VERIFIED COMPLETE** - Created comprehensive Privacy Policy (18.8KB PDF) and Terms of Service (21.3KB PDF) covering IAP billing, GDPR/CCPA compliance, and app store requirements. Both available as web pages (/privacy, /terms) and PDF downloads. App store submission ready.
 - ✓ **App Store Setup Documentation (July 14, 2025)**: **COMPLETE GUIDES CREATED** - Documented complete process for app store submission including environment variable setup (docs/environment-setup.md), production certificate generation (docs/production-certificates-guide.md), and legal document summary. Ready for implementation once DUNS number obtained and developer accounts created.
+- ✓ **Stripe Code Removal (July 14, 2025)**: **CLEANED UP COMPLETELY** - Removed all unused Stripe code including webhook service, API imports, security headers, and user API fields. Updated legal documents to reflect app store payment processing. Codebase now focused entirely on IAP model with no Stripe dependencies.
 
 ### Technical Improvements
 - Enhanced voice selection logic for better cross-language support
@@ -142,7 +143,7 @@ Dark mode preference: Should persist when selected.
 
 ### Core Services
 - **OpenAI API**: Speech recognition via Whisper
-- **Stripe**: Payment processing and subscription management
+- **In-App Purchases**: Payment processing via Apple App Store and Google Play Store
 - **SendGrid**: Email delivery service
 - **PostgreSQL**: Primary database (Neon serverless)
 

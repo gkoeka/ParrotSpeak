@@ -18,7 +18,6 @@ import * as mfaService from "./services/mfa";
 import { db } from "@db";
 import { users, conversations, messages, userFeedback } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import Stripe from "stripe";
 import passport from "passport";
 import iapRoutes from "./routes/iap";
 
@@ -37,8 +36,6 @@ const slowDownMiddleware = slowDown({
   delayMs: 500 // begin adding 500ms of delay per request above 100
 });
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
-
 export async function registerRoutes(app: Express): Promise<Server> {
   // Security middleware
   app.use(generalLimiter);
@@ -48,12 +45,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com", "https://checkout.stripe.com"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.mixpanel.com"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "blob:", "https:"],
-        connectSrc: ["'self'", "ws:", "wss:", "https://api.stripe.com"],
-        frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
+        connectSrc: ["'self'", "ws:", "wss:", "https://api.mixpanel.com", "https://api.openai.com"],
+        frameSrc: ["'self'"],
         objectSrc: ["'none'"],
         upgradeInsecureRequests: [],
       },
@@ -286,8 +283,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             username: user.username,
             firstName: user.firstName,
             lastName: user.lastName,
-            stripeCustomerId: user.stripeCustomerId,
-            stripeSubscriptionId: user.stripeSubscriptionId,
             subscriptionStatus: user.subscriptionStatus,
             subscriptionTier: user.subscriptionTier,
             subscriptionExpiresAt: user.subscriptionExpiresAt,
@@ -365,8 +360,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           username: req.user.username,
           firstName: req.user.firstName,
           lastName: req.user.lastName,
-          stripeCustomerId: req.user.stripeCustomerId,
-          stripeSubscriptionId: req.user.stripeSubscriptionId,
           subscriptionStatus: req.user.subscriptionStatus,
           subscriptionTier: req.user.subscriptionTier,
           subscriptionExpiresAt: req.user.subscriptionExpiresAt,

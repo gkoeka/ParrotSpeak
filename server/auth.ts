@@ -27,8 +27,7 @@ declare global {
       resetToken: string | null;
       resetTokenExpiry: Date | null;
       emailVerified: boolean | null;
-      stripeCustomerId: string | null;
-      stripeSubscriptionId: string | null;
+
       subscription_status: string | null;
       subscription_tier: string | null;
       subscription_expires_at: Date | null;
