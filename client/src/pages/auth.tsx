@@ -79,13 +79,6 @@ export default function AuthPage() {
       {/* Centered ParrotSpeak Header */}
       <div className="w-full py-8 px-4">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center mb-4">
-            <img 
-              src="/parrotspeak-logo.svg"
-              alt="ParrotSpeak Logo"
-              className="w-16 h-16"
-            />
-          </div>
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl md:text-6xl">
             ParrotSpeak
           </h1>
