@@ -623,6 +623,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Visual translation endpoint for camera/image translation
+  app.post('/api/visual-translate', requireAuth, requireSubscription, async (req: Request, res: Response) => {
+    try {
+      const { imageBase64, sourceLanguage, targetLanguage } = req.body;
+      
+      if (!imageBase64 || !sourceLanguage || !targetLanguage) {
+        return res.status(400).json({ message: 'Image, source language, and target language are required' });
+      }
+      
+      // Import visual translation service
+      const { analyzeImageAndTranslate } = await import('./services/visual-translation');
+      
+      // Process the image and translate
+      const result = await analyzeImageAndTranslate(imageBase64, sourceLanguage, targetLanguage);
+      
+      res.json({
+        extractedText: result.extractedText,
+        translation: result.translation
+      });
+      
+    } catch (error) {
+      console.error('Visual translation error:', error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : 'Visual translation failed' 
+      });
+    }
+  });
+
   // Feedback submission endpoint
   app.post('/api/feedback', requireAuth, async (req: Request, res: Response) => {
     try {
