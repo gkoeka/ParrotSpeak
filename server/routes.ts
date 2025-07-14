@@ -71,7 +71,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Mobile app preview - show the actual mobile interface
+  // Mobile app preview - serve the mobile app interface
   app.get('/mobile-app-preview', (req: Request, res: Response) => {
     const logoPath = path.join(process.cwd(), 'mobile-app/assets/logo.png');
     const logoBase64 = fs.existsSync(logoPath) 
@@ -83,178 +83,194 @@ export async function registerRoutes(app: Express): Promise<Server> {
       <html>
       <head>
         <title>ParrotSpeak Mobile App</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f8f9fa;
             height: 100vh;
-            overflow-y: auto;
+            overflow: hidden;
+            position: relative;
           }
-          .mobile-container {
+          .mobile-frame {
             max-width: 414px;
+            height: 100vh;
             margin: 0 auto;
-            background: #f8f9fa;
-            min-height: 100vh;
-            padding: 16px;
-          }
-          .logo-container {
-            text-align: center;
-            margin-top: 20px;
-            margin-bottom: 16px;
-          }
-          .logo {
-            width: 160px;
-            height: 160px;
-            margin-bottom: 20px;
-          }
-          .app-name {
-            font-size: 28px;
-            font-weight: bold;
-            margin-top: 8px;
-            color: #3366FF;
-            text-align: center;
-          }
-          .tagline {
-            font-size: 14px;
-            color: #666;
-            text-align: center;
-            margin-top: 8px;
-          }
-          .form-container {
             background: #fff;
-            border-radius: 10px;
-            padding: 16px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            margin-bottom: 16px;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.1);
           }
-          .header-text {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 14px;
-            text-align: center;
-            color: #333;
-          }
-          .input-container {
+          .status-bar {
+            height: 44px;
+            background: #000;
             display: flex;
             align-items: center;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            margin-bottom: 8px;
-            background: #f9f9f9;
-            height: 45px;
-          }
-          .input-icon {
-            padding: 10px;
-            color: #888;
-          }
-          .input {
-            flex: 1;
-            padding: 8px 10px 8px 0;
-            font-size: 14px;
-            border: none;
-            background: transparent;
-            outline: none;
-          }
-          .button {
-            background: #3366FF;
-            border-radius: 5px;
-            padding: 12px;
-            text-align: center;
-            margin-top: 8px;
-            border: none;
-            cursor: pointer;
-          }
-          .button-text {
+            justify-content: space-between;
+            padding: 0 20px;
             color: #fff;
             font-size: 14px;
             font-weight: 600;
           }
-          .social-container {
+          .app-content {
+            height: calc(100vh - 44px);
+            background: #f8f9fa;
+            overflow-y: auto;
+            padding: 20px 16px;
+          }
+          .logo-container {
+            text-align: center;
+            margin-bottom: 32px;
+          }
+          .logo {
+            width: 160px;
+            height: 160px;
+            margin: 0 auto 20px;
+            border-radius: 20px;
+          }
+          .app-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #3366FF;
+            margin-bottom: 8px;
+          }
+          .app-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 40px;
+          }
+          .auth-form {
+            background: #fff;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+          }
+          .form-title {
+            font-size: 20px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 24px;
+            color: #333;
+          }
+          .input-group {
+            margin-bottom: 16px;
+          }
+          .input-field {
+            width: 100%;
+            height: 50px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            padding: 0 16px;
+            font-size: 16px;
+            background: #f8f9fa;
+            transition: border-color 0.3s;
+          }
+          .input-field:focus {
+            outline: none;
+            border-color: #3366FF;
+            background: #fff;
+          }
+          .primary-button {
+            width: 100%;
+            height: 50px;
+            background: #3366FF;
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background-color 0.3s;
+          }
+          .primary-button:hover {
+            background: #2851CC;
+          }
+          .social-buttons {
             display: flex;
-            gap: 10px;
-            margin-top: 16px;
+            gap: 12px;
+            margin-top: 20px;
           }
           .social-button {
             flex: 1;
+            height: 50px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            background: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background: #fff;
+            font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
+            transition: border-color 0.3s;
           }
-          .toggle-container {
+          .social-button:hover {
+            border-color: #3366FF;
+          }
+          .link-text {
             text-align: center;
-            margin-top: 16px;
-          }
-          .toggle-text {
+            margin-top: 20px;
             color: #3366FF;
-            text-decoration: underline;
+            font-size: 14px;
             cursor: pointer;
           }
-          .status-badge {
-            position: fixed;
-            top: 10px;
-            right: 10px;
+          .ready-badge {
+            position: absolute;
+            top: 52px;
+            right: 16px;
             background: #28a745;
             color: white;
-            padding: 8px 12px;
-            border-radius: 20px;
+            padding: 6px 12px;
+            border-radius: 16px;
             font-size: 12px;
             font-weight: 600;
+            z-index: 1000;
           }
         </style>
       </head>
       <body>
-        <div class="status-badge">✓ Mobile App Ready</div>
-        <div class="mobile-container">
-          <!-- Logo Container -->
-          <div class="logo-container">
-            ${logoBase64 ? `<img src="data:image/png;base64,${logoBase64}" alt="ParrotSpeak Logo" class="logo">` : '<div class="logo" style="background: #3366FF; display: flex; align-items: center; justify-content: center; color: white;">🦜</div>'}
-            <div class="app-name">Welcome to ParrotSpeak</div>
-            <div class="tagline">Breaking down language barriers, one conversation at a time</div>
+        <div class="mobile-frame">
+          <div class="status-bar">
+            <span>9:41</span>
+            <span>ParrotSpeak</span>
+            <span>●●●</span>
           </div>
-          
-          <div class="form-container">
-            <div class="header-text">Sign In</div>
-            
-            <!-- Email Input -->
-            <div class="input-container">
-              <div class="input-icon">✉️</div>
-              <input class="input" placeholder="Email" type="email">
+          <div class="ready-badge">Mobile App Ready</div>
+          <div class="app-content">
+            <div class="logo-container">
+              ${logoBase64 ? `<img src="data:image/png;base64,${logoBase64}" alt="ParrotSpeak Logo" class="logo">` : '<div class="logo" style="background: #3366FF; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px;">🦜</div>'}
+              <div class="app-title">Welcome to ParrotSpeak</div>
+              <div class="app-subtitle">Breaking down language barriers, one conversation at a time</div>
             </div>
             
-            <!-- Password Input -->
-            <div class="input-container">
-              <div class="input-icon">🔒</div>
-              <input class="input" placeholder="Password" type="password">
-            </div>
-            
-            <!-- Sign In Button -->
-            <div class="button">
-              <div class="button-text">Sign In</div>
-            </div>
-            
-            <!-- Social Buttons -->
-            <div class="social-container">
-              <div class="social-button">
-                <span>🔵</span>
-                <span>Google</span>
+            <div class="auth-form">
+              <div class="form-title">Sign In to Continue</div>
+              
+              <div class="input-group">
+                <input type="email" class="input-field" placeholder="Email address">
               </div>
-              <div class="social-button">
-                <span>🍎</span>
-                <span>Apple</span>
+              
+              <div class="input-group">
+                <input type="password" class="input-field" placeholder="Password">
               </div>
-            </div>
-            
-            <!-- Toggle -->
-            <div class="toggle-container">
-              <div class="toggle-text">New user? Sign Up</div>
+              
+              <button class="primary-button">Sign In</button>
+              
+              <div class="social-buttons">
+                <div class="social-button">
+                  <span style="color: #4285F4;">G</span>
+                  <span>Google</span>
+                </div>
+                <div class="social-button">
+                  <span>🍎</span>
+                  <span>Apple</span>
+                </div>
+              </div>
+              
+              <div class="link-text">New user? Sign up here</div>
             </div>
           </div>
         </div>

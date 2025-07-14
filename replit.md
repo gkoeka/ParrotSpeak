@@ -18,6 +18,11 @@ Dark mode preference: Should persist when selected.
 
 ## Recent Changes (July 2025)
 
+### Architecture Restoration (July 14, 2025)
+- ✓ **Web App Restored (July 14, 2025)**: **BOTH WEB AND MOBILE AVAILABLE** - Successfully restored web app structure after user request. Now have both web app (React/Vite) and mobile app (React Native/Expo) running in parallel. Web app provides basic interface while mobile app contains full voice translation functionality.
+- ✓ **Mobile App Preserved (July 14, 2025)**: **VERIFIED WORKING** - All mobile app files, assets, and user's PNG logo implementation remain intact. Mobile app continues to be the primary platform for voice translation features.
+- ✓ **Dual Architecture Benefits (July 14, 2025)**: **IMPLEMENTED** - Users can now access ParrotSpeak via web browser for basic features and preview mobile app interface at /mobile-app-preview. Mobile app provides full native functionality for voice translation, camera features, and optimized user experience.
+
 ### Fixed Critical Issues
 - ✓ **French Text-to-Speech**: Resolved silent failure issue with comprehensive fallback system and enhanced voice detection
 - ✓ **Language Label Persistence**: Fixed bug where past translation labels changed when switching languages
