@@ -28,7 +28,7 @@ export default function VisualTranslation({
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [showSubscriptionPrompt, setShowSubscriptionPrompt] = useState(false);
   const { isCapturing, capturedImage, startCapture, resetCapture, error: cameraError } = useCamera();
-  const { isTranslating, translatedText, originalText, translateImage, reset: resetTranslation } = useVisualTranslation();
+  const { isTranslating, translatedText, originalText, translateImage, reset: resetTranslation, subscriptionRequired } = useVisualTranslation();
   const { shareContent, copyToClipboard } = useShare();
   const isMobile = useMobile();
   const visualAccess = useFeatureAccess('visual');
@@ -38,20 +38,31 @@ export default function VisualTranslation({
     if (!isTranslating) {
       resetCapture();
       resetTranslation();
+      setShowSubscriptionPrompt(false);
       setIsOpen(false);
     }
   };
 
+  // Handle subscription required state
+  useEffect(() => {
+    if (subscriptionRequired) {
+      setShowSubscriptionPrompt(true);
+      // Reset the captured image to prevent retry loop
+      resetCapture();
+    }
+  }, [subscriptionRequired, resetCapture]);
+
   // Translate captured image once we have it
   useEffect(() => {
-    if (capturedImage && !isTranslating && !translatedText) {
+    if (capturedImage && !isTranslating && !translatedText && !subscriptionRequired) {
       if (!visualAccess.hasAccess) {
         setShowSubscriptionPrompt(true);
+        resetCapture(); // Prevent retry loop
         return;
       }
       translateImage(capturedImage, sourceLanguage, targetLanguage);
     }
-  }, [capturedImage, isTranslating, translatedText, translateImage, sourceLanguage, targetLanguage, visualAccess]);
+  }, [capturedImage, isTranslating, translatedText, translateImage, sourceLanguage, targetLanguage, visualAccess, subscriptionRequired, resetCapture]);
 
   // When we have translation results and onTextCapture callback, call it
   useEffect(() => {

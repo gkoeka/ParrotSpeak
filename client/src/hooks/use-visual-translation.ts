@@ -9,6 +9,7 @@ interface UseVisualTranslationReturn {
   translateImage: (imageBase64: string, sourceLanguage: Language, targetLanguage: Language) => Promise<void>;
   reset: () => void;
   error: string | null;
+  subscriptionRequired: boolean;
 }
 
 /**
@@ -19,6 +20,7 @@ export function useVisualTranslation(): UseVisualTranslationReturn {
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [originalText, setOriginalText] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [subscriptionRequired, setSubscriptionRequired] = useState<boolean>(false);
   const { toast } = useToast();
 
   const translateImage = async (
@@ -30,6 +32,7 @@ export function useVisualTranslation(): UseVisualTranslationReturn {
     setError(null);
     setTranslatedText(null);
     setOriginalText(null);
+    setSubscriptionRequired(false);
 
     try {
       const response = await fetch("/api/visual-translate", {
@@ -46,6 +49,10 @@ export function useVisualTranslation(): UseVisualTranslationReturn {
 
       if (!response.ok) {
         const errorData = await response.json();
+        if (response.status === 403 && errorData.message?.includes('subscription')) {
+          setSubscriptionRequired(true);
+          throw new Error(errorData.message || "Active subscription required");
+        }
         throw new Error(errorData.message || "Failed to translate image");
       }
 
@@ -55,11 +62,15 @@ export function useVisualTranslation(): UseVisualTranslationReturn {
     } catch (err) {
       console.error("Visual translation error:", err);
       setError(err instanceof Error ? err.message : "An unknown error occurred");
-      toast({
-        title: "Translation Error",
-        description: err instanceof Error ? err.message : "Failed to translate the image",
-        variant: "destructive",
-      });
+      
+      // Only show toast for non-subscription errors
+      if (!subscriptionRequired) {
+        toast({
+          title: "Translation Error",
+          description: err instanceof Error ? err.message : "Failed to translate the image",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsTranslating(false);
     }
@@ -70,6 +81,7 @@ export function useVisualTranslation(): UseVisualTranslationReturn {
     setOriginalText(null);
     setError(null);
     setIsTranslating(false);
+    setSubscriptionRequired(false);
   };
 
   return {
@@ -79,5 +91,6 @@ export function useVisualTranslation(): UseVisualTranslationReturn {
     translateImage,
     reset,
     error,
+    subscriptionRequired,
   };
 }
