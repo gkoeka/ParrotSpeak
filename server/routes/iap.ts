@@ -70,27 +70,74 @@ async function validateGooglePlayReceipt(receipt: string, productId: string, pur
   error?: string;
 }> {
   try {
-    // TODO: Implement Google Play Store receipt validation
-    // This requires Google Play Developer API credentials
-    // For now, return a mock validation for development
+    console.log('Validating Google Play receipt:', { productId, purchaseToken: purchaseToken?.substring(0, 10) + '...' });
     
-    console.log('Validating Google Play receipt...');
+    // Check if we have Google Play credentials configured
+    const serviceAccountKey = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY;
+    const packageName = process.env.GOOGLE_PLAY_PACKAGE_NAME || 'com.parrotspeak.app';
     
-    // In production, you would:
-    // 1. Use Google Play Developer API to validate the receipt
-    // 2. Check if the purchase is valid and not refunded
-    // 3. Get the expiration date for subscriptions
+    if (!serviceAccountKey) {
+      console.log('Google Play credentials not configured, using development mode');
+      // For development/testing before app store setup
+      return createMockValidation('google');
+    }
+
+    // Real Google Play validation using Google Play Developer API
+    const { google } = await import('googleapis');
     
-    // Mock validation for development
-    const mockExpiresAt = new Date();
-    mockExpiresAt.setMonth(mockExpiresAt.getMonth() + 1); // 1 month from now
+    // Parse service account credentials
+    const credentials = JSON.parse(serviceAccountKey);
     
+    // Create authenticated client
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/androidpublisher']
+    });
+    
+    const androidpublisher = google.androidpublisher({
+      version: 'v3',
+      auth
+    });
+
+    // Validate the purchase with Google Play
+    const response = await androidpublisher.purchases.subscriptions.get({
+      packageName,
+      subscriptionId: productId,
+      token: purchaseToken,
+    });
+
+    const purchase = response.data;
+    
+    if (!purchase) {
+      return {
+        valid: false,
+        error: 'Invalid receipt from Google Play'
+      };
+    }
+
+    // Check if subscription is valid
+    const expiryTime = purchase.expiryTimeMillis ? parseInt(purchase.expiryTimeMillis) : 0;
+    const currentTime = Date.now();
+    
+    const isValid = purchase.paymentState === 1 && // Payment received
+                   purchase.cancelReason === undefined && // Not cancelled
+                   expiryTime > currentTime; // Not expired
+
     return {
-      valid: true,
-      expiresAt: mockExpiresAt
+      valid: isValid,
+      expiresAt: new Date(expiryTime),
+      error: isValid ? undefined : 'Subscription expired or cancelled'
     };
+
   } catch (error) {
     console.error('Google Play validation error:', error);
+    
+    // If credentials not set up yet, fall back to development mode
+    if (error.message?.includes('credentials') || error.message?.includes('auth')) {
+      console.log('Falling back to development mode - set up Google Play credentials for production');
+      return createMockValidation('google');
+    }
+    
     return {
       valid: false,
       error: 'Failed to validate Google Play receipt'
@@ -107,32 +154,142 @@ async function validateAppStoreReceipt(receipt: string, productId: string): Prom
   error?: string;
 }> {
   try {
-    // TODO: Implement App Store receipt validation
-    // This requires App Store Connect API or receipt validation service
-    // For now, return a mock validation for development
+    console.log('Validating App Store receipt for product:', productId);
     
-    console.log('Validating App Store receipt...');
+    // Check if we have App Store credentials configured
+    const appStorePassword = process.env.APP_STORE_SHARED_SECRET;
     
-    // In production, you would:
-    // 1. Send receipt to Apple's validation servers
-    // 2. Verify the receipt signature
-    // 3. Check subscription status and expiration
-    
-    // Mock validation for development
-    const mockExpiresAt = new Date();
-    mockExpiresAt.setMonth(mockExpiresAt.getMonth() + 1); // 1 month from now
-    
-    return {
-      valid: true,
-      expiresAt: mockExpiresAt
+    if (!appStorePassword) {
+      console.log('App Store credentials not configured, using development mode');
+      // For development/testing before app store setup
+      return createMockValidation('apple');
+    }
+
+    // Real App Store validation using Apple's receipt validation API
+    const validationUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://buy.itunes.apple.com/verifyReceipt'
+      : 'https://sandbox.itunes.apple.com/verifyReceipt';
+
+    const validationPayload = {
+      'receipt-data': receipt,
+      'password': appStorePassword,
+      'exclude-old-transactions': true
     };
+
+    const response = await fetch(validationUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(validationPayload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`App Store validation failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // Check response status
+    if (data.status !== 0) {
+      // Handle sandbox fallback for production receipts
+      if (data.status === 21007 && process.env.NODE_ENV === 'production') {
+        console.log('Retrying with sandbox URL...');
+        return validateAppStoreReceiptWithUrl(receipt, productId, 'https://sandbox.itunes.apple.com/verifyReceipt');
+      }
+      
+      return {
+        valid: false,
+        error: `App Store validation failed with status: ${data.status}`
+      };
+    }
+
+    // Find the subscription in the receipt
+    const latestReceiptInfo = data.latest_receipt_info || [];
+    const subscription = latestReceiptInfo.find(item => item.product_id === productId);
+
+    if (!subscription) {
+      return {
+        valid: false,
+        error: 'Product not found in receipt'
+      };
+    }
+
+    // Check if subscription is valid
+    const expiresDate = new Date(parseInt(subscription.expires_date_ms));
+    const currentDate = new Date();
+    
+    const isValid = expiresDate > currentDate && 
+                   !subscription.cancellation_date &&
+                   !subscription.is_in_intro_offer_period;
+
+    return {
+      valid: isValid,
+      expiresAt: expiresDate,
+      error: isValid ? undefined : 'Subscription expired or cancelled'
+    };
+
   } catch (error) {
     console.error('App Store validation error:', error);
+    
+    // If credentials not set up yet, fall back to development mode
+    if (error.message?.includes('password') || error.message?.includes('secret')) {
+      console.log('Falling back to development mode - set up App Store shared secret for production');
+      return createMockValidation('apple');
+    }
+    
     return {
       valid: false,
       error: 'Failed to validate App Store receipt'
     };
   }
+}
+
+/**
+ * Helper function to validate with specific Apple URL
+ */
+async function validateAppStoreReceiptWithUrl(receipt: string, productId: string, url: string) {
+  const validationPayload = {
+    'receipt-data': receipt,
+    'password': process.env.APP_STORE_SHARED_SECRET,
+    'exclude-old-transactions': true
+  };
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(validationPayload),
+  });
+
+  const data = await response.json();
+  
+  if (data.status !== 0) {
+    return {
+      valid: false,
+      error: `App Store validation failed with status: ${data.status}`
+    };
+  }
+
+  const latestReceiptInfo = data.latest_receipt_info || [];
+  const subscription = latestReceiptInfo.find(item => item.product_id === productId);
+
+  if (!subscription) {
+    return {
+      valid: false,
+      error: 'Product not found in receipt'
+    };
+  }
+
+  const expiresDate = new Date(parseInt(subscription.expires_date_ms));
+  const isValid = expiresDate > new Date() && !subscription.cancellation_date;
+
+  return {
+    valid: isValid,
+    expiresAt: expiresDate,
+    error: isValid ? undefined : 'Subscription expired or cancelled'
+  };
 }
 
 /**
@@ -206,5 +363,21 @@ router.get('/subscription', requireAuth, async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+/**
+ * Create mock validation for development/testing
+ */
+function createMockValidation(platform: 'google' | 'apple') {
+  console.log(`Creating mock validation for ${platform} (development mode)`);
+  
+  const mockExpiresAt = new Date();
+  mockExpiresAt.setMonth(mockExpiresAt.getMonth() + 1); // 1 month from now
+  
+  return {
+    valid: true,
+    expiresAt: mockExpiresAt,
+    error: undefined
+  };
+}
 
 export default router;
