@@ -1,4 +1,4 @@
-import { AlertTriangle, Crown, Clock, X } from "lucide-react";
+import { AlertTriangle, Crown, Clock, X, CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,9 +27,9 @@ export function SubscriptionPrompt({
 }: SubscriptionPromptProps) {
   const [, setLocation] = useLocation();
 
-  const handleUpgrade = () => {
+  const handleUpgrade = (planId: string) => {
     onClose?.(); // Close modal first
-    setLocation('/checkout?plan=monthly'); // Go to checkout page with default plan
+    setLocation(`/checkout?plan=${planId}`); // Go to checkout page with selected plan
   };
 
   const handleClose = () => {
@@ -74,19 +74,97 @@ export function SubscriptionPrompt({
           </p>
         </DialogHeader>
         
-        <div className="space-y-4 pt-4">
-          <Button 
-            onClick={handleUpgrade} 
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-base font-medium"
-          >
-            {buttonText}
-          </Button>
+        {/* Plan Options */}
+        <div className="space-y-3 pt-4">
+          {/* One-time Purchase Plans */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">One-Time Purchase</h4>
+            
+            <Button 
+              onClick={() => handleUpgrade('1week')} 
+              variant="outline"
+              className="w-full flex justify-between p-3 h-auto"
+            >
+              <div className="text-left">
+                <div className="font-medium">1 Week</div>
+                <div className="text-xs text-muted-foreground">7 days access</div>
+              </div>
+              <div className="font-bold">$4.99</div>
+            </Button>
+            
+            <Button 
+              onClick={() => handleUpgrade('1month')} 
+              variant="outline"
+              className="w-full flex justify-between p-3 h-auto"
+            >
+              <div className="text-left">
+                <div className="font-medium">1 Month</div>
+                <div className="text-xs text-muted-foreground">30 days access</div>
+              </div>
+              <div className="font-bold">$14.99</div>
+            </Button>
+            
+            <Button 
+              onClick={() => handleUpgrade('3months')} 
+              variant="outline"
+              className="w-full flex justify-between p-3 h-auto"
+            >
+              <div className="text-left">
+                <div className="font-medium">3 Months</div>
+                <div className="text-xs text-muted-foreground">90 days access</div>
+              </div>
+              <div className="font-bold">$39.99</div>
+            </Button>
+            
+            <Button 
+              onClick={() => handleUpgrade('6months')} 
+              variant="outline"
+              className="w-full flex justify-between p-3 h-auto"
+            >
+              <div className="text-left">
+                <div className="font-medium">6 Months</div>
+                <div className="text-xs text-muted-foreground">180 days access</div>
+              </div>
+              <div className="font-bold">$69.99</div>
+            </Button>
+          </div>
+          
+          {/* Subscription Plans */}
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Recurring Plans</h4>
+            
+            <Button 
+              onClick={() => handleUpgrade('monthly')} 
+              className="w-full flex justify-between p-3 h-auto bg-blue-600 hover:bg-blue-700"
+            >
+              <div className="text-left">
+                <div className="font-medium flex items-center gap-2">
+                  Monthly <Badge variant="secondary" className="text-xs">Popular</Badge>
+                </div>
+                <div className="text-xs text-blue-100">Renewed monthly</div>
+              </div>
+              <div className="font-bold">$9.99</div>
+            </Button>
+            
+            <Button 
+              onClick={() => handleUpgrade('annual')} 
+              className="w-full flex justify-between p-3 h-auto bg-green-600 hover:bg-green-700"
+            >
+              <div className="text-left">
+                <div className="font-medium flex items-center gap-2">
+                  Annual <Badge variant="secondary" className="text-xs">Best Value</Badge>
+                </div>
+                <div className="text-xs text-green-100">Renewed yearly</div>
+              </div>
+              <div className="font-bold">$99.00</div>
+            </Button>
+          </div>
           
           {onClose && (
             <Button 
               variant="ghost" 
               onClick={handleClose}
-              className="w-full text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              className="w-full text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mt-4"
             >
               Maybe later
             </Button>
