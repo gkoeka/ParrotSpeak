@@ -28,7 +28,8 @@ export function SubscriptionPrompt({
   const [, setLocation] = useLocation();
 
   const handleUpgrade = () => {
-    setLocation('/profile');
+    onClose?.(); // Close modal first
+    setLocation('/checkout'); // Go to checkout page
   };
 
   const handleClose = () => {
@@ -44,22 +45,22 @@ export function SubscriptionPrompt({
   let title, description, buttonText;
   
   if (isNewUser) {
-    title = "Stay Connected";
-    description = "Please subscribe to keep making meaningful connections worldwide";
-    buttonText = "Subscribe";
+    title = "Connect with Others";
+    description = "Please purchase a plan that fits your needs to make meaningful connections worldwide";
+    buttonText = "Choose your plan";
   } else if (isReturningCustomer) {
     title = "Keep the Conversation Going";
-    description = "Subscribe again to stay connected and grow your global network";
-    buttonText = "Subscribe again";
+    description = "Choose a plan again to keep connecting and grow your global network";
+    buttonText = "Choose a plan again";
   } else {
     // Fallback
-    title = "Stay Connected";
-    description = "Please subscribe to keep making meaningful connections worldwide";
-    buttonText = "Subscribe";
+    title = "Connect with Others";
+    description = "Please purchase a plan that fits your needs to make meaningful connections worldwide";
+    buttonText = "Choose your plan";
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
       <DialogContent className="w-[90vw] max-w-sm">
         <DialogHeader className="text-center space-y-4">
           <div className="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">

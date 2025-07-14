@@ -11,6 +11,10 @@ Preferred preview mode: Mobile app preview only (not web app preview).
 Dark mode preference: Should persist when selected.
 **Change Management**: Always check with user before making extensive changes, especially to core functionality. No rapid bulk changes without approval.
 **Business Terminology**: Use "Customer" for anyone who has ever paid (past subscribers, expired plans, one-time purchases). "Subscriber" implies ongoing subscription which may not apply to all payment models.
+**Subscription Modal Messaging**: 
+- New Users: "Connect with Others" / "Please purchase a plan that fits your needs..." / "Choose your plan"
+- Returning Customers: "Keep the Conversation Going" / "Choose a plan again to keep connecting..." / "Choose a plan again"
+**Modal Navigation**: Subscription prompts route to '/checkout' page for plan selection, with proper close functionality via X button or "Maybe later"
 
 ## Recent Changes (July 2025)
 
@@ -37,6 +41,7 @@ Dark mode preference: Should persist when selected.
 - ✓ **JavaScript Error Fix (July 13, 2025)**: **FIXED** - Resolved "Cannot read properties of undefined (reading 'target')" error in camera functionality with proper null checking for event handlers.
 - ✓ **GitHub Push Workflow Setup (July 13, 2025)**: **COMPLETED** - Created automated push script `push-to-github.sh` and documentation for easy future code uploads to GitHub repository.
 - ✓ **In-App Purchase Integration (July 14, 2025)**: **PHASE 1 & 2 COMPLETE** - Implemented comprehensive IAP system for both Google Play Store and Apple App Store. Created IAP service, updated checkout screen, built backend receipt validation, and prepared complete store deployment documentation. Ready for store account setup with DUNS number.
+- ✓ **Subscription Modal UI/UX Improvements (July 14, 2025)**: **VERIFIED WORKING** - Updated subscription prompt messaging for clearer business terminology and improved user experience. Implemented proper navigation to checkout page and fixed dialog close functionality across both chat and camera features.
 
 ### Technical Improvements
 - Enhanced voice selection logic for better cross-language support
