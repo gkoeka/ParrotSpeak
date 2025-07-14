@@ -157,5 +157,46 @@ export function requireSubscription(req: Request, res: any, next: any) {
     return res.status(403).json({ message: 'Active subscription required' });
   }
   
+  // Also check if subscription has expired
+  if (user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt) < new Date()) {
+    return res.status(403).json({ message: 'Subscription has expired' });
+  }
+  
   next();
+}
+
+// Function to check subscription status for WebSocket and other non-Express contexts
+export async function checkSubscriptionStatus(userId: number): Promise<{ hasSubscription: boolean; error?: string }> {
+  try {
+    const { db } = await import("@db");
+    const { users } = await import("@shared/schema");
+    const { eq } = await import("drizzle-orm");
+    
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+      columns: {
+        subscriptionStatus: true,
+        subscriptionExpiresAt: true
+      }
+    });
+    
+    if (!user) {
+      return { hasSubscription: false, error: 'User not found' };
+    }
+    
+    // Check if user has active subscription
+    if (!user.subscriptionStatus || user.subscriptionStatus !== 'active') {
+      return { hasSubscription: false, error: 'Active subscription required' };
+    }
+    
+    // Check if subscription has expired
+    if (user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt) < new Date()) {
+      return { hasSubscription: false, error: 'Subscription has expired' };
+    }
+    
+    return { hasSubscription: true };
+  } catch (error) {
+    console.error('Error checking subscription status:', error);
+    return { hasSubscription: false, error: 'Failed to verify subscription' };
+  }
 }

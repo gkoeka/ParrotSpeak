@@ -13,7 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import { translateText } from "./services/translation";
 import { storage } from "./storage";
-import { requireAuth, requireSubscription } from "./auth";
+import { requireAuth, requireSubscription, checkSubscriptionStatus } from "./auth";
 import * as mfaService from "./services/mfa";
 import { db } from "@db";
 import { users, conversations, messages, userFeedback } from "@shared/schema";
@@ -133,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/conversations', async (req: Request, res: Response) => {
+  app.post('/api/conversations', requireAuth, requireSubscription, async (req: Request, res: Response) => {
     try {
       const { sourceLanguage, targetLanguage, title } = req.body;
       const userId = req.user?.id;
@@ -165,7 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/conversations/:id/messages', async (req: Request, res: Response) => {
+  app.post('/api/conversations/:id/messages', requireAuth, requireSubscription, async (req: Request, res: Response) => {
     try {
       const { text, sourceLanguage, targetLanguage } = req.body;
       const conversationId = req.params.id;
@@ -694,6 +694,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log('Translation request:', { conversationId, text, sourceLanguage, targetLanguage, userId });
           
           try {
+            // 🔒 CRITICAL: Check subscription status before allowing translation
+            const subscriptionCheck = await checkSubscriptionStatus(userId);
+            if (!subscriptionCheck.hasSubscription) {
+              console.log(`Translation blocked for user ${userId}: ${subscriptionCheck.error}`);
+              ws.send(JSON.stringify({
+                type: 'subscription_required',
+                error: subscriptionCheck.error || 'Active subscription required',
+                message: 'Please upgrade to a premium plan to use translation features'
+              }));
+              return;
+            }
+            
             // Save the original message
             const messageId = await storage.saveMessage(
               conversationId,
