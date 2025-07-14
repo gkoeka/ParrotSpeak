@@ -26,6 +26,7 @@ import { ProtectedRoute } from "@/components/protected-route";
 import AuthPage from "@/pages/auth";
 import PasswordResetPage from "@/pages/password-reset";
 import PrivacyPage from "@/pages/privacy";
+import TermsPage from "@/pages/terms";
 import CookiesPage from "@/pages/cookies";
 import CookieConsent from "@/components/CookieConsent";
 
@@ -65,6 +66,7 @@ function MainLayout() {
           <Route path="/auth" component={AuthPage} />
           <Route path="/password-reset" component={PasswordResetPage} />
           <Route path="/privacy" component={PrivacyPage} />
+          <Route path="/terms" component={TermsPage} />
           <Route path="/cookies" component={CookiesPage} />
           <Route component={NotFound} />
         </Switch>
