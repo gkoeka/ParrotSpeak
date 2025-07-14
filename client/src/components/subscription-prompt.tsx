@@ -37,12 +37,31 @@ export function SubscriptionPrompt({
     }
   };
 
-  const isReturningUser = isExpired || hasEverSubscribed;
+  // Determine user state and messaging
+  const isNewUser = !hasEverSubscribed && !isExpired;
+  const isPastSubscriber = hasEverSubscribed && !isExpired;
+  const isExpiredSubscriber = isExpired;
   
-  const title = isReturningUser ? "Keep the Conversation Going" : "Stay Connected";
-  const description = isReturningUser 
-    ? "Renew to stay connected and grow your global network"
-    : "Please subscribe to keep making meaningful connections worldwide";
+  let title, description, buttonText;
+  
+  if (isNewUser) {
+    title = "Stay Connected";
+    description = "Please subscribe to keep making meaningful connections worldwide";
+    buttonText = "Subscribe";
+  } else if (isPastSubscriber) {
+    title = "Keep the Conversation Going";
+    description = "Subscribe again to stay connected and grow your global network";
+    buttonText = "Subscribe again";
+  } else if (isExpiredSubscriber) {
+    title = "Keep the Conversation Going";
+    description = "Renew to stay connected and grow your global network";
+    buttonText = "Renew";
+  } else {
+    // Fallback
+    title = "Stay Connected";
+    description = "Please subscribe to keep making meaningful connections worldwide";
+    buttonText = "Subscribe";
+  }
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -64,7 +83,7 @@ export function SubscriptionPrompt({
             onClick={handleUpgrade} 
             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-base font-medium"
           >
-            {isReturningUser ? "Renew" : "Subscribe"}
+            {buttonText}
           </Button>
           
           {onClose && (
