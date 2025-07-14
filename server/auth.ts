@@ -172,16 +172,16 @@ export async function requireSubscription(req: Request, res: any, next: any) {
     console.log('Fresh subscription check for user:', {
       id: user.id,
       email: user.email,
-      subscription_status: freshUser.subscription_status,
-      subscription_expires_at: freshUser.subscription_expires_at
+      subscriptionStatus: freshUser.subscriptionStatus,
+      subscriptionExpiresAt: freshUser.subscriptionExpiresAt
     });
     
-    if (!freshUser.subscription_status || freshUser.subscription_status !== 'active') {
+    if (!freshUser.subscriptionStatus || freshUser.subscriptionStatus !== 'active') {
       return res.status(403).json({ message: 'Active subscription required' });
     }
     
     // Also check if subscription has expired
-    if (freshUser.subscription_expires_at && new Date(freshUser.subscription_expires_at) < new Date()) {
+    if (freshUser.subscriptionExpiresAt && new Date(freshUser.subscriptionExpiresAt) < new Date()) {
       return res.status(403).json({ message: 'Subscription has expired' });
     }
     
@@ -200,11 +200,7 @@ export async function checkSubscriptionStatus(userId: number): Promise<{ hasSubs
     const { eq } = await import("drizzle-orm");
     
     const user = await db.query.users.findFirst({
-      where: eq(users.id, userId),
-      columns: {
-        subscription_status: true,
-        subscription_expires_at: true
-      }
+      where: eq(users.id, userId)
     });
     
     if (!user) {
@@ -212,12 +208,12 @@ export async function checkSubscriptionStatus(userId: number): Promise<{ hasSubs
     }
     
     // Check if user has active subscription
-    if (!user.subscription_status || user.subscription_status !== 'active') {
+    if (!user.subscriptionStatus || user.subscriptionStatus !== 'active') {
       return { hasSubscription: false, error: 'Active subscription required' };
     }
     
     // Check if subscription has expired
-    if (user.subscription_expires_at && new Date(user.subscription_expires_at) < new Date()) {
+    if (user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt) < new Date()) {
       return { hasSubscription: false, error: 'Subscription has expired' };
     }
     
