@@ -28,6 +28,7 @@ export default function VoiceSettingsPage() {
 
   // Function to handle form input changes for new profile
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if (!e || !e.target) return;
     const { name, value, type } = e.target;
     
     // Handle number inputs
