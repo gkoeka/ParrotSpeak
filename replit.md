@@ -2,19 +2,18 @@
 
 ## Overview
 
-ParrotSpeak is a comprehensive voice-to-voice translation platform featuring both web and mobile applications. The system enables real-time cross-language communication using AI-powered speech recognition, translation, and synthesis. It includes subscription-based access control, conversation management, analytics, and enterprise-grade security features.
+ParrotSpeak is a mobile-only voice-to-voice translation application built with React Native and Expo. The system enables real-time cross-language communication using AI-powered speech recognition, translation, and synthesis. It includes subscription-based access control, conversation management, analytics, and enterprise-grade security features designed specifically for native mobile deployment to iOS and Android app stores.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
-Preferred preview mode: Mobile app preview only (not web app preview).
+**PROJECT ARCHITECTURE: MOBILE-ONLY** - This is exclusively a React Native mobile app. No web app components needed.
 Dark mode preference: Should persist when selected.
 **Change Management**: Always check with user before making extensive changes, especially to core functionality. No rapid bulk changes without approval.
 **Business Terminology**: Use "Customer" for anyone who has ever paid (past subscribers, expired plans, one-time purchases). "Subscriber" implies ongoing subscription which may not apply to all payment models.
 **Subscription Modal Messaging**: 
 - New Users: "Connect with Others" / "Please purchase a plan that fits your needs..." / "Choose your plan"
 - Returning Customers: "Keep the Conversation Going" / "Choose a plan again to keep connecting..." / "Choose a plan again"
-**Modal Navigation**: Subscription prompts route to '/checkout' page for plan selection, with proper close functionality via X button or "Maybe later"
 **App Store Setup**: User will need DUNS number before setting up developer accounts. Must remember all app store setup information, credentials, and certificate processes for future reference when DUNS number is obtained.
 
 ## Recent Changes (July 2025)
@@ -49,6 +48,7 @@ Dark mode preference: Should persist when selected.
 - ✓ **App Store Setup Documentation (July 14, 2025)**: **COMPLETE GUIDES CREATED** - Documented complete process for app store submission including environment variable setup (docs/environment-setup.md), production certificate generation (docs/production-certificates-guide.md), and legal document summary. Ready for implementation once DUNS number obtained and developer accounts created.
 - ✓ **Stripe Code Removal (July 14, 2025)**: **CLEANED UP COMPLETELY** - Removed all unused Stripe code including webhook service, API imports, security headers, and user API fields. Updated legal documents to reflect app store payment processing. Codebase now focused entirely on IAP model with no Stripe dependencies.
 - ✓ **Logo Implementation Postponed (July 14, 2025)**: **COMPLETED** - Removed logo from auth page to focus on core functionality. User provided React Native logo implementation code for future mobile app integration. Fixed JavaScript error in camera functionality for cleaner mobile experience.
+- ✓ **Mobile-Only Architecture Transformation (July 14, 2025)**: **COMPLETED** - Per user request, completely removed web app components and transformed project into mobile-only React Native application. Deleted client/ directory, vite config, and web dependencies. Updated server to API-only architecture serving mobile app endpoints. Implemented PNG logo in mobile app using user-provided React Native code.
 
 ### Technical Improvements
 - Enhanced voice selection logic for better cross-language support
@@ -71,15 +71,14 @@ Dark mode preference: Should persist when selected.
 
 ## System Architecture
 
-### Full-Stack TypeScript Application
-- **Frontend**: React with TypeScript, Vite build system
-- **Backend**: Express.js with TypeScript
-- **Mobile**: React Native with Expo
+### Mobile-First Architecture
+- **Mobile App**: React Native with Expo for iOS and Android
+- **Backend**: Express.js API server with TypeScript
 - **Database**: PostgreSQL with Drizzle ORM
 - **Real-time**: WebSocket connections for live translation streaming
 
 ### Core Technologies
-- **UI Framework**: shadcn/ui components with Tailwind CSS
+- **Mobile Framework**: React Native with Expo managed workflow
 - **Authentication**: Passport.js with local and Google OAuth strategies
 - **Payment Processing**: In-App Purchases (IAP) for mobile app stores
 - **Speech Services**: OpenAI Whisper API for transcription
