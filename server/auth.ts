@@ -29,9 +29,9 @@ declare global {
       emailVerified: boolean | null;
       stripeCustomerId: string | null;
       stripeSubscriptionId: string | null;
-      subscriptionStatus: string | null;
-      subscriptionTier: string | null;
-      subscriptionExpiresAt: Date | null;
+      subscription_status: string | null;
+      subscription_tier: string | null;
+      subscription_expires_at: Date | null;
       createdAt: Date;
       updatedAt: Date;
     }
@@ -153,12 +153,12 @@ export function requireSubscription(req: Request, res: any, next: any) {
   }
   
   const user = req.user;
-  if (!user.subscriptionStatus || user.subscriptionStatus !== 'active') {
+  if (!user.subscription_status || user.subscription_status !== 'active') {
     return res.status(403).json({ message: 'Active subscription required' });
   }
   
   // Also check if subscription has expired
-  if (user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt) < new Date()) {
+  if (user.subscription_expires_at && new Date(user.subscription_expires_at) < new Date()) {
     return res.status(403).json({ message: 'Subscription has expired' });
   }
   
@@ -175,8 +175,8 @@ export async function checkSubscriptionStatus(userId: number): Promise<{ hasSubs
     const user = await db.query.users.findFirst({
       where: eq(users.id, userId),
       columns: {
-        subscriptionStatus: true,
-        subscriptionExpiresAt: true
+        subscription_status: true,
+        subscription_expires_at: true
       }
     });
     
@@ -185,12 +185,12 @@ export async function checkSubscriptionStatus(userId: number): Promise<{ hasSubs
     }
     
     // Check if user has active subscription
-    if (!user.subscriptionStatus || user.subscriptionStatus !== 'active') {
+    if (!user.subscription_status || user.subscription_status !== 'active') {
       return { hasSubscription: false, error: 'Active subscription required' };
     }
     
     // Check if subscription has expired
-    if (user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt) < new Date()) {
+    if (user.subscription_expires_at && new Date(user.subscription_expires_at) < new Date()) {
       return { hasSubscription: false, error: 'Subscription has expired' };
     }
     
