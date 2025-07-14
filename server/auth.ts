@@ -161,11 +161,7 @@ export async function requireSubscription(req: Request, res: any, next: any) {
     const { eq } = await import("drizzle-orm");
     
     const freshUser = await db.query.users.findFirst({
-      where: eq(users.id, user.id),
-      columns: {
-        subscription_status: true,
-        subscription_expires_at: true
-      }
+      where: eq(users.id, user.id)
     });
     
     if (!freshUser) {
