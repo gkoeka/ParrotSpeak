@@ -867,11 +867,19 @@ export default function ProfilePage() {
                           </li>
                           <li className="flex items-center gap-2">
                             <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
-                            Letters and numbers
+                            One uppercase letter (A-Z)
                           </li>
                           <li className="flex items-center gap-2">
                             <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
-                            At least one special character (!@#$%^&*)
+                            One lowercase letter (a-z)
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                            One number (0-9)
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                            One special character (!@#$%^&*)
                           </li>
                         </ul>
                       </div>

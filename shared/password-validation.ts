@@ -31,10 +31,16 @@ export function validatePassword(password: string): PasswordValidationResult {
     errors.push('Password must be no more than 64 characters long');
   }
 
-  // Check for letters (both uppercase and lowercase count)
-  const hasLetters = /[a-zA-Z]/.test(password);
-  if (!hasLetters) {
-    errors.push('Password must contain at least one letter');
+  // Check for uppercase letters
+  const hasUppercase = /[A-Z]/.test(password);
+  if (!hasUppercase) {
+    errors.push('Password must contain at least one uppercase letter');
+  }
+
+  // Check for lowercase letters
+  const hasLowercase = /[a-z]/.test(password);
+  if (!hasLowercase) {
+    errors.push('Password must contain at least one lowercase letter');
   }
 
   // Check for numbers
@@ -99,12 +105,12 @@ export function validatePassword(password: string): PasswordValidationResult {
   }
 
   // Additional strength recommendations
-  const hasLowercase = /[a-z]/.test(password);
-  const hasUppercase = /[A-Z]/.test(password);
-  
-  if (hasLetters && hasNumbers && hasSpecialChars) {
-    if (!hasLowercase || !hasUppercase) {
-      warnings.push('Consider using both uppercase and lowercase letters for extra security');
+  if (hasUppercase && hasLowercase && hasNumbers && hasSpecialChars) {
+    // All requirements met, password is strong
+    if (password.length >= 12) {
+      // Strong password with good length
+    } else {
+      warnings.push('Consider using a longer password for even better security');
     }
   }
 
@@ -139,12 +145,10 @@ export function getPasswordStrength(password: string): 'weak' | 'fair' | 'good' 
   const hasSpecialChars = /[!@#$%^&*(),.?":{}|<>]/.test(password);
   
   // Required elements
-  if (hasLowercase || hasUppercase) score += 1; // Letters
+  if (hasLowercase) score += 1; // Lowercase
+  if (hasUppercase) score += 1; // Uppercase
   if (hasNumbers) score += 1; // Numbers
   if (hasSpecialChars) score += 1; // Special chars
-  
-  // Bonus for both cases
-  if (hasLowercase && hasUppercase) score += 1;
   
   // Avoid patterns
   if (!/(.)\1{2,}/.test(password)) score += 1;
@@ -159,7 +163,7 @@ export function getPasswordStrength(password: string): 'weak' | 'fair' | 'good' 
  * Generate password requirements text for UI
  */
 export function getPasswordRequirementsText(): string {
-  return 'Password must be 8-64 characters with letters, numbers, and at least one special character (!@#$%^&*).';
+  return 'Password must be 8-64 characters with uppercase, lowercase, numbers, and special characters (!@#$%^&*).';
 }
 
 /**
@@ -168,8 +172,10 @@ export function getPasswordRequirementsText(): string {
 export function getPasswordRequirementsArray(): string[] {
   return [
     'At least 8 characters long',
-    'Contains letters and numbers',
-    'Includes at least one special character (!@#$%^&*)'
+    'One uppercase letter (A-Z)',
+    'One lowercase letter (a-z)', 
+    'One number (0-9)',
+    'One special character (!@#$%^&*)'
   ];
 }
 

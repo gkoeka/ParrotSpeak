@@ -25,7 +25,8 @@ const registerSchema = z.object({
     .string()
     .min(8, "Password must be at least 8 characters")
     .max(64, "Password must be no more than 64 characters")
-    .regex(/[a-zA-Z]/, "Password must contain at least one letter")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
     .regex(/\d/, "Password must contain at least one number")
     .regex(/[!@#$%^&*(),.?":{}|<>]/, "Password must contain at least one special character"),
   firstName: z.string().optional(),
@@ -276,11 +277,19 @@ export default function AuthPage() {
                                 </li>
                                 <li className="flex items-center gap-2">
                                   <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
-                                  Letters and numbers
+                                  One uppercase letter (A-Z)
                                 </li>
                                 <li className="flex items-center gap-2">
                                   <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
-                                  At least one special character (!@#$%^&*)
+                                  One lowercase letter (a-z)
+                                </li>
+                                <li className="flex items-center gap-2">
+                                  <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                                  One number (0-9)
+                                </li>
+                                <li className="flex items-center gap-2">
+                                  <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                                  One special character (!@#$%^&*)
                                 </li>
                               </ul>
                             </FormDescription>

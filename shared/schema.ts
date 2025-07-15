@@ -62,8 +62,11 @@ export const registerUserSchema = createInsertSchema(users, {
   password: (schema) => schema
     .min(8, "Password must be at least 8 characters")
     .max(64, "Password must be no more than 64 characters")
-    .refine(password => /[a-zA-Z]/.test(password), {
-      message: "Password must contain at least one letter"
+    .refine(password => /[A-Z]/.test(password), {
+      message: "Password must contain at least one uppercase letter"
+    })
+    .refine(password => /[a-z]/.test(password), {
+      message: "Password must contain at least one lowercase letter"
     })
     .refine(password => /\d/.test(password), {
       message: "Password must contain at least one number"
