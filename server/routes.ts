@@ -344,13 +344,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Check if user already exists
-      const existingUser = await db.query.users.findFirst({
+      // Check if user already exists by email
+      const existingUserByEmail = await db.query.users.findFirst({
         where: eq(users.email, email)
       });
       
-      if (existingUser) {
-        return res.status(400).json({ message: 'User already exists' });
+      if (existingUserByEmail) {
+        return res.status(400).json({ message: 'An account with this email already exists' });
+      }
+
+      // Check if username already exists
+      const existingUserByUsername = await db.query.users.findFirst({
+        where: eq(users.username, username)
+      });
+      
+      if (existingUserByUsername) {
+        return res.status(400).json({ message: 'This username is already taken' });
       }
       
       // Hash password and create user
@@ -382,9 +391,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration error:', error);
-      res.status(500).json({ message: 'Registration failed' });
+      
+      // Handle specific database constraint violations
+      if (error.code === '23505') {
+        if (error.constraint === 'users_email_unique') {
+          return res.status(400).json({ message: 'An account with this email already exists' });
+        }
+        if (error.constraint === 'users_username_unique') {
+          return res.status(400).json({ message: 'This username is already taken' });
+        }
+      }
+      
+      res.status(500).json({ message: 'Registration failed. Please try again.' });
     }
   });
 
