@@ -315,7 +315,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           user: { 
             id: user.id, 
             email: user.email, 
-            username: user.username,
             firstName: user.firstName,
             lastName: user.lastName,
             subscriptionStatus: user.subscriptionStatus,
@@ -331,7 +330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/auth/register', async (req: Request, res: Response) => {
     try {
-      const { email, username, password, firstName, lastName } = req.body;
+      const { email, password, firstName, lastName } = req.body;
       
       // Validate password according to NIST guidelines
       const { validatePassword } = await import('@shared/password-validation');
@@ -353,14 +352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'An account with this email already exists' });
       }
 
-      // Check if username already exists
-      const existingUserByUsername = await db.query.users.findFirst({
-        where: eq(users.username, username)
-      });
-      
-      if (existingUserByUsername) {
-        return res.status(400).json({ message: 'This username is already taken' });
-      }
+
       
       // Hash password and create user
       const bcrypt = await import('bcryptjs');
@@ -368,7 +360,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const [newUser] = await db.insert(users).values({
         email,
-        username,
         password: hashedPassword,
         firstName,
         lastName,
@@ -386,7 +377,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           user: { 
             id: newUser.id, 
             email: newUser.email, 
-            username: newUser.username 
+            firstName: newUser.firstName,
+            lastName: newUser.lastName
           } 
         });
       });
@@ -399,9 +391,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (error.constraint === 'users_email_unique') {
           return res.status(400).json({ message: 'An account with this email already exists' });
         }
-        if (error.constraint === 'users_username_unique') {
-          return res.status(400).json({ message: 'This username is already taken' });
-        }
+
       }
       
       res.status(500).json({ message: 'Registration failed. Please try again.' });
@@ -423,7 +413,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user: { 
           id: req.user.id, 
           email: req.user.email, 
-          username: req.user.username,
           firstName: req.user.firstName,
           lastName: req.user.lastName,
           subscriptionStatus: req.user.subscriptionStatus,

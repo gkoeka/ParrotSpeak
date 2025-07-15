@@ -62,10 +62,10 @@ const ProfileScreen: React.FC = () => {
             <Text style={styles.infoValue}>{user?.email || 'Not available'}</Text>
           </View>
           
-          {user?.username && (
+          {user?.firstName && (
             <View style={styles.userInfoContainer}>
-              <Text style={styles.infoLabel}>Username:</Text>
-              <Text style={styles.infoValue}>{user.username}</Text>
+              <Text style={styles.infoLabel}>Name:</Text>
+              <Text style={styles.infoValue}>{`${user.firstName} ${user.lastName || ''}`.trim()}</Text>
             </View>
           )}
           

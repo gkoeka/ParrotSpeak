@@ -238,7 +238,7 @@ const AdminScreen: React.FC = () => {
           >
             <View style={styles.userInfo}>
               <Text style={styles.userName}>
-                {user.username || `${user.firstName} ${user.lastName}`.trim()}
+                {`${user.firstName} ${user.lastName || ''}`.trim()}
               </Text>
               <Text style={styles.userEmail}>{user.email}</Text>
               <View style={styles.userMeta}>

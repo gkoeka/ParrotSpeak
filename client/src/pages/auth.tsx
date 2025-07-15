@@ -20,7 +20,6 @@ const loginSchema = z.object({
 // Registration form schema
 const registerSchema = z.object({
   email: z.string().email("Please enter a valid email"),
-  username: z.string().min(3, "Username must be at least 3 characters"),
   password: z
     .string()
     .min(8, "Password must be at least 8 characters")
@@ -29,7 +28,7 @@ const registerSchema = z.object({
     .regex(/[a-z]/, "Password must contain at least one lowercase letter")
     .regex(/\d/, "Password must contain at least one number")
     .regex(/[!@#$%^&*(),.?":{}|<>]/, "Password must contain at least one special character"),
-  firstName: z.string().optional(),
+  firstName: z.string().min(1, "First name is required"),
   lastName: z.string().optional(),
 });
 
@@ -54,7 +53,6 @@ export default function AuthPage() {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       email: "",
-      username: "",
       password: "",
       firstName: "",
       lastName: "",
@@ -218,26 +216,13 @@ export default function AuthPage() {
                           </FormItem>
                         )}
                       />
-                      <FormField
-                        control={registerForm.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Username</FormLabel>
-                            <FormControl>
-                              <Input placeholder="username" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={registerForm.control}
                           name="firstName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>First Name (Optional)</FormLabel>
+                              <FormLabel>First Name</FormLabel>
                               <FormControl>
                                 <Input placeholder="John" {...field} />
                               </FormControl>

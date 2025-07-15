@@ -204,7 +204,6 @@ export async function getAdminAccessRequests() {
     .select({
       id: users.id,
       email: users.email,
-      username: users.username,
       firstName: users.firstName,
       lastName: users.lastName,
       adminAccessAuthorized: users.adminAccessAuthorized,

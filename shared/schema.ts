@@ -16,9 +16,8 @@ export const sessions = pgTable("sessions", {
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").unique(),
-  username: text("username").unique(),
   password: text("password"),
-  firstName: text("first_name"),
+  firstName: text("first_name").notNull(),
   lastName: text("last_name"),
   profileImageUrl: text("profile_image_url"),
   googleId: text("google_id").unique(),
@@ -58,7 +57,7 @@ export const usersRelations = relations(users, ({ many }) => ({
 // Schema for user registration with email/password
 export const registerUserSchema = createInsertSchema(users, {
   email: (schema) => schema.email("Please enter a valid email").min(1, "Email is required"),
-  username: (schema) => schema.min(3, "Username must be at least 3 characters"),
+  firstName: (schema) => schema.min(1, "First name is required"),
   password: (schema) => schema
     .min(8, "Password must be at least 8 characters")
     .max(64, "Password must be no more than 64 characters")
@@ -76,7 +75,6 @@ export const registerUserSchema = createInsertSchema(users, {
     }),
 }).pick({
   email: true,
-  username: true,
   password: true,
   firstName: true, 
   lastName: true

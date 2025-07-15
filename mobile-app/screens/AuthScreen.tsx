@@ -55,10 +55,11 @@ const AuthScreen: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const [usernameError, setUsernameError] = useState('');
+  const [firstNameError, setFirstNameError] = useState('');
   
   // Toggle between login and register
   const toggleAuthMode = () => {
@@ -66,7 +67,7 @@ const AuthScreen: React.FC = () => {
     // Clear form errors when switching modes
     setEmailError('');
     setPasswordError('');
-    setUsernameError('');
+    setFirstNameError('');
   };
   
   // Validate form fields
@@ -101,15 +102,12 @@ const AuthScreen: React.FC = () => {
       setPasswordError('');
     }
     
-    // Validate username for registration
-    if (!isLogin && !username.trim()) {
-      setUsernameError('Username is required');
-      isValid = false;
-    } else if (!isLogin && username.trim().length < 3) {
-      setUsernameError('Username must be at least 3 characters');
+    // Validate first name (for registration)
+    if (!isLogin && !firstName.trim()) {
+      setFirstNameError('First name is required');
       isValid = false;
     } else {
-      setUsernameError('');
+      setFirstNameError('');
     }
     
     return isValid;
@@ -124,7 +122,7 @@ const AuthScreen: React.FC = () => {
         await login({ email, password });
         navigation.navigate('Home');
       } else {
-        await register({ email, username, password });
+        await register({ email, firstName, lastName, password });
         navigation.navigate('Home');
       }
     } catch (error) {
@@ -195,21 +193,33 @@ const AuthScreen: React.FC = () => {
           </View>
           {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
           
-          {/* Username Input (Registration only) */}
+          {/* Name Inputs (Registration only) */}
           {!isLogin && (
             <>
-              <View style={styles.inputContainer}>
-                <Icon name="user" size={18} color="#888" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Username"
-                  value={username}
-                  onChangeText={setUsername}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
+              <View style={[styles.inputContainer, { flexDirection: 'row', gap: 10 }]}>
+                <View style={[styles.inputContainer, { flex: 1, margin: 0 }]}>
+                  <Icon name="user" size={18} color="#888" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="First Name"
+                    value={firstName}
+                    onChangeText={setFirstName}
+                    autoCapitalize="words"
+                    autoCorrect={false}
+                  />
+                </View>
+                <View style={[styles.inputContainer, { flex: 1, margin: 0 }]}>
+                  <TextInput
+                    style={[styles.input, { paddingLeft: 10 }]}
+                    placeholder="Last Name"
+                    value={lastName}
+                    onChangeText={setLastName}
+                    autoCapitalize="words"
+                    autoCorrect={false}
+                  />
+                </View>
               </View>
-              {usernameError ? <Text style={styles.errorText}>{usernameError}</Text> : null}
+              {firstNameError ? <Text style={styles.errorText}>{firstNameError}</Text> : null}
             </>
           )}
           

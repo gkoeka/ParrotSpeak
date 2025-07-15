@@ -334,11 +334,11 @@ export default function ProfilePage() {
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarImage src={user?.profileImageUrl || ""} alt={user?.username || ""} />
+                  <AvatarImage src={user?.profileImageUrl || ""} alt={user?.firstName || ""} />
                   <AvatarFallback className="text-lg">{getNameInitials()}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="font-medium text-lg">{user?.username || user?.email}</div>
+                  <div className="font-medium text-lg">{user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user?.email}</div>
                   <div className="text-muted-foreground">{user?.email}</div>
                 </div>
               </div>

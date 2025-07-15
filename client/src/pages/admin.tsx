@@ -263,7 +263,7 @@ export default function AdminPage() {
                           <TableRow key={user.id}>
                             <TableCell>
                               <div>
-                                <div className="font-medium">{user.username || `${user.firstName} ${user.lastName}`.trim()}</div>
+                                <div className="font-medium">{`${user.firstName} ${user.lastName || ''}`.trim()}</div>
                                 <div className="text-sm text-muted-foreground">ID: {user.id}</div>
                               </div>
                             </TableCell>
