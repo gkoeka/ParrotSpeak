@@ -19,7 +19,8 @@ async function viewFeedback() {
         email: userFeedback.email,
         status: userFeedback.status,
         createdAt: userFeedback.createdAt,
-        userName: users.username,
+        userName: users.firstName,
+        userLastName: users.lastName,
         userEmail: users.email,
       })
       .from(userFeedback)
@@ -35,7 +36,8 @@ async function viewFeedback() {
       console.log(`\n${index + 1}. FEEDBACK #${item.id}`);
       console.log(`   Category: ${item.category.toUpperCase()}`);
       console.log(`   Date: ${item.createdAt?.toLocaleString()}`);
-      console.log(`   From: ${item.userName || 'Anonymous'} ${item.userEmail ? `(${item.userEmail})` : ''}`);
+      const displayName = item.userName ? `${item.userName} ${item.userLastName || ''}`.trim() : 'Anonymous';
+      console.log(`   From: ${displayName} ${item.userEmail ? `(${item.userEmail})` : ''}`);
       if (item.email && item.email !== item.userEmail) {
         console.log(`   Contact Email: ${item.email}`);
       }

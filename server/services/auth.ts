@@ -107,7 +107,7 @@ export async function findOrCreateGoogleUser(
     .values({
       email: googleProfile.email || null,
       googleId,
-      username: googleProfile.displayName || null,
+
       firstName: googleProfile.name?.givenName || null,
       lastName: googleProfile.name?.familyName || null,
       profileImageUrl: googleProfile.photos?.[0]?.value || null,
@@ -223,9 +223,8 @@ export async function resetPassword(token: string, newPassword: string): Promise
  */
 export async function registerUser(userData: {
   email: string;
-  username: string;
   password: string;
-  firstName?: string;
+  firstName: string;
   lastName?: string;
 }) {
   // Check if email already exists
@@ -234,15 +233,7 @@ export async function registerUser(userData: {
     throw new Error("Email is already in use");
   }
 
-  // Check if username already exists
-  const [existingUserByUsername] = await db
-    .select()
-    .from(users)
-    .where(eq(users.username, userData.username));
-  
-  if (existingUserByUsername) {
-    throw new Error("Username is already taken");
-  }
+
 
   // Hash the password
   const hashedPassword = await hashPassword(userData.password);
@@ -252,9 +243,8 @@ export async function registerUser(userData: {
     .insert(users)
     .values({
       email: userData.email,
-      username: userData.username,
       password: hashedPassword,
-      firstName: userData.firstName || null,
+      firstName: userData.firstName,
       lastName: userData.lastName || null,
       emailVerified: false,
       createdAt: new Date(),
@@ -312,7 +302,6 @@ export async function createAdminUser(email: string, password: string): Promise<
       .insert(users)
       .values({
         email,
-        username: "admin",
         password: hashedPassword,
         firstName: "Admin",
         lastName: "User",
@@ -328,7 +317,8 @@ export async function createAdminUser(email: string, password: string): Promise<
       user: {
         id: newUser.id,
         email: newUser.email,
-        username: newUser.username
+        firstName: newUser.firstName,
+        lastName: newUser.lastName
       }
     };
   } catch (error) {

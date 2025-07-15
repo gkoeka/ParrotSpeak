@@ -16,7 +16,6 @@ import { useToast } from "@/hooks/use-toast";
 interface AdminUser {
   id: number;
   email: string;
-  username: string;
   firstName: string;
   lastName: string;
   emailVerified: boolean;
@@ -49,7 +48,8 @@ interface AdminFeedback {
   createdAt: string;
   userId: number;
   userEmail: string;
-  username: string;
+  userFirstName: string;
+  userLastName: string;
 }
 
 export default function AdminPage() {
@@ -307,8 +307,7 @@ export default function AdminPage() {
                                             <div className="space-y-2 text-sm">
                                               <div><strong>ID:</strong> {userDetails.user.id}</div>
                                               <div><strong>Email:</strong> {userDetails.user.email}</div>
-                                              <div><strong>Username:</strong> {userDetails.user.username || 'Not set'}</div>
-                                              <div><strong>Name:</strong> {userDetails.user.firstName || ''} {userDetails.user.lastName || ''}</div>
+                                              <div><strong>Name:</strong> {userDetails.user.firstName || 'Not set'}</div>
                                             </div>
                                           </div>
                                           <div>
@@ -449,7 +448,7 @@ export default function AdminPage() {
                           <TableRow key={item.id}>
                             <TableCell>
                               <div>
-                                <div className="font-medium">{item.username || item.userEmail || item.email}</div>
+                                <div className="font-medium">{item.userFirstName ? `${item.userFirstName} ${item.userLastName || ''}`.trim() : item.userEmail || item.email}</div>
                                 {item.userId && <div className="text-sm text-muted-foreground">ID: {item.userId}</div>}
                               </div>
                             </TableCell>

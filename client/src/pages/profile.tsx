@@ -27,8 +27,7 @@ export default function ProfilePage() {
   const [profileForm, setProfileForm] = useState({
     firstName: user?.firstName || "",
     lastName: user?.lastName || "",
-    email: user?.email || "",
-    username: user?.username || ""
+    email: user?.email || ""
   });
 
   // Password change form state
@@ -44,8 +43,7 @@ export default function ProfilePage() {
       setProfileForm({
         firstName: user.firstName || "",
         lastName: user.lastName || "",
-        email: user.email || "",
-        username: user.username || ""
+        email: user.email || ""
       });
     }
   }, [user]);
@@ -266,10 +264,11 @@ export default function ProfilePage() {
   }
 
   const getNameInitials = () => {
-    if (user?.firstName && user?.lastName) {
-      return `${user.firstName[0]}${user.lastName[0]}`;
-    } else if (user?.username) {
-      return user.username.substring(0, 2).toUpperCase();
+    if (user?.firstName) {
+      // Use first two letters of first name or first letter + 'U' for User
+      return user.firstName.length > 1 
+        ? user.firstName.substring(0, 2).toUpperCase()
+        : `${user.firstName[0]}U`.toUpperCase();
     } else if (user?.email) {
       return user.email.substring(0, 2).toUpperCase();
     }
@@ -338,7 +337,7 @@ export default function ProfilePage() {
                   <AvatarFallback className="text-lg">{getNameInitials()}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="font-medium text-lg">{user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user?.email}</div>
+                  <div className="font-medium text-lg">{user?.firstName || user?.email}</div>
                   <div className="text-muted-foreground">{user?.email}</div>
                 </div>
               </div>
@@ -444,14 +443,7 @@ export default function ProfilePage() {
                         onChange={(e) => setProfileForm(prev => ({ ...prev, email: e.target.value }))}
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="username">Username</Label>
-                      <Input 
-                        id="username" 
-                        value={profileForm.username} 
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, username: e.target.value }))}
-                      />
-                    </div>
+
                   </div>
                   
                   <Separator className="my-6" />

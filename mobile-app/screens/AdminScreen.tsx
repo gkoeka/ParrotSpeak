@@ -19,7 +19,6 @@ import { getHeaders, buildUrl } from '../api/config';
 interface AdminUser {
   id: number;
   email: string;
-  username: string;
   firstName: string;
   lastName: string;
   emailVerified: boolean;
@@ -45,7 +44,8 @@ interface AdminFeedback {
   createdAt: string;
   userId: number;
   userEmail: string;
-  username: string;
+  userFirstName: string;
+  userLastName: string;
 }
 
 const AdminScreen: React.FC = () => {
@@ -141,8 +141,7 @@ const AdminScreen: React.FC = () => {
 
   const filteredUsers = users?.filter(user =>
     user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchQuery.toLowerCase())
+    (user.firstName || '').toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
   if (!isAdmin) {
@@ -238,7 +237,7 @@ const AdminScreen: React.FC = () => {
           >
             <View style={styles.userInfo}>
               <Text style={styles.userName}>
-                {`${user.firstName} ${user.lastName || ''}`.trim()}
+                {user.firstName || user.email}
               </Text>
               <Text style={styles.userEmail}>{user.email}</Text>
               <View style={styles.userMeta}>
@@ -276,7 +275,7 @@ const AdminScreen: React.FC = () => {
           <View key={item.id} style={styles.feedbackCard}>
             <View style={styles.feedbackHeader}>
               <Text style={styles.feedbackUser}>
-                {item.username || item.userEmail || item.email}
+                {item.userFirstName || item.userEmail || item.email}
               </Text>
               <View
                 style={[
@@ -360,7 +359,7 @@ const AdminScreen: React.FC = () => {
                 </View>
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Username:</Text>
-                  <Text style={styles.detailValue}>{selectedUser.username}</Text>
+                  <Text style={styles.detailValue}>{selectedUser.firstName ? `${selectedUser.firstName} ${selectedUser.lastName || ''}`.trim() : 'Not set'}</Text>
                 </View>
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Name:</Text>

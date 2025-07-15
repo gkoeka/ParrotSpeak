@@ -28,8 +28,12 @@ const registerSchema = z.object({
     .regex(/[a-z]/, "Password must contain at least one lowercase letter")
     .regex(/\d/, "Password must contain at least one number")
     .regex(/[!@#$%^&*(),.?":{}|<>]/, "Password must contain at least one special character"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().optional(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -54,6 +58,7 @@ export default function AuthPage() {
     defaultValues: {
       email: "",
       password: "",
+      confirmPassword: "",
       firstName: "",
       lastName: "",
     },
@@ -208,7 +213,7 @@ export default function AuthPage() {
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Email</FormLabel>
+                            <FormLabel>Email <span className="text-red-500">*</span></FormLabel>
                             <FormControl>
                               <Input placeholder="your.email@example.com" type="email" {...field} />
                             </FormControl>
@@ -222,7 +227,7 @@ export default function AuthPage() {
                           name="firstName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>First Name</FormLabel>
+                              <FormLabel>First Name <span className="text-red-500">*</span></FormLabel>
                               <FormControl>
                                 <Input placeholder="John" {...field} />
                               </FormControl>
@@ -235,7 +240,7 @@ export default function AuthPage() {
                           name="lastName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Last Name (Optional)</FormLabel>
+                              <FormLabel>Last Name</FormLabel>
                               <FormControl>
                                 <Input placeholder="Doe" {...field} />
                               </FormControl>
@@ -249,7 +254,7 @@ export default function AuthPage() {
                         name="password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Password</FormLabel>
+                            <FormLabel>Password <span className="text-red-500">*</span></FormLabel>
                             <FormControl>
                               <Input placeholder="••••••••" type="password" {...field} />
                             </FormControl>
@@ -278,6 +283,19 @@ export default function AuthPage() {
                                 </li>
                               </ul>
                             </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={registerForm.control}
+                        name="confirmPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Confirm Password <span className="text-red-500">*</span></FormLabel>
+                            <FormControl>
+                              <Input placeholder="••••••••" type="password" {...field} />
+                            </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}

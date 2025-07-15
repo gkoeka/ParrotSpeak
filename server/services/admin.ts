@@ -26,7 +26,6 @@ export async function getAllUsers(adminUserId: number) {
     .select({
       id: users.id,
       email: users.email,
-      username: users.username,
       firstName: users.firstName,
       lastName: users.lastName,
       emailVerified: users.emailVerified,
@@ -182,7 +181,6 @@ export async function searchUsers(adminUserId: number, query: string) {
     .select({
       id: users.id,
       email: users.email,
-      username: users.username,
       firstName: users.firstName,
       lastName: users.lastName,
       createdAt: users.createdAt
@@ -191,7 +189,6 @@ export async function searchUsers(adminUserId: number, query: string) {
     .where(
       or(
         like(users.email, `%${query}%`),
-        like(users.username, `%${query}%`),
         like(users.firstName, `%${query}%`),
         like(users.lastName, `%${query}%`)
       )
@@ -256,7 +253,8 @@ export async function getAllFeedback(adminUserId: number) {
       createdAt: userFeedback.createdAt,
       userId: userFeedback.userId,
       userEmail: users.email,
-      username: users.username
+      userFirstName: users.firstName,
+      userLastName: users.lastName
     })
     .from(userFeedback)
     .leftJoin(users, eq(userFeedback.userId, users.id))

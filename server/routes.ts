@@ -430,14 +430,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/auth/user', requireAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      const { firstName, lastName, email, username } = req.body;
+      const { firstName, lastName, email } = req.body;
 
       // Use correct field names for database
       const updateData: any = {};
       if (firstName !== undefined) updateData.firstName = firstName;
       if (lastName !== undefined) updateData.lastName = lastName;
       if (email !== undefined) updateData.email = email;
-      if (username !== undefined) updateData.username = username;
+
       updateData.updatedAt = new Date();
 
       const [updatedUser] = await db
@@ -788,7 +788,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           feedback,
           category,
           email || user?.email,
-          user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user?.username
+          user?.firstName || user?.email
         );
         console.log('Feedback email sent successfully');
       } catch (emailError) {

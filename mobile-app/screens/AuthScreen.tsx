@@ -55,10 +55,12 @@ const AuthScreen: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [firstNameError, setFirstNameError] = useState('');
   
   // Toggle between login and register
@@ -67,6 +69,7 @@ const AuthScreen: React.FC = () => {
     // Clear form errors when switching modes
     setEmailError('');
     setPasswordError('');
+    setConfirmPasswordError('');
     setFirstNameError('');
   };
   
@@ -100,6 +103,19 @@ const AuthScreen: React.FC = () => {
       }
     } else {
       setPasswordError('');
+    }
+    
+    // Validate confirm password (for registration)
+    if (!isLogin) {
+      if (!confirmPassword) {
+        setConfirmPasswordError('Please confirm your password');
+        isValid = false;
+      } else if (password !== confirmPassword) {
+        setConfirmPasswordError('Passwords don\'t match');
+        isValid = false;
+      } else {
+        setConfirmPasswordError('');
+      }
     }
     
     // Validate first name (for registration)
@@ -183,7 +199,7 @@ const AuthScreen: React.FC = () => {
             <Icon name="mail" size={18} color="#888" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Email"
+              placeholder="Email *"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -201,7 +217,7 @@ const AuthScreen: React.FC = () => {
                   <Icon name="user" size={18} color="#888" style={styles.inputIcon} />
                   <TextInput
                     style={styles.input}
-                    placeholder="First Name"
+                    placeholder="First Name *"
                     value={firstName}
                     onChangeText={setFirstName}
                     autoCapitalize="words"
@@ -228,7 +244,7 @@ const AuthScreen: React.FC = () => {
             <Icon name="lock" size={18} color="#888" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="Password"
+              placeholder="Password *"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -237,6 +253,25 @@ const AuthScreen: React.FC = () => {
             />
           </View>
           {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+          
+          {/* Confirm Password Input (Registration only) */}
+          {!isLogin && (
+            <>
+              <View style={styles.inputContainer}>
+                <Icon name="lock" size={18} color="#888" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Confirm Password *"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+              {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
+            </>
+          )}
           
           {/* Submit Button */}
           <TouchableOpacity

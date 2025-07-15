@@ -65,7 +65,7 @@ const ProfileScreen: React.FC = () => {
           {user?.firstName && (
             <View style={styles.userInfoContainer}>
               <Text style={styles.infoLabel}>Name:</Text>
-              <Text style={styles.infoValue}>{`${user.firstName} ${user.lastName || ''}`.trim()}</Text>
+              <Text style={styles.infoValue}>{user.firstName}</Text>
             </View>
           )}
           

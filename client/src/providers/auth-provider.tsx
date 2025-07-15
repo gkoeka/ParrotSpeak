@@ -13,9 +13,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   register: (userData: { 
     email: string; 
-    username: string; 
     password: string;
-    firstName?: string;
+    firstName: string;
     lastName?: string;
   }) => void;
   login: (credentials: { email: string; password: string }) => void;
