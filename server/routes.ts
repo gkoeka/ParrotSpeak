@@ -61,14 +61,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Static files and uploads
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
   app.use(express.static(path.join(process.cwd(), 'public')));
+  
+  // Serve client files for web app
+  app.use('/src', express.static(path.join(process.cwd(), 'client/src')));
+  app.use('/client', express.static(path.join(process.cwd(), 'client')));
 
   // Root route - serve web app or API status
   app.get('/', (req: Request, res: Response) => {
     if (req.query.webapp) {
-      // Serve the web app for mobile emulator
-      const clientPath = path.join(process.cwd(), 'client/index.html');
-      if (fs.existsSync(clientPath)) {
-        res.sendFile(clientPath);
+      // Serve the simple web app for mobile emulator
+      const webappPath = path.join(process.cwd(), 'public/webapp.html');
+      if (fs.existsSync(webappPath)) {
+        res.sendFile(webappPath);
       } else {
         res.status(404).send('Web app not found');
       }
