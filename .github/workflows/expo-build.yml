@@ -16,10 +16,13 @@ jobs:
         id: check-expo
         run: |
           if [ -f "mobile-app/app.json" ] || [ -f "mobile-app/app.config.js" ]; then
+            echo "expo_project=true" >> $GITHUB_ENV
             echo "expo_project=true" >> $GITHUB_OUTPUT
           else
+            echo "expo_project=false" >> $GITHUB_ENV
             echo "expo_project=false" >> $GITHUB_OUTPUT
           fi
+        shell: bash
 
       - name: Checkout repository
         if: steps.check-expo.outputs.expo_project == 'true'
