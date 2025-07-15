@@ -80,6 +80,7 @@ Dark mode preference: Should persist when selected.
 - ✓ **Auth Page Spacing Optimization (July 15, 2025)**: **LAYOUT REFINED** - Reduced spacing between tagline and authentication forms by 50% on both web and mobile platforms for tighter, more focused user experience.
 - ✓ **Expired Account Billing Display (July 15, 2025)**: **UX ENHANCED** - Updated billing section to show "Your plan is complete" for users with expired subscriptions instead of showing inactive plan names, providing clearer messaging about account status.
 - ✓ **Plan Name Capitalization Fix (July 15, 2025)**: **DISPLAY CONSISTENCY** - Fixed subscription tier display to show "Lifetime Plan" instead of "lifetime Plan" across both web and mobile platforms for proper capitalization consistency.
+- ✓ **Login Sessions Removal (July 15, 2025)**: **MOBILE-FOCUSED CLEANUP** - Removed Login Sessions section from Security settings as it's not needed for mobile-only app deployment on iOS/Android. Eliminated related getBrowserInfo() function and simplified security interface for mobile users.
 
 ### Technical Improvements
 - Enhanced voice selection logic for better cross-language support

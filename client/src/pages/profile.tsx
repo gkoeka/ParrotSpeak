@@ -275,43 +275,7 @@ export default function ProfilePage() {
     return "US";
   };
 
-  const getBrowserInfo = () => {
-    const userAgent = navigator.userAgent;
-    let browser = 'Unknown';
-    let os = 'Unknown';
 
-    // Detect browser
-    if (userAgent.includes('Edg/')) {
-      browser = 'Edge';
-    } else if (userAgent.includes('Chrome/') && !userAgent.includes('Edg/')) {
-      // Check if it's actually Brave or just Chrome
-      browser = userAgent.includes('Brave') ? 'Brave' : 'Chrome';
-    } else if (userAgent.includes('Firefox/')) {
-      browser = 'Firefox';
-    } else if (userAgent.includes('Safari/') && !userAgent.includes('Chrome/')) {
-      browser = 'Safari';
-    }
-
-    // Detect OS
-    if (userAgent.includes('Mac OS X') || userAgent.includes('Macintosh')) {
-      os = 'macOS';
-    } else if (userAgent.includes('Windows NT')) {
-      os = 'Windows';
-    } else if (userAgent.includes('Linux')) {
-      os = 'Linux';
-    } else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) {
-      os = 'iOS';
-    } else if (userAgent.includes('Android')) {
-      os = 'Android';
-    }
-
-    // Special case for Replit desktop app
-    if (userAgent.includes('Electron') || userAgent.includes('Replit')) {
-      browser = 'Replit Desktop';
-    }
-
-    return `${browser} on ${os}`;
-  };
 
   return (
     <>
@@ -899,24 +863,7 @@ export default function ProfilePage() {
                   </Button>
                 </div>
 
-                <Separator />
 
-                {/* Login Sessions (future feature) */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Login Sessions</h3>
-                  <p className="text-muted-foreground">
-                    View and manage your active login sessions across devices.
-                  </p>
-                  <div className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium">Current Session</div>
-                        <div className="text-sm text-muted-foreground">{getBrowserInfo()} • This device</div>
-                      </div>
-                      <div className="text-sm text-green-600">Active</div>
-                    </div>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           )}
