@@ -63,11 +63,6 @@ app.use((req, res, next) => {
   // Setup authentication before registering routes
   setupAuth(app);
   
-  // Setup static file serving for client directory temporarily
-  app.use('/src', express.static(path.resolve('./client/src')));
-  app.use('/public', express.static(path.resolve('./client/public')));
-  // Removed general client static serving to avoid conflicts with webapp route
-  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

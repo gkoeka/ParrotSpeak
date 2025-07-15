@@ -61,9 +61,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Root route - serve mobile emulator by default (MUST BE BEFORE STATIC MIDDLEWARE)
   app.get('/', (req: Request, res: Response) => {
     if (req.query.webapp) {
-      // Serve the working HTML/JS web app
-      const webappPath = path.join(process.cwd(), 'client', 'webapp.html');
-      res.sendFile(webappPath);
+      // Serve the actual React web app index.html
+      const clientIndexPath = path.join(process.cwd(), 'client', 'index.html');
+      res.sendFile(clientIndexPath);
     } else if (req.query.api) {
       // Serve API status when specifically requested
       res.json({ 
