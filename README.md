@@ -145,6 +145,9 @@ usage_statistics       // User engagement and feature usage tracking
 conversation_patterns  // Conversation flow analysis and insights
 ```
 
+## 📝 Repository Status
+GitHub now uses SSH instead of HTTPS, synced July 14th.
+
 ## 🚀 Getting Started
 
 ### Prerequisites
