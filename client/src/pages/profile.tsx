@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, CreditCard, Settings, Shield, Download, UserX, AlertTriangle, BarChart3, LogOut } from "lucide-react";
+import { User, CreditCard, Settings, Shield, Download, UserX, AlertTriangle, BarChart3, LogOut, Clock, Crown, Calendar, Zap, RefreshCw, X, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
@@ -533,39 +533,113 @@ export default function ProfilePage() {
               <CardContent className="space-y-6">
                 <div className="grid gap-6">
                   {/* Current Subscription Status */}
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle>Current Plan</CardTitle>
+                  <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 dark:from-blue-950/20 dark:to-indigo-950/20 dark:border-blue-800">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="flex items-center gap-2">
+                        {user?.subscriptionStatus === "active" && <Shield className="h-5 w-5 text-green-600" />}
+                        {user?.subscriptionTier && user?.subscriptionStatus !== "active" && <Clock className="h-5 w-5 text-amber-500" />}
+                        {!user?.subscriptionTier && <Users className="h-5 w-5 text-gray-500" />}
+                        Current Plan
+                      </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium">
-                            {user?.subscriptionTier 
-                              ? (user?.subscriptionStatus === "active" 
-                                  ? `${user.subscriptionTier.charAt(0).toUpperCase() + user.subscriptionTier.slice(1)} Plan` 
-                                  : "Your plan is complete")
-                              : "Free Plan"}
+                    <CardContent className="pt-0">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          {/* Plan Name with Status Badge */}
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="flex items-center gap-2">
+                              {user?.subscriptionTier && <Crown className="h-4 w-4 text-amber-500" />}
+                              <span className="text-lg font-semibold">
+                                {user?.subscriptionTier 
+                                  ? (user?.subscriptionStatus === "active" 
+                                      ? `${user.subscriptionTier.charAt(0).toUpperCase() + user.subscriptionTier.slice(1)} Plan` 
+                                      : "Your plan is complete")
+                                  : "Free Plan"}
+                              </span>
+                            </div>
+                            <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              user?.subscriptionStatus === "active" 
+                                ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300"
+                                : user?.subscriptionTier && user?.subscriptionStatus !== "active"
+                                ? "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
+                                : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                            }`}>
+                              {user?.subscriptionStatus === "active" 
+                                ? "Active"
+                                : user?.subscriptionTier && user?.subscriptionStatus !== "active"
+                                ? "Expired"
+                                : "Free"}
+                            </div>
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            {user?.subscriptionStatus === "active" && user?.subscriptionExpiresAt 
-                              ? `Renews on ${new Date(user.subscriptionExpiresAt).toLocaleDateString()}`
-                              : (user?.subscriptionTier && user?.subscriptionStatus !== "active"
-                                  ? "Plan has ended - purchase another plan to continue"
-                                  : "Limited features available")}
+
+                          {/* Plan Details */}
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-sm">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-muted-foreground">
+                                {user?.subscriptionStatus === "active" && user?.subscriptionExpiresAt 
+                                  ? `Renews on ${new Date(user.subscriptionExpiresAt).toLocaleDateString()}`
+                                  : (user?.subscriptionTier && user?.subscriptionStatus !== "active"
+                                      ? "Plan has ended - purchase another plan to continue"
+                                      : "Limited features available")}
+                              </span>
+                            </div>
+
+                            {/* Progress Bar for Active Subscriptions */}
+                            {user?.subscriptionStatus === "active" && user?.subscriptionExpiresAt && (
+                              <div className="space-y-1">
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                  <span>Time remaining</span>
+                                  <span>
+                                    {Math.max(0, Math.ceil((new Date(user.subscriptionExpiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))} days
+                                  </span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+                                  <div 
+                                    className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                                    style={{
+                                      width: `${Math.max(10, Math.min(100, 
+                                        ((new Date(user.subscriptionExpiresAt).getTime() - new Date().getTime()) / 
+                                         (30 * 24 * 60 * 60 * 1000)) * 100
+                                      ))}%`
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
-                        <div className="flex gap-2">
+
+                        {/* Action Buttons */}
+                        <div className="flex flex-col gap-2 ml-4">
                           {!user?.subscriptionTier && (
-                            <Button variant="outline">
-                              Upgrade
+                            <Button 
+                              variant="default" 
+                              className="bg-blue-600 hover:bg-blue-700"
+                              onClick={() => setSubscriptionModalOpen(true)}
+                            >
+                              <Zap className="h-4 w-4 mr-2" />
+                              Upgrade Plan
                             </Button>
                           )}
+                          
+                          {user?.subscriptionTier && user?.subscriptionStatus !== "active" && (
+                            <Button 
+                              variant="default" 
+                              className="bg-blue-600 hover:bg-blue-700"
+                              onClick={() => setSubscriptionModalOpen(true)}
+                            >
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                              Purchase Again
+                            </Button>
+                          )}
+
                           {user?.subscriptionStatus === "active" && user?.subscriptionTier && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="outline" className="text-red-600 hover:text-red-700">
-                                  Cancel Subscription
+                                <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                  <X className="h-4 w-4 mr-2" />
+                                  Cancel Plan
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>

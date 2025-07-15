@@ -14,21 +14,21 @@ fi
 mkdir -p ~/.ssh
 
 # Check if SSH_PRIVATE_KEY environment variable exists
-if [ -z "$SSH_PRIVATE_KEY" ]; then
+if [ -z "$SSH_PRIVATE_KEY_B64" ]; then
     if [ "$SILENT" != "true" ]; then
-        echo "⚠️  SSH_PRIVATE_KEY environment variable not set"
-        echo "   Add your 'Take 2 SSH key' to Replit secrets as SSH_PRIVATE_KEY"
+        echo "⚠️  SSH_PRIVATE_KEY_B64 environment variable not set"
+        echo "   Add your 'Take 2 SSH key' to Replit secrets as SSH_PRIVATE_KEY_B64"
     fi
     exit 1
 fi
 
 # Set up SSH private key - handle both base64 and raw formats
-if [[ "$SSH_PRIVATE_KEY" == *"-----BEGIN"* ]]; then
+if [[ "$SSH_PRIVATE_KEY_B64" == *"-----BEGIN"* ]]; then
     # Already in proper format
-    echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+    echo "$SSH_PRIVATE_KEY_B64" > ~/.ssh/id_ed25519
 else
     # Try to decode base64 first
-    echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_ed25519 2>/dev/null || echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+    echo "$SSH_PRIVATE_KEY_B64" | base64 -d > ~/.ssh/id_ed25519 2>/dev/null || echo "$SSH_PRIVATE_KEY_B64" > ~/.ssh/id_ed25519
 fi
 chmod 600 ~/.ssh/id_ed25519
 
