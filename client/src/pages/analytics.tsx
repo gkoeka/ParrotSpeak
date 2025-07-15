@@ -21,8 +21,6 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { Skeleton } from '@/components/ui/skeleton';
-import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
 import Header from '@/components/header';
 import { BarChart2, Zap, MessageCircle } from 'lucide-react';
 
@@ -76,7 +74,9 @@ export default function AnalyticsPage() {
         credentials: 'include'
       });
       if (!response.ok) throw new Error('Failed to fetch top languages');
-      return response.json();
+      const data = await response.json();
+      // Ensure we only show top 5 language pairs
+      return data.slice(0, 5);
     }
   });
   
@@ -84,9 +84,102 @@ export default function AnalyticsPage() {
     return num?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") || "0";
   };
   
-  // Backend already formats language pairs correctly as "en-US → fr-FR"
+  // Convert language codes to human-readable names
+  const getLanguageName = (code: string): string => {
+    const languageMap: { [key: string]: string } = {
+      'en-US': 'English',
+      'en-GB': 'English (UK)',
+      'es-ES': 'Spanish',
+      'es-MX': 'Spanish (Mexico)',
+      'fr-FR': 'French',
+      'de-DE': 'German',
+      'it-IT': 'Italian',
+      'pt-PT': 'Portuguese',
+      'pt-BR': 'Portuguese (Brazil)',
+      'ru-RU': 'Russian',
+      'zh-CN': 'Chinese (Simplified)',
+      'zh-TW': 'Chinese (Traditional)',
+      'ja-JP': 'Japanese',
+      'ko-KR': 'Korean',
+      'ar-SA': 'Arabic',
+      'hi-IN': 'Hindi',
+      'th-TH': 'Thai',
+      'vi-VN': 'Vietnamese',
+      'nl-NL': 'Dutch',
+      'sv-SE': 'Swedish',
+      'da-DK': 'Danish',
+      'no-NO': 'Norwegian',
+      'fi-FI': 'Finnish',
+      'pl-PL': 'Polish',
+      'cs-CZ': 'Czech',
+      'hu-HU': 'Hungarian',
+      'ro-RO': 'Romanian',
+      'bg-BG': 'Bulgarian',
+      'hr-HR': 'Croatian',
+      'sk-SK': 'Slovak',
+      'sl-SI': 'Slovenian',
+      'et-EE': 'Estonian',
+      'lv-LV': 'Latvian',
+      'lt-LT': 'Lithuanian',
+      'uk-UA': 'Ukrainian',
+      'be-BY': 'Belarusian',
+      'el-GR': 'Greek',
+      'tr-TR': 'Turkish',
+      'he-IL': 'Hebrew',
+      'fa-IR': 'Persian',
+      'ur-PK': 'Urdu',
+      'bn-BD': 'Bengali',
+      'ta-IN': 'Tamil',
+      'te-IN': 'Telugu',
+      'ml-IN': 'Malayalam',
+      'kn-IN': 'Kannada',
+      'gu-IN': 'Gujarati',
+      'pa-IN': 'Punjabi',
+      'mr-IN': 'Marathi',
+      'or-IN': 'Odia',
+      'as-IN': 'Assamese',
+      'ne-NP': 'Nepali',
+      'si-LK': 'Sinhala',
+      'my-MM': 'Burmese',
+      'km-KH': 'Khmer',
+      'lo-LA': 'Lao',
+      'ka-GE': 'Georgian',
+      'am-ET': 'Amharic',
+      'sw-KE': 'Swahili',
+      'zu-ZA': 'Zulu',
+      'af-ZA': 'Afrikaans',
+      'is-IS': 'Icelandic',
+      'mt-MT': 'Maltese',
+      'cy-GB': 'Welsh',
+      'ga-IE': 'Irish',
+      'gd-GB': 'Scottish Gaelic',
+      'eu-ES': 'Basque',
+      'ca-ES': 'Catalan',
+      'gl-ES': 'Galician',
+      'lb-LU': 'Luxembourgish',
+      'mk-MK': 'Macedonian',
+      'sq-AL': 'Albanian',
+      'bs-BA': 'Bosnian',
+      'sr-RS': 'Serbian',
+      'me-ME': 'Montenegrin',
+      'az-AZ': 'Azerbaijani',
+      'kk-KZ': 'Kazakh',
+      'ky-KG': 'Kyrgyz',
+      'uz-UZ': 'Uzbek',
+      'tg-TJ': 'Tajik',
+      'tk-TM': 'Turkmen',
+      'mn-MN': 'Mongolian',
+    };
+    return languageMap[code] || code;
+  };
+
   const formatLanguagePair = (pair: string) => {
-    return pair || '';
+    if (!pair) return '';
+    const [source, target] = pair.split(' → ');
+    if (source && target) {
+      return `${getLanguageName(source)} → ${getLanguageName(target)}`;
+    }
+    return pair;
   };
   
   return (
@@ -184,9 +277,9 @@ export default function AnalyticsPage() {
           </Card>
         </div>
         
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-1">
           {/* Top Language Pairs */}
-          <Card className="col-span-1 lg:col-span-1">
+          <Card className="max-w-2xl mx-auto">
             <CardHeader>
               <CardTitle>Top Language Pairs</CardTitle>
               <CardDescription>
@@ -218,51 +311,10 @@ export default function AnalyticsPage() {
                         </div>
                       </div>
                       <div className="text-sm font-medium">
-                        {lang.count ? 
-                          `${Math.round((lang.count / (usageStats?.totalMessages || 1)) * 100)}%` : 
+                        {lang.count && usageStats?.totalTranslations ? 
+                          `${Math.round((lang.count / usageStats.totalTranslations) * 100)}%` : 
                           '0%'}
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-6 text-center text-muted-foreground">
-                  No language usage data available yet
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          
-          {/* Language Pair Usage */}
-          <Card className="col-span-1 lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Language Pair Usage</CardTitle>
-              <CardDescription>
-                Distribution of translation volume by language pair
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingLanguages ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-full" />
-                </div>
-              ) : topLanguages && topLanguages.length > 0 ? (
-                <div className="space-y-4">
-                  {topLanguages.map((languageData, i) => (
-                    <div key={i} className="space-y-1">
-                      <div className="flex justify-between">
-                        <Label className="text-sm">{languageData.languagePair}</Label>
-                        <span className="text-sm">
-                          {formatNumber(languageData.count)} uses
-                        </span>
-                      </div>
-                      <Progress 
-                        value={Math.round((languageData.count / (topLanguages[0]?.count || 1)) * 100)} 
-                        className="h-2" 
-                      />
                     </div>
                   ))}
                 </div>
