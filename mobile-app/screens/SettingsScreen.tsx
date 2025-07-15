@@ -165,74 +165,94 @@ export default function SettingsScreen() {
           </View>
         </View>
         
-        {/* Analytics Section */}
+        {/* Accessibility Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Analytics & Data</Text>
+          <Text style={styles.sectionTitle}>Accessibility</Text>
           
-          <TouchableOpacity 
-            style={styles.navigationButton}
-            onPress={handleViewAnalytics}
-          >
-            <View style={styles.navigationButtonContent}>
-              <Icon name="bar-chart-2" size={20} color="#4F46E5" />
-              <Text style={styles.navigationButtonText}>View Translation Analytics</Text>
+          <View style={styles.settingItem}>
+            <View>
+              <Text style={styles.settingLabel}>Large text</Text>
+              <Text style={styles.settingDescription}>
+                Increase text size for better readability
+              </Text>
             </View>
-            <Icon name="chevron-right" size={20} color="#9ca3af" />
-          </TouchableOpacity>
+            <Switch
+              value={false}
+              onValueChange={(value) => handleUpdateSetting('largeText', value)}
+              trackColor={{ false: '#d1d5db', true: '#818cf8' }}
+              thumbColor={false ? '#f4f3f4' : '#4F46E5'}
+            />
+          </View>
           
-          <Text style={styles.settingDescription}>
-            View translation quality metrics, usage statistics, and language pair analysis
-          </Text>
+          <View style={styles.settingItem}>
+            <View>
+              <Text style={styles.settingLabel}>High contrast mode</Text>
+              <Text style={styles.settingDescription}>
+                Improve text visibility with high contrast colors
+              </Text>
+            </View>
+            <Switch
+              value={false}
+              onValueChange={(value) => handleUpdateSetting('highContrast', value)}
+              trackColor={{ false: '#d1d5db', true: '#818cf8' }}
+              thumbColor={false ? '#f4f3f4' : '#4F46E5'}
+            />
+          </View>
         </View>
         
         {/* Display Settings */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Display</Text>
           
-          {/* Placeholder for future settings */}
-          <Text style={styles.settingDescription}>
-            Display settings will be available in future updates
-          </Text>
+          <View style={styles.settingItem}>
+            <View>
+              <Text style={styles.settingLabel}>Dark mode</Text>
+              <Text style={styles.settingDescription}>
+                Switch to dark theme for better viewing in low light
+              </Text>
+            </View>
+            <Switch
+              value={false}
+              onValueChange={(value) => handleUpdateSetting('darkMode', value)}
+              trackColor={{ false: '#d1d5db', true: '#818cf8' }}
+              thumbColor={false ? '#f4f3f4' : '#4F46E5'}
+            />
+          </View>
+          
+          <View style={styles.settingItem}>
+            <View>
+              <Text style={styles.settingLabel}>Reduce animations</Text>
+              <Text style={styles.settingDescription}>
+                Minimize motion effects throughout the app
+              </Text>
+            </View>
+            <Switch
+              value={false}
+              onValueChange={(value) => handleUpdateSetting('reduceAnimations', value)}
+              trackColor={{ false: '#d1d5db', true: '#818cf8' }}
+              thumbColor={false ? '#f4f3f4' : '#4F46E5'}
+            />
+          </View>
         </View>
         
-        {/* Feedback Section */}
+        {/* Privacy Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Help & Feedback</Text>
+          <Text style={styles.sectionTitle}>Privacy</Text>
           
-          <TouchableOpacity 
-            style={[styles.navigationButton, styles.feedbackButton]}
-            onPress={handleSubmitFeedback}
-          >
-            <View style={styles.navigationButtonContent}>
-              <Icon name="message-circle" size={20} color="#fff" />
-              <Text style={[styles.navigationButtonText, styles.feedbackButtonText]}>Send Feedback</Text>
+          <View style={styles.settingItem}>
+            <View>
+              <Text style={styles.settingLabel}>Analytics tracking</Text>
+              <Text style={styles.settingDescription}>
+                Allow anonymous usage data collection to improve the app
+              </Text>
             </View>
-            <Icon name="chevron-right" size={20} color="#fff" />
-          </TouchableOpacity>
-          
-          <Text style={styles.settingDescription}>
-            We'd love to hear your thoughts and suggestions to improve the app
-          </Text>
-        </View>
-        
-        {/* Account Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
-          
-          <TouchableOpacity 
-            style={[styles.navigationButton, styles.logoutButton]}
-            onPress={handleLogout}
-          >
-            <View style={styles.navigationButtonContent}>
-              <Icon name="log-out" size={20} color="#ef4444" />
-              <Text style={[styles.navigationButtonText, styles.logoutButtonText]}>Logout</Text>
-            </View>
-            <Icon name="chevron-right" size={20} color="#ef4444" />
-          </TouchableOpacity>
-          
-          <Text style={styles.settingDescription}>
-            Sign out of your account for testing purposes
-          </Text>
+            <Switch
+              value={true}
+              onValueChange={(value) => handleUpdateSetting('analyticsTracking', value)}
+              trackColor={{ false: '#d1d5db', true: '#818cf8' }}
+              thumbColor={true ? '#4F46E5' : '#f4f3f4'}
+            />
+          </View>
         </View>
 
         {/* About Section */}

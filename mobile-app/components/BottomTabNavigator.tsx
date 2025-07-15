@@ -26,8 +26,8 @@ const tabs: TabItem[] = [
   { key: 'home', title: 'Home', icon: 'home', screen: 'Home' },
   { key: 'conversations', title: 'Chats', icon: 'message-circle', screen: 'ConversationsList' },
   { key: 'camera', title: 'Camera', icon: 'camera', screen: 'Camera' },
-  { key: 'analytics', title: 'Analytics', icon: 'bar-chart-2', screen: 'Analytics' },
   { key: 'settings', title: 'Settings', icon: 'settings', screen: 'Settings' },
+  { key: 'profile', title: 'Profile', icon: 'user', screen: 'Profile' },
 ];
 
 export default function BottomTabNavigator() {
