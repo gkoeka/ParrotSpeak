@@ -239,8 +239,8 @@ export default function ConversationsPage() {
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-3">Welcome Back!</h3>
               <p className="text-gray-600 mb-8 max-w-lg mx-auto leading-relaxed">
-                Your past conversations are temporarily hidden.<br />
-                Upgrade your plan to unlock full access to your conversation history and keep translating without limits — everything is still safely stored for you.
+                Your conversations are temporarily hidden.<br />
+                Upgrade your plan to unlock full access to your conversation history and keep translating without limits; everything is still safely stored for you.
               </p>
               <div className="space-y-3">
                 <Button 
