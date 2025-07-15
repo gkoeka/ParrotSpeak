@@ -148,6 +148,8 @@ conversation_patterns  // Conversation flow analysis and insights
 ## 📝 Repository Status
 GitHub now uses SSH instead of HTTPS, synced July 14th.
 
+**Important:** Take 2 SSH key is required for future pushes to GitHub.
+
 ## 🚀 Getting Started
 
 ### Prerequisites
