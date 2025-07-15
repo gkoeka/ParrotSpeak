@@ -31,6 +31,13 @@ export default function ProfilePage() {
     username: user?.username || ""
   });
 
+  // Password change form state
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+
   // Update form state when user data changes
   useEffect(() => {
     if (user) {
@@ -177,6 +184,67 @@ export default function ProfilePage() {
       });
     },
   });
+
+  // Change password mutation
+  const changePasswordMutation = useMutation({
+    mutationFn: async (passwordData: { currentPassword: string; newPassword: string }) => {
+      const res = await apiRequest("POST", "/api/auth/change-password", passwordData);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Password Changed",
+        description: "Your password has been updated successfully.",
+      });
+      // Reset password form
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Change Password",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Password change handler
+  const handlePasswordChange = () => {
+    const { currentPassword, newPassword, confirmPassword } = passwordForm;
+    
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all password fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Passwords Don't Match",
+        description: "Please ensure your new password and confirmation match.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      toast({
+        title: "Password Too Short",
+        description: "Your new password must be at least 6 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    changePasswordMutation.mutate({ currentPassword, newPassword });
+  };
 
   // Redirect to login if not authenticated
   if (!isLoading && !isAuthenticated) {
@@ -771,27 +839,38 @@ export default function ProfilePage() {
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="currentPassword">Current Password</Label>
-                      <Input id="currentPassword" type="password" />
+                      <Input 
+                        id="currentPassword" 
+                        type="password"
+                        value={passwordForm.currentPassword}
+                        onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="newPassword">New Password</Label>
-                      <Input id="newPassword" type="password" />
+                      <Input 
+                        id="newPassword" 
+                        type="password"
+                        value={passwordForm.newPassword}
+                        onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                      <Input id="confirmPassword" type="password" />
+                      <Input 
+                        id="confirmPassword" 
+                        type="password"
+                        value={passwordForm.confirmPassword}
+                        onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      />
                     </div>
                   </div>
                   <Button 
                     className="mt-2"
-                    onClick={() => {
-                      toast({
-                        title: "Password changed",
-                        description: "Your password has been updated successfully",
-                      });
-                    }}
+                    onClick={handlePasswordChange}
+                    disabled={changePasswordMutation.isPending}
                   >
-                    Update Password
+                    {changePasswordMutation.isPending ? "Changing..." : "Change Password"}
                   </Button>
                 </div>
 

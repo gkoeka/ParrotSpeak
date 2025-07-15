@@ -437,6 +437,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Change password endpoint
+  app.post('/api/auth/change-password', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ error: 'Current password and new password are required' });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ error: 'New password must be at least 6 characters long' });
+      }
+
+      // Get current user from database
+      const currentUser = await db.query.users.findFirst({
+        where: eq(users.id, userId)
+      });
+
+      if (!currentUser || !currentUser.password) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Verify current password
+      const bcrypt = await import('bcryptjs');
+      const isCurrentPasswordValid = await bcrypt.compare(currentPassword, currentUser.password);
+
+      if (!isCurrentPasswordValid) {
+        return res.status(400).json({ error: 'Current password is incorrect' });
+      }
+
+      // Hash new password
+      const hashedNewPassword = await bcrypt.hash(newPassword, 12);
+
+      // Update password in database
+      await db
+        .update(users)
+        .set({ 
+          password: hashedNewPassword,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, userId));
+
+      res.json({ message: 'Password changed successfully' });
+    } catch (error) {
+      console.error('Error changing password:', error);
+      res.status(500).json({ error: 'Failed to change password' });
+    }
+  });
+
   // Analytics consent management
   app.get('/api/analytics/consent', requireAuth, async (req: Request, res: Response) => {
     try {
