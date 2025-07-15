@@ -55,18 +55,48 @@ export default function ConversationArea({
   const { settings } = useSpeechSettings();
   const spokenMessageIds = useRef<Set<string>>(new Set());
   
-  // Simple auto-playback logic - much cleaner than the separate SpeechManager
+  // Track if this is a historical conversation load vs new real-time messages
+  const isInitialLoadRef = useRef<boolean>(true);
+  const previousMessageCountRef = useRef<number>(0);
+  
+  // Reset initial load tracking when messages first arrive
   useEffect(() => {
-    if (isTyping || !messages.length) return;
+    if (messages.length > 0 && isInitialLoadRef.current) {
+      console.log(`[ConversationArea] Historical conversation detected with ${messages.length} messages - preventing auto-playback`);
+      
+      // Mark all existing messages as "spoken" to prevent auto-playback
+      messages.forEach(message => {
+        spokenMessageIds.current.add(message.id);
+      });
+      
+      // Set previous count and mark initial load complete after delay
+      previousMessageCountRef.current = messages.length;
+      
+      setTimeout(() => {
+        isInitialLoadRef.current = false;
+        console.log(`[ConversationArea] Initial load complete - future new messages will auto-play`);
+      }, 1000); // 1 second delay to ensure all historical messages are loaded
+    }
+  }, [messages.length]);
+  
+  // Auto-playback logic with proper historical conversation detection
+  useEffect(() => {
+    if (isTyping || !messages.length || isInitialLoadRef.current) return;
     
+    const currentMessageCount = messages.length;
     const lastMessage = messages[messages.length - 1];
     const shouldAutoPlay = settings?.autoPlay !== false; // Default to true
     
-    // Auto-play new translation messages that haven't been spoken
-    if (lastMessage && 
+    // Only auto-play if this is genuinely a NEW message (count increased)
+    const isNewMessage = currentMessageCount > previousMessageCountRef.current;
+    
+    if (isNewMessage && 
+        lastMessage && 
         !lastMessage.isUser && 
         !spokenMessageIds.current.has(lastMessage.id) &&
         shouldAutoPlay) {
+      
+      console.log(`[ConversationArea] Auto-playing NEW real-time translation: ${lastMessage.id.slice(0, 6)}...`);
       
       // Mark message as spoken to prevent re-playing
       spokenMessageIds.current.add(lastMessage.id);
@@ -76,7 +106,12 @@ export default function ConversationArea({
       
       // Auto-play the translation
       speak(lastMessage.text, targetLanguage.code, voiceProfileId);
+    } else if (!isNewMessage) {
+      console.log(`[ConversationArea] Skipping auto-playback - not a new message (count: ${currentMessageCount}, previous: ${previousMessageCountRef.current})`);
     }
+    
+    // Update previous count
+    previousMessageCountRef.current = currentMessageCount;
   }, [messages, isTyping, settings, speak, targetLanguage.code]);
   
   // Scroll to bottom when messages change

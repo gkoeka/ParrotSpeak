@@ -50,21 +50,28 @@ export default function ConversationArea({
   useEffect(() => {
     console.log(`[ConversationArea] Initial setup - messages.length: ${messages.length}`);
     
-    // Always set baseline to current message count to prevent auto-playback of existing messages
-    baselineMessageCountRef.current = messages.length;
-    lastMessageCountRef.current = messages.length;
-    
-    // Mark initial load as complete immediately for empty conversations
-    // For conversations with existing messages, add a longer delay to ensure they're historical
-    if (messages.length === 0) {
+    if (messages.length > 0) {
+      // Historical conversation detected - mark all messages as already "spoken"
+      console.log(`[ConversationArea] Historical conversation with ${messages.length} messages - marking all as spoken to prevent auto-playback`);
+      
+      // Set baseline and mark all existing messages as spoken to prevent any auto-playback
+      baselineMessageCountRef.current = messages.length;
+      lastMessageCountRef.current = messages.length;
+      
+      // CRITICAL: Don't rely on timeout - immediately mark as historical
       initialLoadCompleteRef.current = true;
-      console.log(`[ConversationArea] Empty conversation - initial load complete`);
+      
+      // The key fix: ensure no historical messages ever auto-play by preventing the auto-play condition
+      // Set baseline higher than current to prevent any existing message from triggering auto-play
+      baselineMessageCountRef.current = messages.length + 1;
+      
+      console.log(`[ConversationArea] Historical conversation setup complete - baseline set to ${baselineMessageCountRef.current} to prevent auto-play`);
     } else {
-      // Longer delay for conversations with existing messages to ensure they're treated as historical
-      setTimeout(() => {
-        initialLoadCompleteRef.current = true;
-        console.log(`[ConversationArea] Historical conversation loaded - initial load complete`);
-      }, 2000); // Increased to 2 seconds
+      // Empty conversation - ready for new messages immediately
+      baselineMessageCountRef.current = 0;
+      lastMessageCountRef.current = 0;
+      initialLoadCompleteRef.current = true;
+      console.log(`[ConversationArea] Empty conversation - ready for new messages`);
     }
   }, []);
   
