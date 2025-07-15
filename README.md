@@ -4,20 +4,32 @@ A comprehensive voice-to-voice translation platform with subscription-based acce
 
 ## 🎉 Recent Updates (July 2025)
 
-### Critical Bug Fixes & Improvements
-- **✅ French Text-to-Speech Fixed** - Resolved silent playback issue with enhanced fallback system and timeout detection
-- **✅ Analytics Dashboard Corrected** - Fixed language pairs showing "→ undefined" instead of actual translation data  
-- **✅ Auto-Playback Controls Enhanced** - Fixed unwanted playback of historical conversations, improved manual controls
-- **✅ Device Detection Accuracy** - Replaced hardcoded browser info with real-time detection for Replit desktop app
-- **✅ Privacy Controls Verified** - Live tested analytics opt-out system, confirmed complete protection when disabled
-- **✅ Speech Settings Integration** - Auto-playback toggle now properly saves and integrates with voice preferences
-- **✅ Mobile Playback Controls** - Fixed pause/resume button states and manual playback functionality
+### Major System Improvements (July 15, 2025)
+- **✅ Username Removal Complete** - Simplified registration to email + firstName (required for marketing) + lastName (optional) + password with enhanced validation
+- **✅ Application Restoration Complete** - Full system restoration with working web app and mobile emulator, all core features verified
+- **✅ Enhanced Password Security** - Comprehensive password requirements with 5-item visual checklist: 8+ characters, uppercase, lowercase, number, special character
+- **✅ Mobile-Focused Authentication** - Repositioned Google/Apple sign-in buttons above email field with elegant dividers across all platforms
+- **✅ Login Sessions Removal** - Eliminated unnecessary session management for mobile-only deployment on iOS/Android
+- **✅ Welsh Flag Correction** - Updated Welsh language to display proper Welsh dragon flag instead of Union Jack for cultural accuracy
+- **✅ Dzongkha Language Support** - Added Bhutanese language support with proper Bhutan flag for expanded South Asian coverage
 
-### User Experience Enhancements  
-- **Enhanced Voice Selection** - Better cross-language support with intelligent fallbacks
-- **Improved Error Handling** - More graceful failures and user feedback
-- **Real-time Validation** - Immediate feedback on settings changes and privacy controls
-- **Platform Consistency** - Full feature parity maintained between web and mobile apps
+### Critical Bug Fixes & Improvements  
+- **✅ French Text-to-Speech Fixed** - Resolved silent playback issue with enhanced fallback system and 5-second timeout detection
+- **✅ Auto-Playback Critical Fixes** - Fixed unwanted playback of historical conversations with strengthened detection logic and multiple fail-safes
+- **✅ Analytics Data Integrity** - Removed mock data, implemented authentic data-only approach with proper empty states for new users
+- **✅ Translation Quality System Redesign** - Eliminated flawed user rating system, replaced with meaningful internal success metrics
+- **✅ Password Change Functionality** - Fixed non-functional password change with proper validation, bcrypt hashing, and user feedback
+- **✅ Pause/Resume Button States** - Resolved button state management with consolidated state synchronization logic
+- **✅ Analytics Dashboard Corrected** - Fixed language pairs showing "→ undefined" instead of actual translation data
+- **✅ Device Detection Accuracy** - Replaced hardcoded browser info with real-time detection for Replit desktop app
+
+### User Experience Enhancements
+- **Simplified Registration Flow** - Streamlined to essential fields only with enhanced password requirements and friendly UX
+- **Expired Customer Experience** - Personalized "Welcome Back!" messaging with reassuring conversation storage notifications
+- **Plan Name Consistency** - Fixed capitalization across platforms ("Lifetime Plan" vs "lifetime Plan")
+- **Billing Display Enhancement** - Updated expired subscriptions to show "Your plan is complete" with helpful messaging
+- **Privacy Controls Verified** - Live tested analytics opt-out system, confirmed complete protection when disabled
+- **Platform Consistency** - Full feature parity maintained between web and mobile apps with cross-platform validation
 
 ## 🌟 Features
 
@@ -31,22 +43,26 @@ A comprehensive voice-to-voice translation platform with subscription-based acce
 - **WebSocket Real-time Communication** - Live streaming for immediate translation results
 
 ### Language Support
-- **50+ Languages** including all major world languages
-- **European Language Focus** - Comprehensive coverage of European languages
-- **Automatic Language Detection** - Smart detection of spoken languages
+- **70+ Languages** including all major world languages and specialized regional languages
+- **Enhanced Cultural Accuracy** - Proper Welsh dragon flag display and authentic country representations
+- **Expanded South Asian Coverage** - Added Dzongkha (Bhutanese) language support with proper flag
+- **European Language Focus** - Comprehensive coverage of European languages including Welsh, Irish, Basque, and regional variants
+- **Automatic Language Detection** - Smart detection of spoken languages with intelligent fallback system
 
 ### Subscription & Access Control
-- **100% Translation Protection** - All translation features require active subscription
-- **Flexible Subscription Plans** - Monthly and annual options with full feature access
-- **Custom Subscription Modals** - Personalized messaging for new vs. returning users
-- **Graceful Access Control** - User management features remain free (history, settings, profile)
-- **Stripe Payment Integration** - Secure payment processing and subscription management
+- **100% Translation Protection** - All translation features require active subscription with comprehensive middleware protection
+- **In-App Purchase Integration** - Native iOS and Android app store payment processing for mobile-only deployment
+- **6 Subscription Plans** - One-time purchases (1 month, 3 months, 6 months, lifetime) and recurring plans (monthly, annual)
+- **Custom Subscription Modals** - Personalized messaging for new vs. returning customers with proper business terminology
+- **Expired Customer Management** - Hidden conversation history for expired users until subscription renewal
+- **Graceful Access Control** - User management features remain free (history, settings, profile) while protecting all translation functionality
 
 ### Platform Coverage
-- **Web Application** - Full-featured browser-based interface with admin capabilities
-- **Mobile App (React Native/Expo)** - Native iOS and Android app with complete feature parity
-- **Cross-Platform Sync** - Conversations and settings sync across all devices
-- **App Store Ready** - Mobile app configured for iOS and Android distribution
+- **Mobile-Only Deployment** - Focused iOS and Android app store distribution strategy
+- **Mobile App (React Native/Expo)** - Native iOS and Android app with complete feature parity and IAP integration
+- **Web Interface for Development** - Full-featured browser-based interface with admin capabilities for testing and development
+- **App Store Ready** - Mobile app configured for iOS and Android distribution with production certificates and legal documents
+- **Cross-Platform Development Sync** - Conversations and settings sync between development web interface and production mobile apps
 
 ### User Experience
 - **Mobile-First Design** - Optimized for one-handed smartphone operation
@@ -99,19 +115,19 @@ A comprehensive voice-to-voice translation platform with subscription-based acce
 **AI & Services**
 - OpenAI Whisper API for speech recognition
 - OpenAI GPT models for translation
-- Stripe for subscription management and payments
-- SendGrid for email notifications
-- Mixpanel for user analytics and engagement tracking
+- In-App Purchases (IAP) for mobile app store payment processing
+- SendGrid for email notifications and feedback system
+- Mixpanel for user analytics and engagement tracking with privacy controls
 
 **Security & Infrastructure**
 - AES-256 encryption for all conversation data (including guest conversations)
-- Multi-factor authentication (TOTP) with mobile app support
+- Enhanced password security with composition rules and visual validation checklist
 - Comprehensive rate limiting and security headers (helmet middleware)
 - Input validation and file upload protection
-- Session-based authentication with random session secrets
+- Session-based authentication optimized for mobile-only deployment
 - Comprehensive audit logging and admin authorization
-- GDPR/CCPA compliant data retention policies
-- Cookie consent mechanism with granular preferences
+- GDPR/CCPA compliant data retention policies with automated cleanup
+- Privacy-first analytics with complete opt-out functionality
 
 ### Database Schema
 
@@ -136,8 +152,8 @@ conversation_patterns  // Conversation flow analysis and insights
 - Node.js 18+ 
 - PostgreSQL database
 - OpenAI API key (for translation and speech recognition)
-- Stripe account (for subscription management)
-- SendGrid account (for email notifications)
+- Apple Developer Account and Google Play Developer Account (for mobile app store distribution)
+- SendGrid account (for email notifications and feedback system)
 - Mixpanel account (for analytics tracking - optional)
 
 ### Environment Variables
@@ -155,10 +171,9 @@ ENCRYPTION_MASTER_KEY=your-encryption-key
 # OpenAI
 OPENAI_API_KEY=your-openai-api-key
 
-# Stripe
-STRIPE_SECRET_KEY=your-stripe-secret-key
-STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
-VITE_STRIPE_PUBLIC_KEY=your-stripe-public-key
+# App Store Credentials (for mobile deployment)
+GOOGLE_PLAY_SERVICE_ACCOUNT_KEY=your-google-play-service-account-key
+APPLE_APP_STORE_CONNECT_API_KEY=your-apple-app-store-connect-api-key
 
 # SendGrid
 SENDGRID_API_KEY=your-sendgrid-api-key
