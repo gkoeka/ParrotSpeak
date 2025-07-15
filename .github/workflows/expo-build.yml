@@ -43,6 +43,8 @@ jobs:
           expo-version: latest
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
+        env:
+          USE_YARN: false
 
       - name: Install dependencies
         if: steps.check-expo.outputs.expo_project == 'true'
