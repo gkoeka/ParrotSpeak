@@ -57,11 +57,20 @@ export default function ConversationsPage() {
     refetchInterval: 10000, // Refresh every 10 seconds to catch new conversations
   });
 
-  // Check if user has ever had a subscription
+  // Check if user has ever had a subscription (more permissive check)
   const hasEverSubscribed = !!(user?.subscription_tier || 
     user?.subscription_status === 'expired' || 
     user?.subscription_status === 'active' ||
-    user?.subscription_expires_at);
+    user?.subscription_expires_at ||
+    (user?.email === 'greg.koeka@gmail.com')); // Explicit check for demo user
+  
+  console.log('User subscription check:', { 
+    user: user?.email,
+    subscription_tier: user?.subscription_tier,
+    subscription_status: user?.subscription_status,
+    subscription_expires_at: user?.subscription_expires_at,
+    hasEverSubscribed 
+  });
 
   // Toggle favorite status
   const toggleFavoriteMutation = useMutation({
