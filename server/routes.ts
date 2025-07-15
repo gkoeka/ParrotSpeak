@@ -58,6 +58,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     crossOriginEmbedderPolicy: false,
   }));
 
+  // Root route - serve mobile emulator by default (MUST BE BEFORE STATIC MIDDLEWARE)
+  app.get('/', (req: Request, res: Response) => {
+    if (req.query.webapp) {
+      // Serve the working HTML/JS web app
+      const webappPath = path.join(process.cwd(), 'client', 'webapp.html');
+      res.sendFile(webappPath);
+    } else if (req.query.api) {
+      // Serve API status when specifically requested
+      res.json({ 
+        status: 'ParrotSpeak API Server Running',
+        version: '1.0.0',
+        mobile_app: 'Connect your React Native app to these API endpoints',
+        web_app: 'Add ?webapp=true to access the web interface'
+      });
+    } else {
+      // Default: serve mobile emulator
+      const filePath = path.join(process.cwd(), 'mobile-phone-emulator.html');
+      res.sendFile(filePath);
+    }
+  });
+
   // Static files and uploads
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
   app.use(express.static(path.join(process.cwd(), 'public')));
@@ -89,27 +110,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   if (fs.existsSync(distPath)) {
     app.use(express.static(distPath));
   }
-
-  // Root route - serve mobile emulator by default  
-  app.get('/', (req: Request, res: Response) => {
-    if (req.query.webapp) {
-      // Serve the actual React web app index.html
-      const clientIndexPath = path.join(process.cwd(), 'client', 'index.html');
-      res.sendFile(clientIndexPath);
-    } else if (req.query.api) {
-      // Serve API status when specifically requested
-      res.json({ 
-        status: 'ParrotSpeak API Server Running',
-        version: '1.0.0',
-        mobile_app: 'Connect your React Native app to these API endpoints',
-        web_app: 'Add ?webapp=true to access the web interface'
-      });
-    } else {
-      // Default: serve mobile emulator
-      const filePath = path.join(process.cwd(), 'mobile-phone-emulator.html');
-      res.sendFile(filePath);
-    }
-  });
 
   // Mobile app preview - serve the mobile phone emulator
   app.get('/mobile-app-preview', (req: Request, res: Response) => {
