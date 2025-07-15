@@ -575,12 +575,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sum + conv.messages.filter(m => !m.isUser).length, 0
       );
 
-      // Basic quality metrics
-      res.json({
-        averageQuality: 4.2,
-        totalTranslations,
-        accuracy: 95.8
-      });
+      // Only return quality metrics if user has translations
+      if (totalTranslations === 0) {
+        res.json({
+          totalTranslations: 0,
+          hasData: false
+        });
+      } else {
+        // TODO: Replace with real translation quality feedback from database
+        // For now, calculate a basic quality score based on actual user data
+        const userTranslations = userConversations.reduce((allMessages, conv) => {
+          return allMessages.concat(conv.messages.filter(m => !m.isUser));
+        }, [] as any[]);
+        
+        // Check if we have actual quality feedback data from translation_quality table
+        const qualityFeedback = await db.query.translationQuality.findMany({
+          where: (translationQuality, { eq, inArray }) => {
+            const messageIds = userTranslations.map(msg => msg.id);
+            return messageIds.length > 0 ? inArray(translationQuality.messageId, messageIds) : eq(translationQuality.messageId, 'none');
+          }
+        });
+        
+        if (qualityFeedback.length > 0) {
+          // Calculate real average from user feedback
+          const averageQuality = qualityFeedback.reduce((sum, feedback) => 
+            sum + feedback.qualityScore, 0) / qualityFeedback.length;
+          
+          res.json({
+            averageQuality: Math.round(averageQuality * 10) / 10, // Round to 1 decimal
+            totalTranslations,
+            totalFeedback: qualityFeedback.length,
+            hasData: true
+          });
+        } else {
+          // No quality feedback yet - don't show quality score
+          res.json({
+            totalTranslations,
+            hasData: true,
+            noQualityData: true
+          });
+        }
+      }
     } catch (error) {
       console.error('Analytics quality error:', error);
       res.status(500).json({ message: 'Failed to get quality statistics' });

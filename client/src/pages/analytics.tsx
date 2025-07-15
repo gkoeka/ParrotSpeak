@@ -187,8 +187,10 @@ export default function AnalyticsPage() {
                 </div>
               )}
               <p className="text-xs text-muted-foreground">
-                {qualityStats?.totalTranslations ? 
-                  `Based on ${qualityStats.totalTranslations} translations` : 
+                {qualityStats?.totalTranslations > 0 ? 
+                  (qualityStats?.averageQuality ? 
+                    `Based on ${qualityStats.totalFeedback || 0} feedback responses` :
+                    'No quality feedback yet') :
                   'No translations yet'}
               </p>
             </CardContent>
