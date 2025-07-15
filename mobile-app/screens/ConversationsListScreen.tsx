@@ -172,9 +172,17 @@ export default function ConversationsListScreen() {
   );
   
   // Check if user has ever had a subscription
-  const hasEverSubscribed = !!(user?.subscriptionTier || 
-    user?.subscriptionStatus === 'expired' || 
-    user?.subscriptionStatus === 'active');
+  const hasEverSubscribed = !!(user?.subscription_tier || 
+    user?.subscription_status === 'expired' || 
+    user?.subscription_status === 'active' ||
+    user?.subscription_expires_at); // Any expiration date means they had a subscription
+  
+  console.log('[ConversationsListScreen] User subscription check:', {
+    subscription_tier: user?.subscription_tier,
+    subscription_status: user?.subscription_status,
+    subscription_expires_at: user?.subscription_expires_at,
+    hasEverSubscribed
+  });
 
   // Empty state when no conversations
   const renderEmptyState = () => {
