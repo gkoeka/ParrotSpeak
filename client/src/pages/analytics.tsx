@@ -67,18 +67,20 @@ export default function AnalyticsPage() {
   
 
   
-  const { data: topLanguages, isLoading: isLoadingLanguages } = useQuery({
+  const { data: allLanguages, isLoading: isLoadingLanguages } = useQuery({
     queryKey: ['/api/analytics/top-languages'],
     queryFn: async () => {
-      const response = await fetch('/api/analytics/top-languages?limit=5', {
+      const response = await fetch('/api/analytics/top-languages', {
         credentials: 'include'
       });
       if (!response.ok) throw new Error('Failed to fetch top languages');
-      const data = await response.json();
-      // Ensure we only show top 5 language pairs
-      return data.slice(0, 5);
+      return await response.json();
     }
   });
+
+  // Calculate the top 5 for display and total sum for percentage calculation
+  const topLanguages = allLanguages?.slice(0, 5) || [];
+  const totalLanguagePairCount = allLanguages?.reduce((sum: number, lang: any) => sum + (lang.count || 0), 0) || 0;
   
   const formatNumber = (num: number): string => {
     return num?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") || "0";
@@ -311,8 +313,8 @@ export default function AnalyticsPage() {
                         </div>
                       </div>
                       <div className="text-sm font-medium">
-                        {lang.count && usageStats?.totalTranslations ? 
-                          `${Math.round((lang.count / usageStats.totalTranslations) * 100)}%` : 
+                        {lang.count && totalLanguagePairCount > 0 ? 
+                          `${Math.round((lang.count / totalLanguagePairCount) * 100)}%` : 
                           '0%'}
                       </div>
                     </div>
