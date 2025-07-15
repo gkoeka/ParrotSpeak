@@ -53,15 +53,15 @@ export function SubscriptionModal({
       '1month': 14.99,
       '3months': 39.99,
       '6months': 69.99,
-      '1year': 99.99,
-      'lifetime': 299.99
+      'monthly': 9.99,
+      'annual': 99.00
     };
     return plans[planId] || 14.99;
   };
 
   const getPlanInterval = (planId: string) => {
-    if (planId === 'lifetime') return 'lifetime';
-    if (planId === '1year') return 'year';
+    if (planId === 'annual') return 'year';
+    if (planId === 'monthly') return 'month';
     if (planId.includes('month')) return 'month';
     if (planId.includes('week')) return 'week';
     return 'month';
@@ -84,26 +84,35 @@ export function SubscriptionModal({
               <Text style={styles.crownIcon}>👑</Text>
             </View>
             
+            {/* Close Button */}
+            <TouchableOpacity
+              style={styles.closeX}
+              onPress={onClose}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.closeXText}>✕</Text>
+            </TouchableOpacity>
+            
             {/* Title */}
             <Text style={styles.title}>{title}</Text>
             
             {/* Description */}
             <Text style={styles.description}>{description}</Text>
             
-            {/* Plan Options */}
+            {/* One-Time Purchase Plans */}
             <View style={styles.plansContainer}>
-              <Text style={styles.plansTitle}>One-Time Purchase</Text>
+              <Text style={styles.sectionTitle}>One-Time Purchase</Text>
               
               <TouchableOpacity
-                style={styles.planButton}
+                style={[styles.planButton, styles.highlightedPlan]}
                 onPress={() => handleUpgrade('1week')}
                 activeOpacity={0.8}
               >
                 <View style={styles.planInfo}>
-                  <Text style={styles.planName}>1 Week</Text>
-                  <Text style={styles.planDuration}>7 days access</Text>
+                  <Text style={[styles.planName, styles.highlightedText]}>1 Week</Text>
+                  <Text style={[styles.planDuration, styles.highlightedSubtext]}>7 days access</Text>
                 </View>
-                <Text style={styles.planPrice}>$4.99</Text>
+                <Text style={[styles.planPrice, styles.highlightedText]}>$4.99</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
@@ -141,29 +150,44 @@ export function SubscriptionModal({
                 </View>
                 <Text style={styles.planPrice}>$69.99</Text>
               </TouchableOpacity>
+            </View>
+            
+            {/* Recurring Plans */}
+            <View style={styles.plansContainer}>
+              <Text style={styles.sectionTitle}>Recurring Plans</Text>
               
               <TouchableOpacity
-                style={styles.planButton}
-                onPress={() => handleUpgrade('1year')}
+                style={[styles.planButton, styles.popularPlan]}
+                onPress={() => handleUpgrade('monthly')}
                 activeOpacity={0.8}
               >
                 <View style={styles.planInfo}>
-                  <Text style={styles.planName}>1 Year</Text>
-                  <Text style={styles.planDuration}>365 days access</Text>
+                  <View style={styles.planHeader}>
+                    <Text style={[styles.planName, styles.popularText]}>Monthly</Text>
+                    <View style={styles.popularBadge}>
+                      <Text style={styles.badgeText}>Popular</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.planDuration, styles.popularSubtext]}>Renewed monthly</Text>
                 </View>
-                <Text style={styles.planPrice}>$99.99</Text>
+                <Text style={[styles.planPrice, styles.popularText]}>$9.99</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
-                style={[styles.planButton, styles.lifetimeButton]}
-                onPress={() => handleUpgrade('lifetime')}
+                style={[styles.planButton, styles.bestValuePlan]}
+                onPress={() => handleUpgrade('annual')}
                 activeOpacity={0.8}
               >
                 <View style={styles.planInfo}>
-                  <Text style={[styles.planName, styles.lifetimeText]}>Lifetime</Text>
-                  <Text style={[styles.planDuration, styles.lifetimeText]}>One-time purchase</Text>
+                  <View style={styles.planHeader}>
+                    <Text style={[styles.planName, styles.bestValueText]}>Annual</Text>
+                    <View style={styles.bestValueBadge}>
+                      <Text style={styles.badgeText}>Best Value</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.planDuration, styles.bestValueSubtext]}>Renewed yearly</Text>
                 </View>
-                <Text style={[styles.planPrice, styles.lifetimeText]}>$299.99</Text>
+                <Text style={[styles.planPrice, styles.bestValueText]}>$99.00</Text>
               </TouchableOpacity>
             </View>
             
@@ -197,7 +221,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: '#1f2937',
     borderRadius: 16,
     padding: 24,
     width: '100%',
@@ -214,7 +238,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: 64,
     height: 64,
-    backgroundColor: '#dbeafe',
+    backgroundColor: '#3b82f6',
     borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
@@ -222,17 +246,18 @@ const styles = StyleSheet.create({
   },
   crownIcon: {
     fontSize: 32,
+    color: 'white',
   },
   title: {
     fontSize: 24,
     fontWeight: '600',
-    color: '#111827',
+    color: 'white',
     textAlign: 'center',
     marginBottom: 8,
   },
   description: {
     fontSize: 16,
-    color: '#6b7280',
+    color: '#9ca3af',
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 24,
@@ -241,45 +266,92 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 16,
   },
-  plansTitle: {
-    fontSize: 14,
+  sectionTitle: {
+    fontSize: 16,
     fontWeight: '500',
-    color: '#374151',
+    color: '#9ca3af',
     marginBottom: 12,
   },
   planButton: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: '#374151',
     borderRadius: 8,
-    padding: 12,
+    padding: 16,
     marginBottom: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: '#374151',
   },
-  lifetimeButton: {
-    backgroundColor: '#fef3c7',
-    borderColor: '#f59e0b',
+  highlightedPlan: {
+    borderColor: '#3b82f6',
+    borderWidth: 2,
+  },
+  popularPlan: {
+    backgroundColor: '#3b82f6',
+    borderColor: '#3b82f6',
+  },
+  bestValuePlan: {
+    backgroundColor: '#10b981',
+    borderColor: '#10b981',
   },
   planInfo: {
     flex: 1,
   },
+  planHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
   planName: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#111827',
+    color: 'white',
+    marginRight: 8,
   },
   planDuration: {
     fontSize: 12,
-    color: '#6b7280',
+    color: '#9ca3af',
   },
   planPrice: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-    color: '#111827',
+    color: 'white',
   },
-  lifetimeText: {
-    color: '#92400e',
+  highlightedText: {
+    color: '#3b82f6',
+  },
+  highlightedSubtext: {
+    color: '#93c5fd',
+  },
+  popularText: {
+    color: 'white',
+  },
+  popularSubtext: {
+    color: '#dbeafe',
+  },
+  bestValueText: {
+    color: 'white',
+  },
+  bestValueSubtext: {
+    color: '#d1fae5',
+  },
+  popularBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  bestValueBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: 'white',
   },
   closeButton: {
     paddingVertical: 12,
@@ -288,8 +360,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   closeButtonText: {
-    color: '#6b7280',
+    color: '#9ca3af',
     fontSize: 16,
+    fontWeight: '500',
+  },
+  closeX: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeXText: {
+    color: '#9ca3af',
+    fontSize: 18,
     fontWeight: '500',
   },
 });
