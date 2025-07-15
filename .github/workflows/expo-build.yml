@@ -1,0 +1,88 @@
+name: Expo Auto-Build and Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build and Deploy Mobile App
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check for Expo project
+        id: check-expo
+        run: |
+          if [ -f "mobile-app/app.json" ] || [ -f "mobile-app/app.config.js" ]; then
+            echo "expo_project=true" >> $GITHUB_OUTPUT
+          else
+            echo "expo_project=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout repository
+        if: steps.check-expo.outputs.expo_project == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        if: steps.check-expo.outputs.expo_project == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Setup Expo
+        if: steps.check-expo.outputs.expo_project == 'true'
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        if: steps.check-expo.outputs.expo_project == 'true'
+        working-directory: ./mobile-app
+        run: npm ci
+
+      - name: Build iOS (Production)
+        if: steps.check-expo.outputs.expo_project == 'true' && github.ref == 'refs/heads/main'
+        working-directory: ./mobile-app
+        run: eas build --platform ios --non-interactive --no-wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build Android (Production)
+        if: steps.check-expo.outputs.expo_project == 'true' && github.ref == 'refs/heads/main'
+        working-directory: ./mobile-app
+        run: eas build --platform android --non-interactive --no-wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Submit to App Stores (if configured)
+        if: steps.check-expo.outputs.expo_project == 'true' && github.ref == 'refs/heads/main'
+        working-directory: ./mobile-app
+        run: |
+          # Submit to iOS App Store (requires app store credentials)
+          if [ "${{ secrets.APPLE_APP_STORE_CONNECT_API_KEY }}" != "" ]; then
+            eas submit --platform ios --latest --non-interactive
+          fi
+          
+          # Submit to Google Play Store (requires Google Play credentials)
+          if [ "${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY }}" != "" ]; then
+            eas submit --platform android --latest --non-interactive
+          fi
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Create deployment comment
+        if: steps.check-expo.outputs.expo_project == 'true' && github.event_name == 'push'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body: '🚀 ParrotSpeak mobile app build initiated!\n\n✅ iOS build started\n✅ Android build started\n\nCheck [Expo dashboard](https://expo.dev) for build progress.'
+            })

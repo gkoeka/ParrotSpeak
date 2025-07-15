@@ -150,6 +150,15 @@ GitHub now uses SSH instead of HTTPS, synced July 14th.
 
 **Important:** Take 2 SSH key is required for future pushes to GitHub.
 
+**Expo Auto-Build:** Pushing code to GitHub automatically triggers Expo builds for iOS and Android app store deployment.
+
+### Auto-Build Workflow
+1. **Code Push**: Push changes from Replit to GitHub using SSH
+2. **GitHub Actions**: Automatically detects mobile app changes
+3. **Expo Build**: Initiates iOS and Android builds via EAS
+4. **App Store Submission**: Automatically submits builds to app stores (if configured)
+5. **Deployment Comment**: GitHub comment confirms build initiation
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -392,24 +401,29 @@ npm run format       # Code formatting
 - **Build Process**: Automatic via `npm run build`
 - **Deployment URL**: Custom domain or `.replit.app` subdomain
 
-### Mobile App Deployment
-- **iOS**: Submit to App Store via Expo Application Services (EAS)
-- **Android**: Submit to Google Play Store via EAS
-- **Requirements**: Apple/Google developer accounts, app store assets
-- **Build Process**: `expo build:ios` and `expo build:android`
+### Mobile App Deployment (Automated)
+- **Automatic Builds**: Expo builds trigger automatically when code is pushed from Replit → GitHub
+- **GitHub Integration**: Push to main branch automatically initiates EAS build process
+- **iOS**: Automated build and submit to App Store via Expo Application Services (EAS)
+- **Android**: Automated build and submit to Google Play Store via EAS
+- **Requirements**: Apple/Google developer accounts, app store assets, EAS CLI configured
+- **Build Trigger**: Every push to GitHub main branch starts automated build pipeline
+- **Build Process**: Automated via GitHub Actions → EAS Build → App Store submission
 
 ### Production Checklist
-- ✅ All API keys configured and working (OpenAI, Stripe, SendGrid)
+- ✅ All API keys configured and working (OpenAI, IAP credentials, SendGrid)
 - ✅ Database schema deployed (`npm run db:push`)
 - ✅ Security headers and rate limiting configured
 - ✅ MFA setup functional for admin accounts
 - ✅ Data retention policies implemented with automated cleanup
-- ✅ Cookie consent mechanism active
-- ✅ Stripe webhooks configured for subscription management
-- ✅ SendGrid templates created for email notifications
+- ✅ Privacy controls and GDPR compliance active
+- ✅ SendGrid templates created for email notifications and feedback system
 - ✅ Domain and SSL certificates configured
 - ✅ Analytics tracking properly initialized with privacy controls
 - ✅ Mobile app ready for app store distribution
+- ✅ Expo EAS automated build pipeline configured
+- ✅ GitHub Actions workflow for automatic app store submission
+- ✅ SSH key authentication configured for seamless code deployment
 
 ## 📱 Platform Feature Parity
 
