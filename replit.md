@@ -2,26 +2,22 @@
 
 ## Overview
 
-ParrotSpeak is a mobile-only voice-to-voice translation application built with React Native and Expo. The system enables real-time cross-language communication using AI-powered speech recognition, translation, and synthesis. It includes subscription-based access control, conversation management, analytics, and enterprise-grade security features designed specifically for native mobile deployment to iOS and Android app stores.
+ParrotSpeak is a comprehensive voice-to-voice translation platform featuring both web and mobile applications. The system enables real-time cross-language communication using AI-powered speech recognition, translation, and synthesis. It includes subscription-based access control, conversation management, analytics, and enterprise-grade security features.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
-**PROJECT ARCHITECTURE: MOBILE-ONLY** - This is exclusively a React Native mobile app. No web app components needed.
+Preferred preview mode: Mobile app preview only (not web app preview).
 Dark mode preference: Should persist when selected.
 **Change Management**: Always check with user before making extensive changes, especially to core functionality. No rapid bulk changes without approval.
 **Business Terminology**: Use "Customer" for anyone who has ever paid (past subscribers, expired plans, one-time purchases). "Subscriber" implies ongoing subscription which may not apply to all payment models.
 **Subscription Modal Messaging**: 
 - New Users: "Connect with Others" / "Please purchase a plan that fits your needs..." / "Choose your plan"
 - Returning Customers: "Keep the Conversation Going" / "Choose a plan again to keep connecting..." / "Choose a plan again"
+**Modal Navigation**: Subscription prompts route to '/checkout' page for plan selection, with proper close functionality via X button or "Maybe later"
 **App Store Setup**: User will need DUNS number before setting up developer accounts. Must remember all app store setup information, credentials, and certificate processes for future reference when DUNS number is obtained.
 
 ## Recent Changes (July 2025)
-
-### Architecture Restoration (July 14, 2025)
-- ✓ **Web App Restored (July 14, 2025)**: **BOTH WEB AND MOBILE AVAILABLE** - Successfully restored web app structure after user request. Now have both web app (React/Vite) and mobile app (React Native/Expo) running in parallel. Web app provides basic interface while mobile app contains full voice translation functionality.
-- ✓ **Mobile App Preserved (July 14, 2025)**: **VERIFIED WORKING** - All mobile app files, assets, and user's PNG logo implementation remain intact. Mobile app continues to be the primary platform for voice translation features.
-- ✓ **Dual Architecture Benefits (July 14, 2025)**: **IMPLEMENTED** - Users can now access ParrotSpeak via web browser for basic features and preview mobile app interface at /mobile-app-preview. Mobile app provides full native functionality for voice translation, camera features, and optimized user experience.
 
 ### Fixed Critical Issues
 - ✓ **French Text-to-Speech**: Resolved silent failure issue with comprehensive fallback system and enhanced voice detection
@@ -52,12 +48,6 @@ Dark mode preference: Should persist when selected.
 - ✓ **Legal Documents Complete (July 14, 2025)**: **VERIFIED COMPLETE** - Created comprehensive Privacy Policy (18.8KB PDF) and Terms of Service (21.3KB PDF) covering IAP billing, GDPR/CCPA compliance, and app store requirements. Both available as web pages (/privacy, /terms) and PDF downloads. App store submission ready.
 - ✓ **App Store Setup Documentation (July 14, 2025)**: **COMPLETE GUIDES CREATED** - Documented complete process for app store submission including environment variable setup (docs/environment-setup.md), production certificate generation (docs/production-certificates-guide.md), and legal document summary. Ready for implementation once DUNS number obtained and developer accounts created.
 - ✓ **Stripe Code Removal (July 14, 2025)**: **CLEANED UP COMPLETELY** - Removed all unused Stripe code including webhook service, API imports, security headers, and user API fields. Updated legal documents to reflect app store payment processing. Codebase now focused entirely on IAP model with no Stripe dependencies.
-- ✓ **Logo Implementation Postponed (July 14, 2025)**: **COMPLETED** - Removed logo from auth page to focus on core functionality. User provided React Native logo implementation code for future mobile app integration. Fixed JavaScript error in camera functionality for cleaner mobile experience.
-- ✓ **Mobile-Only Architecture Transformation (July 14, 2025)**: **COMPLETED** - Per user request, completely removed web app components and transformed project into mobile-only React Native application. Deleted client/ directory, vite config, and web dependencies. Updated server to API-only architecture serving mobile app endpoints. Implemented PNG logo in mobile app using user-provided React Native code.
-- ✓ **Mobile Emulator Restoration (July 15, 2025)**: **COMPLETED** - Restored sophisticated mobile-phone-emulator.html with device frames and controls from 90 minutes prior. Fixed JavaScript errors and created functional web app for iframe. Made mobile emulator the default preview view - accessing root URL now shows phone emulator directly instead of API status.
-- ✓ **Original App Architecture Investigation (July 15, 2025)**: **EVIDENCE FOUND & PARTIALLY RESTORED** - Discovered and confirmed original dual architecture existed with authentic evidence. Found login/register toggle in AuthScreen.tsx (lines 276-283) with toggleAuthMode() function and conditional username field. Restored actual React web app serving in mobile emulator instead of fake webapp.html. Missing: Original 5-section footer navigation structure that was replaced with current stack-only navigation. Both web app (7 pages) and mobile app (13+ screens) architectures confirmed functional.
-- ✓ **5-Section Footer Navigation Restoration (July 15, 2025)**: **COMPLETE** - Successfully restored original footer structure: Home, Chats, Camera (3rd position), Settings (4th - accessibility, dark mode), Profile (5th - login/logout, delete account, GDPR, billing with 6 plans, analytics, feedback). Found Camera functionality in VisualTranslationCard component. Moved analytics, feedback, logout from Settings to Profile. Added accessibility settings, dark mode, GDPR data rights, and delete account functionality. All 6 subscription plans confirmed: 1 Week ($4.99), 1 Month ($14.99), 3 Months ($39.99), 6 Months ($69.99), Monthly ($10/month), Annual ($99/year).
-- ✓ **Dual Architecture Fully Restored (July 15, 2025)**: **COMPLETE** - Successfully restored complete dual architecture following README guidance. Fixed server routes to properly serve React web app at `/?webapp=true` with all 7 pages (HomePage, ConversationPage, AnalyticsPage, SettingsPage, ProfilePage, AuthPage, ConversationsListPage). Mobile emulator iframe now loads functional React web app instead of blank screen. Both mobile app (React Native/Expo with 5-section navigation) and web app (React/Vite) working in parallel. Complete feature parity maintained between platforms as specified in project architecture.
 
 ### Technical Improvements
 - Enhanced voice selection logic for better cross-language support
@@ -80,14 +70,15 @@ Dark mode preference: Should persist when selected.
 
 ## System Architecture
 
-### Mobile-First Architecture
-- **Mobile App**: React Native with Expo for iOS and Android
-- **Backend**: Express.js API server with TypeScript
+### Full-Stack TypeScript Application
+- **Frontend**: React with TypeScript, Vite build system
+- **Backend**: Express.js with TypeScript
+- **Mobile**: React Native with Expo
 - **Database**: PostgreSQL with Drizzle ORM
 - **Real-time**: WebSocket connections for live translation streaming
 
 ### Core Technologies
-- **Mobile Framework**: React Native with Expo managed workflow
+- **UI Framework**: shadcn/ui components with Tailwind CSS
 - **Authentication**: Passport.js with local and Google OAuth strategies
 - **Payment Processing**: In-App Purchases (IAP) for mobile app stores
 - **Speech Services**: OpenAI Whisper API for transcription

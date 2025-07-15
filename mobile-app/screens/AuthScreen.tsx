@@ -20,6 +20,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Icon from 'react-native-vector-icons/Feather';
 import { Ionicons } from '@expo/vector-icons';
 import { FontAwesome } from '@expo/vector-icons';
+import ParrotSpeakLogo from '../components/ParrotSpeakLogo';
 
 type AuthScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Auth'>;
 
@@ -163,12 +164,8 @@ const AuthScreen: React.FC = () => {
       >
         {/* Logo Container */}
         <View style={styles.logoContainer}>
-          <Image
-            source={require('../assets/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.appName}>Welcome to ParrotSpeak</Text>
+          <ParrotSpeakLogo width={logoSize} height={logoSize} />
+          <Text style={styles.appName}>ParrotSpeak</Text>
           <Text style={styles.tagline}>Breaking down language barriers, one conversation at a time</Text>
         </View>
       
@@ -303,9 +300,10 @@ const styles = StyleSheet.create({
     marginBottom: 16, 
   },
   logo: {
-    width: 160,
-    height: 160,
-    marginBottom: 20,
+    fontSize: 26, 
+    fontWeight: 'bold',
+    color: '#3366FF',
+    marginBottom: 4, 
   },
   tagline: {
     fontSize: 14, 

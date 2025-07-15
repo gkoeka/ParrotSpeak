@@ -3,23 +3,8 @@ import rateLimit from "express-rate-limit";
 import slowDown from "express-slow-down";
 import helmet from "helmet";
 import { registerRoutes } from "./routes";
+import { setupVite, serveStatic, log } from "./vite";
 import { setupAuth } from "./auth";
-// import { createServer as createViteServer } from "vite";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-function log(message: string, source = "express") {
-  const formattedTime = new Date().toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-
-  console.log(`${formattedTime} [${source}] ${message}`);
-}
 
 const app = express();
 
@@ -73,7 +58,18 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Dual architecture server - API + React web app
+  // importantly only setup vite in development and after
+  // setting up all the other routes so the catch-all route
+  // doesn't interfere with the other routes
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
+  }
+
+  // ALWAYS serve the app on port 5000
+  // this serves both the API and the client.
+  // It is the only port that is not firewalled.
   const port = 5000;
   server.listen({
     port,

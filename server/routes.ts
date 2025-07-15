@@ -50,7 +50,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "blob:", "https:"],
         connectSrc: ["'self'", "ws:", "wss:", "https://api.mixpanel.com", "https://api.openai.com"],
-        frameSrc: ["'self'", "'unsafe-inline'"],
+        frameSrc: ["'self'"],
         objectSrc: ["'none'"],
         upgradeInsecureRequests: [],
       },
@@ -58,70 +58,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     crossOriginEmbedderPolicy: false,
   }));
 
-  // Root route - serve mobile emulator by default (MUST BE BEFORE STATIC MIDDLEWARE)
-  app.get('/', (req: Request, res: Response) => {
-    if (req.query.webapp) {
-      // Serve the working HTML/JS web app
-      const webappPath = path.join(process.cwd(), 'client', 'webapp.html');
-      res.sendFile(webappPath);
-    } else if (req.query.api) {
-      // Serve API status when specifically requested
-      res.json({ 
-        status: 'ParrotSpeak API Server Running',
-        version: '1.0.0',
-        mobile_app: 'Connect your React Native app to these API endpoints',
-        web_app: 'Add ?webapp=true to access the web interface'
-      });
-    } else {
-      // Default: serve mobile emulator
-      const filePath = path.join(process.cwd(), 'mobile-phone-emulator.html');
-      res.sendFile(filePath);
-    }
-  });
-
   // Static files and uploads
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
-  app.use(express.static(path.join(process.cwd(), 'public')));
-  
-  // Configure MIME types for JavaScript modules
-  express.static.mime.define({'application/javascript': ['js', 'mjs']});
-  express.static.mime.define({'text/javascript': ['js', 'mjs']});
-  
-  // Serve client files for web app with proper MIME types
-  app.use('/client', express.static(path.join(process.cwd(), 'client'), {
-    setHeaders: (res, filePath) => {
-      if (filePath.endsWith('.js') || filePath.endsWith('.mjs') || filePath.endsWith('.tsx') || filePath.endsWith('.ts')) {
-        res.setHeader('Content-Type', 'application/javascript');
-      }
-    }
-  }));
-  
-  // Serve client src files directly for module imports
-  app.use('/src', express.static(path.join(process.cwd(), 'client/src'), {
-    setHeaders: (res, filePath) => {
-      if (filePath.endsWith('.js') || filePath.endsWith('.mjs') || filePath.endsWith('.tsx') || filePath.endsWith('.ts')) {
-        res.setHeader('Content-Type', 'application/javascript');
-      }
-    }
-  }));
 
-  // Serve built client files
-  const distPath = path.join(process.cwd(), 'dist');
-  if (fs.existsSync(distPath)) {
-    app.use(express.static(distPath));
-  }
-
-  // Mobile app preview - serve the mobile phone emulator
-  app.get('/mobile-app-preview', (req: Request, res: Response) => {
-    const filePath = path.join(process.cwd(), 'mobile-phone-emulator.html');
-    res.sendFile(filePath);
+  // Root route - always redirect to mobile preview
+  app.get('/', (req: Request, res: Response, next: NextFunction) => {
+    // Always redirect to mobile app preview unless explicitly requesting webapp
+    if (req.query.webapp === 'true') {
+      next();
+      return;
+    }
+    return res.redirect('/mobile-app-preview');
   });
 
+  // Handle webapp routes specifically for iframe content  
+  app.get('/webapp*', (req: Request, res: Response, next: NextFunction) => {
+    // Rewrite the URL to serve React app for iframe content
+    req.url = req.url.replace('/webapp', '');
+    if (req.url === '') req.url = '/';
+    next();
+  });
+
+  // Mobile preview routes
   app.get('/mobile-preview', (req: Request, res: Response) => {
-    res.redirect('/mobile-app-preview');
+    const emulatorPath = path.join(process.cwd(), 'mobile-phone-emulator.html');
+    if (fs.existsSync(emulatorPath)) {
+      return res.sendFile(emulatorPath);
+    }
+    res.status(404).send('Mobile emulator not found');
   });
 
+  app.get('/mobile-app-preview', (req: Request, res: Response) => {
+    const emulatorPath = path.join(process.cwd(), 'mobile-phone-emulator.html');
+    console.log(`[Routes] Looking for mobile emulator at: ${emulatorPath}`);
+    console.log(`[Routes] File exists: ${fs.existsSync(emulatorPath)}`);
+    
+    if (fs.existsSync(emulatorPath)) {
+      return res.sendFile(emulatorPath);
+    }
+    res.status(404).send('Mobile emulator not found');
+  });
 
+  // Test page for playback controls
+  app.get('/test-playback-controls', (req: Request, res: Response) => {
+    const testPath = path.join(process.cwd(), 'test-playback-controls.html');
+    if (fs.existsSync(testPath)) {
+      return res.sendFile(testPath);
+    }
+    res.status(404).send('Test page not found');
+  });
+
+  // Test script for playback controls
+  app.get('/verify-playback-test.js', (req: Request, res: Response) => {
+    const scriptPath = path.join(process.cwd(), 'verify-playback-test.js');
+    if (fs.existsSync(scriptPath)) {
+      res.setHeader('Content-Type', 'application/javascript');
+      return res.sendFile(scriptPath);
+    }
+    res.status(404).send('Test script not found');
+  });
 
   // API Routes
   app.get('/api/conversations', async (req: Request, res: Response) => {

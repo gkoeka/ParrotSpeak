@@ -125,111 +125,17 @@ const ProfileScreen: React.FC = () => {
           </>
         )}
         
-        {/* Analytics & Data Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Analytics & Data</Text>
-          
-          <TouchableOpacity 
-            style={styles.navigationButton}
-            onPress={() => navigation.navigate('Analytics')}
-          >
-            <View style={styles.navigationButtonContent}>
-              <Icon name="bar-chart-2" size={20} color="#4F46E5" />
-              <Text style={styles.navigationButtonText}>View Translation Analytics</Text>
-            </View>
-            <Icon name="chevron-right" size={20} color="#9ca3af" />
-          </TouchableOpacity>
-          
-          <Text style={styles.settingDescription}>
-            View translation quality metrics, usage statistics, and language pair analysis
-          </Text>
-        </View>
-        
-        {/* Help & Feedback Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Help & Feedback</Text>
-          
-          <TouchableOpacity 
-            style={styles.feedbackButton}
-            onPress={() => navigation.navigate('Feedback')}
-          >
-            <View style={styles.navigationButtonContent}>
-              <Icon name="message-circle" size={20} color="#fff" />
-              <Text style={styles.feedbackButtonText}>Send Feedback</Text>
-            </View>
-            <Icon name="chevron-right" size={20} color="#fff" />
-          </TouchableOpacity>
-          
-          <Text style={styles.settingDescription}>
-            We'd love to hear your thoughts and suggestions to improve the app
-          </Text>
-        </View>
-        
-        {/* Privacy & Data Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Privacy & Data</Text>
-          
-          <TouchableOpacity 
-            style={styles.gdprButton}
-            onPress={() => Alert.alert(
-              'GDPR Data Rights',
-              'Under GDPR, you have rights to access, rectify, erase, restrict processing, and data portability. Contact support for data requests.',
-              [
-                { text: 'Contact Support', onPress: () => navigation.navigate('Feedback') },
-                { text: 'OK', style: 'default' }
-              ]
-            )}
-          >
-            <View style={styles.navigationButtonContent}>
-              <Icon name="shield" size={20} color="#059669" />
-              <Text style={styles.gdprButtonText}>GDPR Data Rights</Text>
-            </View>
-            <Icon name="chevron-right" size={20} color="#9ca3af" />
-          </TouchableOpacity>
-          
-          <Text style={styles.settingDescription}>
-            Manage your data privacy rights and preferences
-          </Text>
-        </View>
-        
-        {/* Account Actions Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account Actions</Text>
-          
-          <TouchableOpacity 
-            style={styles.deleteButton}
-            onPress={() => Alert.alert(
-              'Delete Account',
-              'This will permanently delete your account and all data. This action cannot be undone.',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Delete Account', style: 'destructive', onPress: () => {
-                  Alert.alert('Account Deletion', 'Please contact support to delete your account. We will process your request within 30 days.');
-                }}
-              ]
-            )}
-          >
-            <View style={styles.navigationButtonContent}>
-              <Icon name="trash-2" size={20} color="#ef4444" />
-              <Text style={styles.deleteButtonText}>Delete My Account</Text>
-            </View>
-            <Icon name="chevron-right" size={20} color="#ef4444" />
-          </TouchableOpacity>
-          
+        <View style={styles.actionContainer}>
           <TouchableOpacity 
             style={styles.logoutButton}
             onPress={handleLogout}
             disabled={isLoading}
           >
-            <View style={styles.navigationButtonContent}>
-              <Icon name="log-out" size={20} color="#ef4444" />
-              {isLoading ? (
-                <ActivityIndicator color="#ef4444" />
-              ) : (
-                <Text style={styles.logoutButtonText}>Sign Out</Text>
-              )}
-            </View>
-            <Icon name="chevron-right" size={20} color="#ef4444" />
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.logoutButtonText}>Sign Out</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -314,111 +220,15 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   logoutButton: {
-    flexDirection: 'row',
+    backgroundColor: '#E53935',
+    borderRadius: 5,
+    paddingVertical: 14,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#fef2f2',
-    borderRadius: 8,
-    marginBottom: 12,
   },
   logoutButtonText: {
-    color: '#ef4444',
-    fontSize: 16,
-    fontWeight: '500',
-    marginLeft: 12,
-  },
-  section: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    color: '#333',
-  },
-  navigationButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  navigationButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  navigationButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-    marginLeft: 12,
-  },
-  feedbackButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#4F46E5',
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  feedbackButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
     color: '#fff',
-    marginLeft: 12,
-  },
-  gdprButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#f0fdf4',
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  gdprButtonText: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#059669',
-    marginLeft: 12,
-  },
-  deleteButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#fef2f2',
-    borderRadius: 8,
-    marginBottom: 12,
-  },
-  deleteButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#ef4444',
-    marginLeft: 12,
-  },
-  settingDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-    marginBottom: 8,
+    fontWeight: 'bold',
   },
 });
 
