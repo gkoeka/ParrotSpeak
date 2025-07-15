@@ -36,6 +36,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { formatRelativeTime, formatConversationTime } from '@/lib/date-utils';
 import { MoreVertical, Star, StarOff, Trash2, Edit, MessageSquare, MessageCircle, Plus, Clock, RefreshCw } from 'lucide-react';
 import Header from '@/components/header';
+import { SubscriptionPrompt } from '@/components/subscription-prompt';
 
 export default function ConversationsPage() {
   const [, navigate] = useLocation();
@@ -43,6 +44,7 @@ export default function ConversationsPage() {
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [newName, setNewName] = useState('');
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -244,12 +246,12 @@ export default function ConversationsPage() {
               </p>
               <div className="space-y-3">
                 <Button 
-                  onClick={() => navigate('/checkout')} 
+                  onClick={() => setShowSubscriptionModal(true)} 
                   size="lg"
                   className="bg-amber-600 hover:bg-amber-700 text-white px-8 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 mr-4"
                 >
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  Renew Subscription
+                  Purchase another plan
                 </Button>
                 <Button 
                   onClick={() => navigate('/')} 
@@ -429,6 +431,14 @@ export default function ConversationsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <SubscriptionPrompt
+        feature="conversation access"
+        isExpired={true}
+        hasEverSubscribed={hasEverSubscribed}
+        open={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+      />
     </div>
     </>
   );
