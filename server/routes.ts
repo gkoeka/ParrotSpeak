@@ -66,23 +66,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/src', express.static(path.join(process.cwd(), 'client/src')));
   app.use('/client', express.static(path.join(process.cwd(), 'client')));
 
-  // Root route - serve web app or API status
+  // Root route - serve mobile emulator by default
   app.get('/', (req: Request, res: Response) => {
     if (req.query.webapp) {
-      // Serve the simple web app for mobile emulator
+      // Serve the simple web app for mobile emulator iframe
       const webappPath = path.join(process.cwd(), 'public/webapp.html');
       if (fs.existsSync(webappPath)) {
         res.sendFile(webappPath);
       } else {
         res.status(404).send('Web app not found');
       }
-    } else {
+    } else if (req.query.api) {
+      // Serve API status when specifically requested
       res.json({ 
         status: 'ParrotSpeak API Server Running',
         version: '1.0.0',
         mobile_app: 'Connect your React Native app to these API endpoints',
         web_app: 'Add ?webapp=true to access the web interface'
       });
+    } else {
+      // Default: serve mobile emulator
+      const filePath = path.join(process.cwd(), 'mobile-phone-emulator.html');
+      res.sendFile(filePath);
     }
   });
 

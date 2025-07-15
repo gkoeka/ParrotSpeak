@@ -54,6 +54,7 @@ Dark mode preference: Should persist when selected.
 - ✓ **Stripe Code Removal (July 14, 2025)**: **CLEANED UP COMPLETELY** - Removed all unused Stripe code including webhook service, API imports, security headers, and user API fields. Updated legal documents to reflect app store payment processing. Codebase now focused entirely on IAP model with no Stripe dependencies.
 - ✓ **Logo Implementation Postponed (July 14, 2025)**: **COMPLETED** - Removed logo from auth page to focus on core functionality. User provided React Native logo implementation code for future mobile app integration. Fixed JavaScript error in camera functionality for cleaner mobile experience.
 - ✓ **Mobile-Only Architecture Transformation (July 14, 2025)**: **COMPLETED** - Per user request, completely removed web app components and transformed project into mobile-only React Native application. Deleted client/ directory, vite config, and web dependencies. Updated server to API-only architecture serving mobile app endpoints. Implemented PNG logo in mobile app using user-provided React Native code.
+- ✓ **Mobile Emulator Restoration (July 15, 2025)**: **COMPLETED** - Restored sophisticated mobile-phone-emulator.html with device frames and controls from 90 minutes prior. Fixed JavaScript errors and created functional web app for iframe. Made mobile emulator the default preview view - accessing root URL now shows phone emulator directly instead of API status.
 
 ### Technical Improvements
 - Enhanced voice selection logic for better cross-language support
