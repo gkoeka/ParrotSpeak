@@ -28,6 +28,7 @@ import {
 } from '../api/advancedAnalyticsService';
 import { checkFeatureAccess } from '../api/subscriptionService';
 import { SubscriptionModal } from '../components/SubscriptionModal';
+import Header from '../components/Header';
 import Icon from 'react-native-vector-icons/Feather';
 
 type AnalyticsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Analytics'>;
@@ -221,26 +222,7 @@ export default function AnalyticsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-left" size={24} color="#000" />
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={styles.messageButton}
-          onPress={handleNewConversation}
-          accessibilityLabel="New conversation"
-        >
-          <Icon name="message-square" size={22} color="#4F46E5" />
-        </TouchableOpacity>
-        
-        <Text style={styles.headerTitle}>Analytics</Text>
-        <View style={styles.headerRight} />
-      </View>
+      <Header />
       
       {renderTimeRangeSelector()}
       

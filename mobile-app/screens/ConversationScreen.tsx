@@ -21,6 +21,7 @@ import ConversationArea from '../components/ConversationArea';
 import VoiceInputControls from '../components/VoiceInputControls';
 import LanguageSelector from '../components/LanguageSelector';
 import { SubscriptionModal } from '../components/SubscriptionModal';
+import Header from '../components/Header';
 
 type ConversationScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Conversation'>;
 type ConversationScreenRouteProp = RouteProp<RootStackParamList, 'Conversation'>;
@@ -208,27 +209,7 @@ export default function ConversationScreen() {
   
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-left" size={24} color="#000" />
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.newConversationButton}
-          onPress={handleNewConversation}
-          accessibilityLabel="New conversation"
-        >
-          <Icon name="message-square" size={22} color="#4F46E5" />
-        </TouchableOpacity>
-        
-        <Text style={styles.headerTitle} numberOfLines={1}>{title}</Text>
-        <TouchableOpacity style={styles.menuButton}>
-          <Icon name="more-vertical" size={24} color="#000" />
-        </TouchableOpacity>
-      </View>
+      <Header onNewConversation={handleNewConversation} />
       
       <LanguageSelector
         sourceLanguage={sourceLanguage}

@@ -16,6 +16,7 @@ import { Conversation } from '../types';
 import { fetchConversations, updateConversation, deleteConversation } from '../api/conversationService';
 import Icon from 'react-native-vector-icons/Feather';
 import { formatConversationTime } from '../utils/date-utils';
+import Header from '../components/Header';
 
 type ConversationsListNavigationProp = StackNavigationProp<RootStackParamList, 'ConversationsList'>;
 
@@ -184,22 +185,7 @@ export default function ConversationsListScreen() {
   
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.messageButton}
-          onPress={() => navigation.navigate('Home')}
-          accessibilityLabel="New conversation"
-        >
-          <Icon name="message-square" size={22} color="#4F46E5" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Conversations</Text>
-        <TouchableOpacity
-          style={styles.newConversationButton}
-          onPress={() => navigation.navigate('Home')}
-        >
-          <Icon name="plus" size={24} color="#4F46E5" />
-        </TouchableOpacity>
-      </View>
+      <Header />
       
       {isLoading ? (
         <View style={styles.loadingContainer}>
