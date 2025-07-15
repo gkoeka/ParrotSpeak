@@ -26,8 +26,12 @@ type AuthScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Auth'>;
 
 // Email validation regex
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-// Password must be at least 8 characters with at least one uppercase, one lowercase, and one number
-const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+// NIST-compliant password validation (import from shared)
+const validatePassword = async (password: string) => {
+  const { validatePassword } = await import('@shared/password-validation');
+  return validatePassword(password);
+};
 
 const AuthScreen: React.FC = () => {
   const navigation = useNavigation<AuthScreenNavigationProp>();
@@ -66,7 +70,7 @@ const AuthScreen: React.FC = () => {
   };
   
   // Validate form fields
-  const validateForm = (): boolean => {
+  const validateForm = async (): Promise<boolean> => {
     let isValid = true;
     
     // Validate email
@@ -84,11 +88,15 @@ const AuthScreen: React.FC = () => {
     if (!password) {
       setPasswordError('Password is required');
       isValid = false;
-    } else if (!isLogin && !passwordRegex.test(password)) {
-      setPasswordError(
-        'Password must be at least 8 characters with at least one uppercase letter, one lowercase letter, and one number'
-      );
-      isValid = false;
+    } else if (!isLogin) {
+      // Use NIST-compliant password validation for registration
+      const passwordValidation = await validatePassword(password);
+      if (!passwordValidation.isValid) {
+        setPasswordError(passwordValidation.errors.join('. '));
+        isValid = false;
+      } else {
+        setPasswordError('');
+      }
     } else {
       setPasswordError('');
     }
@@ -109,7 +117,7 @@ const AuthScreen: React.FC = () => {
   
   // Handle form submission
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    if (!(await validateForm())) return;
     
     try {
       if (isLogin) {

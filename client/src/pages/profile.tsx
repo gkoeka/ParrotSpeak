@@ -213,7 +213,7 @@ export default function ProfilePage() {
   });
 
   // Password change handler
-  const handlePasswordChange = () => {
+  const handlePasswordChange = async () => {
     const { currentPassword, newPassword, confirmPassword } = passwordForm;
     
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -234,10 +234,14 @@ export default function ProfilePage() {
       return;
     }
     
-    if (newPassword.length < 6) {
+    // Validate password according to NIST guidelines
+    const { validatePassword } = await import('@shared/password-validation');
+    const passwordValidation = validatePassword(newPassword);
+    
+    if (!passwordValidation.isValid) {
       toast({
-        title: "Password Too Short",
-        description: "Your new password must be at least 6 characters long.",
+        title: "Invalid Password",
+        description: passwordValidation.errors.join('. '),
         variant: "destructive",
       });
       return;
@@ -854,6 +858,9 @@ export default function ProfilePage() {
                         value={passwordForm.newPassword}
                         onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
                       />
+                      <p className="text-sm text-muted-foreground">
+                        Password must be between 8-64 characters. No other requirements - use a unique password you can remember.
+                      </p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="confirmPassword">Confirm New Password</Label>

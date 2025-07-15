@@ -333,6 +333,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { email, username, password, firstName, lastName } = req.body;
       
+      // Validate password according to NIST guidelines
+      const { validatePassword } = await import('@shared/password-validation');
+      const passwordValidation = validatePassword(password);
+      
+      if (!passwordValidation.isValid) {
+        return res.status(400).json({ 
+          message: 'Invalid password', 
+          errors: passwordValidation.errors 
+        });
+      }
+      
       // Check if user already exists
       const existingUser = await db.query.users.findFirst({
         where: eq(users.email, email)
@@ -447,8 +458,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Current password and new password are required' });
       }
 
-      if (newPassword.length < 6) {
-        return res.status(400).json({ error: 'New password must be at least 6 characters long' });
+      // Validate new password according to NIST guidelines
+      const { validatePassword } = await import('@shared/password-validation');
+      const passwordValidation = validatePassword(newPassword);
+      
+      if (!passwordValidation.isValid) {
+        return res.status(400).json({ 
+          error: 'Invalid password', 
+          details: passwordValidation.errors 
+        });
       }
 
       // Get current user from database

@@ -24,9 +24,14 @@ const registerSchema = z.object({
   password: z
     .string()
     .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Password must include at least one uppercase letter")
-    .regex(/[a-z]/, "Password must include at least one lowercase letter")
-    .regex(/[0-9]/, "Password must include at least one number"),
+    .max(64, "Password must be no more than 64 characters")
+    .refine(async (password) => {
+      const { validatePassword } = await import('@shared/password-validation');
+      const validation = validatePassword(password);
+      return validation.isValid;
+    }, {
+      message: "Password must be between 8-64 characters"
+    }),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
 });
@@ -267,7 +272,7 @@ export default function AuthPage() {
                               <Input placeholder="••••••••" type="password" {...field} />
                             </FormControl>
                             <FormDescription>
-                              Password must be at least 8 characters and include uppercase, lowercase, and numbers.
+                              Password must be between 8-64 characters. No other requirements - use a unique password you can remember.
                             </FormDescription>
                             <FormMessage />
                           </FormItem>
