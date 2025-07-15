@@ -579,7 +579,7 @@ export default function ProfilePage() {
                           <div className="font-medium">
                             {user?.subscriptionTier 
                               ? (user?.subscriptionStatus === "active" 
-                                  ? `${user.subscriptionTier} Plan` 
+                                  ? `${user.subscriptionTier.charAt(0).toUpperCase() + user.subscriptionTier.slice(1)} Plan` 
                                   : "Your plan is complete")
                               : "Free Plan"}
                           </div>

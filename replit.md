@@ -79,6 +79,7 @@ Dark mode preference: Should persist when selected.
 - ✓ **Authentication Form Social Sign-In Repositioning (July 15, 2025)**: **UX IMPROVED** - Moved Google/Apple sign-in buttons above email field in both login and register views across web and mobile platforms. Added elegant dividers with "Or continue with email" text for modern authentication flow design.
 - ✓ **Auth Page Spacing Optimization (July 15, 2025)**: **LAYOUT REFINED** - Reduced spacing between tagline and authentication forms by 50% on both web and mobile platforms for tighter, more focused user experience.
 - ✓ **Expired Account Billing Display (July 15, 2025)**: **UX ENHANCED** - Updated billing section to show "Your plan is complete" for users with expired subscriptions instead of showing inactive plan names, providing clearer messaging about account status.
+- ✓ **Plan Name Capitalization Fix (July 15, 2025)**: **DISPLAY CONSISTENCY** - Fixed subscription tier display to show "Lifetime Plan" instead of "lifetime Plan" across both web and mobile platforms for proper capitalization consistency.
 
 ### Technical Improvements
 - Enhanced voice selection logic for better cross-language support

@@ -84,7 +84,7 @@ const ProfileScreen: React.FC = () => {
               {user.subscriptionTier && (
                 <View style={styles.userInfoContainer}>
                   <Text style={styles.infoLabel}>Plan:</Text>
-                  <Text style={styles.infoValue}>{user.subscriptionTier}</Text>
+                  <Text style={styles.infoValue}>{user.subscriptionTier.charAt(0).toUpperCase() + user.subscriptionTier.slice(1)}</Text>
                 </View>
               )}
               
