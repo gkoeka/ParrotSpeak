@@ -17,6 +17,7 @@ import { requireAuth, requireSubscription, checkSubscriptionStatus } from "./aut
 import * as mfaService from "./services/mfa";
 import { db } from "@db";
 import { users, conversations, messages, userFeedback } from "@shared/schema";
+import { InternalAnalyticsService } from "./services/internal-analytics";
 import { eq } from "drizzle-orm";
 import passport from "passport";
 import iapRoutes from "./routes/iap";
@@ -152,6 +153,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId
       );
       
+      // Track conversation start for internal analytics
+      await InternalAnalyticsService.startConversationTracking(conversation.id, userId);
+      
       res.status(201).json(conversation);
     } catch (error) {
       console.error('Create conversation error:', error);
@@ -177,6 +181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { text, sourceLanguage, targetLanguage } = req.body;
       const conversationId = req.params.id;
       const userId = req.user?.id;
+      const startTime = Date.now();
 
       // Save the original message
       const messageId = await storage.saveMessage(
@@ -188,8 +193,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId
       );
 
+      // Track user message for analytics
+      await InternalAnalyticsService.updateConversationMetrics(conversationId, {
+        isUser: true
+      });
+
       // Perform translation
       const translationResult = await translateText(text, sourceLanguage, targetLanguage);
+      const translationTime = Date.now() - startTime;
+      
+      // Track translation for analytics
+      await InternalAnalyticsService.updateConversationMetrics(conversationId, {
+        isUser: false,
+        translationTime,
+        failed: false
+      });
       
       res.status(201).json({
         id: messageId,
@@ -212,6 +230,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           errorMessage = 'Invalid or missing OpenAI API key. Please check your API configuration.';
         }
       }
+      
+      // Track failed translation for analytics
+      const conversationId = req.params.id;
+      await InternalAnalyticsService.updateConversationMetrics(conversationId, {
+        isUser: false,
+        failed: true
+      });
       
       res.status(500).json({ message: errorMessage });
     }
@@ -575,47 +600,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sum + conv.messages.filter(m => !m.isUser).length, 0
       );
 
-      // Only return quality metrics if user has translations
-      if (totalTranslations === 0) {
-        res.json({
-          totalTranslations: 0,
-          hasData: false
-        });
-      } else {
-        // TODO: Replace with real translation quality feedback from database
-        // For now, calculate a basic quality score based on actual user data
-        const userTranslations = userConversations.reduce((allMessages, conv) => {
-          return allMessages.concat(conv.messages.filter(m => !m.isUser));
-        }, [] as any[]);
-        
-        // Check if we have actual quality feedback data from translation_quality table
-        const qualityFeedback = await db.query.translationQuality.findMany({
-          where: (translationQuality, { eq, inArray }) => {
-            const messageIds = userTranslations.map(msg => msg.id);
-            return messageIds.length > 0 ? inArray(translationQuality.messageId, messageIds) : eq(translationQuality.messageId, 'none');
-          }
-        });
-        
-        if (qualityFeedback.length > 0) {
-          // Calculate real average from user feedback
-          const averageQuality = qualityFeedback.reduce((sum, feedback) => 
-            sum + feedback.qualityScore, 0) / qualityFeedback.length;
-          
-          res.json({
-            averageQuality: Math.round(averageQuality * 10) / 10, // Round to 1 decimal
-            totalTranslations,
-            totalFeedback: qualityFeedback.length,
-            hasData: true
-          });
-        } else {
-          // No quality feedback yet - don't show quality score
-          res.json({
-            totalTranslations,
-            hasData: true,
-            noQualityData: true
-          });
-        }
-      }
+      // Return simple usage metrics without subjective quality ratings
+      res.json({
+        totalTranslations,
+        hasData: totalTranslations > 0
+      });
     } catch (error) {
       console.error('Analytics quality error:', error);
       res.status(500).json({ message: 'Failed to get quality statistics' });

@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { pool } from "@db";
-import { translationQuality, usageStatistics } from "@shared/schema";
+import { usageStatistics } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { db } from "@db";
 

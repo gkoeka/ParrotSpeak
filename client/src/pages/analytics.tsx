@@ -168,11 +168,11 @@ export default function AnalyticsPage() {
             </CardContent>
           </Card>
           
-          {/* Translation Quality Card */}
+          {/* Success Rate Card */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Translation Quality
+                Success Rate
               </CardTitle>
               <Star className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -181,16 +181,12 @@ export default function AnalyticsPage() {
                 <Skeleton className="h-8 w-full" />
               ) : (
                 <div className="text-2xl font-bold">
-                  {qualityStats?.averageQuality ? 
-                    `${qualityStats.averageQuality.toFixed(1)}/5.0` : 
-                    'No data'}
+                  {qualityStats?.totalTranslations > 0 ? 'Active' : 'No data'}
                 </div>
               )}
               <p className="text-xs text-muted-foreground">
                 {qualityStats?.totalTranslations > 0 ? 
-                  (qualityStats?.averageQuality ? 
-                    `Based on ${qualityStats.totalFeedback || 0} feedback responses` :
-                    'No quality feedback yet') :
+                  'Translation system operational' :
                   'No translations yet'}
               </p>
             </CardContent>

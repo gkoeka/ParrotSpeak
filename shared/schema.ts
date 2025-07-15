@@ -220,32 +220,8 @@ export const insertSpeechSettingsSchema = createInsertSchema(speechSettings, {
 export type InsertSpeechSettings = z.infer<typeof insertSpeechSettingsSchema>;
 export type SpeechSettings = typeof speechSettings.$inferSelect;
 
-// Translation Quality Analytics table
-export const translationQuality = pgTable("translation_quality", {
-  id: text("id").primaryKey(),
-  messageId: text("message_id").notNull().references(() => messages.id),
-  qualityScore: decimal("quality_score", { precision: 4, scale: 2 }), // 0.0 to 5.0 scale
-  feedbackType: text("feedback_type"), // "accurate", "inaccurate", "contextual_error", etc.
-  userFeedback: text("user_feedback"), // Optional comment from user
-  createdAt: text("created_at").notNull(),
-});
-
-export const translationQualityRelations = relations(translationQuality, ({ one }) => ({
-  message: one(messages, {
-    fields: [translationQuality.messageId],
-    references: [messages.id],
-  }),
-}));
-
-export const insertTranslationQualitySchema = createInsertSchema(translationQuality, {
-  messageId: (schema) => schema.min(1, "Message ID is required"),
-  qualityScore: (schema) => schema.optional(),
-  feedbackType: (schema) => schema.optional(),
-  userFeedback: (schema) => schema.optional(),
-});
-
-export type InsertTranslationQuality = z.infer<typeof insertTranslationQualitySchema>;
-export type TranslationQuality = typeof translationQuality.$inferSelect;
+// Removed flawed translation quality rating system
+// Users can't judge translation quality in languages they don't speak
 
 // Usage Statistics table
 export const usageStatistics = pgTable("usage_statistics", {
