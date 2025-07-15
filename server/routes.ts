@@ -67,16 +67,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   express.static.mime.define({'text/javascript': ['js', 'mjs']});
   
   // Serve client files for web app with proper MIME types
-  app.use('/src', express.static(path.join(process.cwd(), 'client/src'), {
-    setHeaders: (res, path) => {
-      if (path.endsWith('.js') || path.endsWith('.mjs') || path.endsWith('.tsx') || path.endsWith('.ts')) {
+  app.use('/client', express.static(path.join(process.cwd(), 'client'), {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.js') || filePath.endsWith('.mjs') || filePath.endsWith('.tsx') || filePath.endsWith('.ts')) {
         res.setHeader('Content-Type', 'application/javascript');
       }
     }
   }));
-  app.use('/client', express.static(path.join(process.cwd(), 'client'), {
-    setHeaders: (res, path) => {
-      if (path.endsWith('.js') || path.endsWith('.mjs') || path.endsWith('.tsx') || path.endsWith('.ts')) {
+  
+  // Serve client src files directly for module imports
+  app.use('/src', express.static(path.join(process.cwd(), 'client/src'), {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.js') || filePath.endsWith('.mjs') || filePath.endsWith('.tsx') || filePath.endsWith('.ts')) {
         res.setHeader('Content-Type', 'application/javascript');
       }
     }
@@ -91,28 +93,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Root route - serve mobile emulator by default  
   app.get('/', (req: Request, res: Response) => {
     if (req.query.webapp) {
-      // Create a simple HTML page that loads the React app
-      res.send(`
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ParrotSpeak</title>
-    <script type="module">
-        import { createRoot } from '/client/src/main.tsx';
-    </script>
-    <style>
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
-        #root { min-height: 100vh; }
-    </style>
-</head>
-<body>
-    <div id="root"></div>
-    <script type="module" src="/client/src/main.tsx"></script>
-</body>
-</html>
-      `)
+      // Serve the actual React web app index.html
+      const clientIndexPath = path.join(process.cwd(), 'client', 'index.html');
+      res.sendFile(clientIndexPath);
     } else if (req.query.api) {
       // Serve API status when specifically requested
       res.json({ 
