@@ -199,19 +199,22 @@ export default function ConversationsPage() {
     <>
       <Header />
       <div className="container h-full p-4 md:p-8 max-w-4xl">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Your Conversations</h1>
-            <p className="text-gray-600 mt-1">Continue your language exchanges or start fresh</p>
+        {/* Only show header for users with conversations */}
+        {groupedConversations.length > 0 && (
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Your Conversations</h1>
+              <p className="text-gray-600 mt-1">Continue your language exchanges or start fresh</p>
+            </div>
+            <Button 
+              onClick={() => navigate('/')} 
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 whitespace-nowrap"
+            >
+              <Plus size={16} />
+              New Chat
+            </Button>
           </div>
-          <Button 
-            onClick={() => navigate('/')} 
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 whitespace-nowrap"
-          >
-            <Plus size={16} />
-            New Chat
-          </Button>
-        </div>
+        )}
 
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
