@@ -150,6 +150,11 @@ GitHub now uses SSH instead of HTTPS, synced July 14th.
 
 **Important:** Take 2 SSH key is required for future pushes to GitHub.
 
+**SSH Setup Required:**
+1. Add your SSH private key to Replit Secrets as `SSH_PRIVATE_KEY`
+2. The SSH key should be in OpenSSH format (starts with `-----BEGIN OPENSSH PRIVATE KEY-----`)
+3. Auto-setup script will configure SSH on every workspace load
+
 **Expo Auto-Build:** Pushing code to GitHub automatically triggers Expo builds for iOS and Android app store deployment.
 
 ### Auto-Build Workflow
