@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Image } from 'react-native';
 
 interface ParrotSpeakLogoProps {
   width?: number;
@@ -19,37 +19,41 @@ export default function ParrotSpeakLogo({
           {
             width: width,
             height: height,
-            backgroundColor: '#4ade80',
-            borderRadius: width / 2,
             justifyContent: 'center',
             alignItems: 'center',
-            borderWidth: 2,
-            borderColor: '#1f2937',
           },
           style
         ]}
       >
-        <Text style={{
-          fontSize: Math.max(width * 0.6, 16),
-          fontWeight: 'bold',
-          color: 'white',
-        }}>
-          P
-        </Text>
+        <Image
+          source={require('../assets/parrotspeak-logo.png')}
+          style={{
+            width: width,
+            height: height,
+            resizeMode: 'contain',
+          }}
+          accessibilityLabel="ParrotSpeak Logo"
+        />
       </View>
     );
   } catch (error) {
-    // Fallback in case of any errors
+    // Fallback in case of any errors with the image
     return (
       <View style={[{
         width: width,
         height: height,
-        backgroundColor: '#dc2626',
+        backgroundColor: '#4ade80',
         borderRadius: width / 2,
         justifyContent: 'center',
         alignItems: 'center',
       }, style]}>
-        <Text style={{ color: 'white', fontWeight: 'bold' }}>!</Text>
+        <Text style={{ 
+          fontSize: Math.max(width * 0.6, 16),
+          fontWeight: 'bold',
+          color: 'white',
+        }}>
+          🦜
+        </Text>
       </View>
     );
   }
