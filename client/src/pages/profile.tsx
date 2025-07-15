@@ -578,13 +578,17 @@ export default function ProfilePage() {
                         <div>
                           <div className="font-medium">
                             {user?.subscriptionTier 
-                              ? `${user.subscriptionTier} Plan` 
+                              ? (user?.subscriptionStatus === "active" 
+                                  ? `${user.subscriptionTier} Plan` 
+                                  : "Your plan is complete")
                               : "Free Plan"}
                           </div>
                           <div className="text-sm text-muted-foreground">
                             {user?.subscriptionStatus === "active" && user?.subscriptionExpiresAt 
                               ? `Renews on ${new Date(user.subscriptionExpiresAt).toLocaleDateString()}`
-                              : "Limited features available"}
+                              : (user?.subscriptionTier && user?.subscriptionStatus !== "active"
+                                  ? "Plan has ended - purchase another plan to continue"
+                                  : "Limited features available")}
                           </div>
                         </div>
                         <div className="flex gap-2">

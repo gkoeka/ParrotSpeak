@@ -102,7 +102,7 @@ export default function AuthPage() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 pb-8">
-        <div className="grid gap-8 md:grid-cols-2 lg:gap-16 max-w-6xl mx-auto">
+        <div className="grid gap-4 md:grid-cols-2 lg:gap-8 max-w-6xl mx-auto">
           {/* Empty space for balance */}
           <div></div>
 
