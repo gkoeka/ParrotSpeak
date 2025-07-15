@@ -50,7 +50,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         imgSrc: ["'self'", "data:", "blob:", "https:"],
         connectSrc: ["'self'", "ws:", "wss:", "https://api.mixpanel.com", "https://api.openai.com"],
-        frameSrc: ["'self'"],
+        frameSrc: ["'self'", "'unsafe-inline'"],
         objectSrc: ["'none'"],
         upgradeInsecureRequests: [],
       },
