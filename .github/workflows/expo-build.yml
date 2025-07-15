@@ -10,16 +10,14 @@ jobs:
   build:
     name: Build and Deploy Mobile App
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Check for Expo project
         id: check-expo
         run: |
           if [ -f "mobile-app/app.json" ] || [ -f "mobile-app/app.config.js" ]; then
-            echo "expo_project=true" >> $GITHUB_ENV
             echo "expo_project=true" >> $GITHUB_OUTPUT
           else
-            echo "expo_project=false" >> $GITHUB_ENV
             echo "expo_project=false" >> $GITHUB_OUTPUT
           fi
         shell: bash
@@ -70,7 +68,7 @@ jobs:
           if [ "${{ secrets.APPLE_APP_STORE_CONNECT_API_KEY }}" != "" ]; then
             eas submit --platform ios --latest --non-interactive
           fi
-          
+
           # Submit to Google Play Store (requires Google Play credentials)
           if [ "${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY }}" != "" ]; then
             eas submit --platform android --latest --non-interactive
