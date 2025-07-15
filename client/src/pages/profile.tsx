@@ -543,125 +543,125 @@ export default function ProfilePage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          {/* Plan Name with Status Badge */}
-                          <div className="flex items-center gap-3 mb-3">
-                            <div className="flex items-center gap-2">
-                              {user?.subscriptionTier && <Crown className="h-4 w-4 text-amber-500" />}
-                              <span className="text-lg font-semibold">
-                                {user?.subscriptionTier 
-                                  ? (user?.subscriptionStatus === "active" 
-                                      ? `${user.subscriptionTier.charAt(0).toUpperCase() + user.subscriptionTier.slice(1)} Plan` 
-                                      : "Your plan is complete")
-                                  : "Free Plan"}
-                              </span>
-                            </div>
-                            <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              user?.subscriptionStatus === "active" 
-                                ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300"
-                                : user?.subscriptionTier && user?.subscriptionStatus !== "active"
-                                ? "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
-                                : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                            }`}>
-                              {user?.subscriptionStatus === "active" 
-                                ? "Active"
-                                : user?.subscriptionTier && user?.subscriptionStatus !== "active"
-                                ? "Expired"
-                                : "Free"}
-                            </div>
+                      <div className="space-y-4">
+                        {/* Plan Name with Status Badge */}
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
+                            {user?.subscriptionTier && <Crown className="h-4 w-4 text-amber-500" />}
+                            <span className="text-lg font-semibold">
+                              {user?.subscriptionTier 
+                                ? (user?.subscriptionStatus === "active" 
+                                    ? `${user.subscriptionTier.charAt(0).toUpperCase() + user.subscriptionTier.slice(1)} Plan` 
+                                    : "Your plan is complete")
+                                : "Free Plan"}
+                            </span>
                           </div>
-
-                          {/* Plan Details */}
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-sm">
-                              <Calendar className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-muted-foreground">
-                                {user?.subscriptionStatus === "active" && user?.subscriptionExpiresAt 
-                                  ? `Renews on ${new Date(user.subscriptionExpiresAt).toLocaleDateString()}`
-                                  : (user?.subscriptionTier && user?.subscriptionStatus !== "active"
-                                      ? "Plan has ended - purchase another plan to continue"
-                                      : "Limited features available")}
-                              </span>
-                            </div>
-
-                            {/* Progress Bar for Active Subscriptions */}
-                            {user?.subscriptionStatus === "active" && user?.subscriptionExpiresAt && (
-                              <div className="space-y-1">
-                                <div className="flex justify-between text-xs text-muted-foreground">
-                                  <span>Time remaining</span>
-                                  <span>
-                                    {Math.max(0, Math.ceil((new Date(user.subscriptionExpiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))} days
-                                  </span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                                  <div 
-                                    className="bg-green-500 h-2 rounded-full transition-all duration-300"
-                                    style={{
-                                      width: `${Math.max(10, Math.min(100, 
-                                        ((new Date(user.subscriptionExpiresAt).getTime() - new Date().getTime()) / 
-                                         (30 * 24 * 60 * 60 * 1000)) * 100
-                                      ))}%`
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            )}
+                          <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            user?.subscriptionStatus === "active" 
+                              ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300"
+                              : user?.subscriptionTier && user?.subscriptionStatus !== "active"
+                              ? "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
+                              : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                          }`}>
+                            {user?.subscriptionStatus === "active" 
+                              ? "Active"
+                              : user?.subscriptionTier && user?.subscriptionStatus !== "active"
+                              ? "Expired"
+                              : "Free"}
                           </div>
                         </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex flex-col gap-2 ml-4">
-                          {!user?.subscriptionTier && (
-                            <Button 
-                              variant="default" 
-                              className="bg-blue-600 hover:bg-blue-700"
-                              onClick={() => setSubscriptionModalOpen(true)}
-                            >
-                              <Zap className="h-4 w-4 mr-2" />
-                              Upgrade Plan
-                            </Button>
-                          )}
-                          
-                          {user?.subscriptionTier && user?.subscriptionStatus !== "active" && (
-                            <Button 
-                              variant="default" 
-                              className="bg-blue-600 hover:bg-blue-700"
-                              onClick={() => setSubscriptionModalOpen(true)}
-                            >
-                              <RefreshCw className="h-4 w-4 mr-2" />
-                              Purchase Again
-                            </Button>
-                          )}
+                        {/* Plan Details */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-muted-foreground">
+                              {user?.subscriptionStatus === "active" && user?.subscriptionExpiresAt 
+                                ? `Renews on ${new Date(user.subscriptionExpiresAt).toLocaleDateString()}`
+                                : (user?.subscriptionTier && user?.subscriptionStatus !== "active"
+                                    ? "Plan has ended - purchase another plan to continue"
+                                    : "Limited features available")}
+                            </span>
+                          </div>
 
-                          {user?.subscriptionStatus === "active" && user?.subscriptionTier && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                                  <X className="h-4 w-4 mr-2" />
-                                  Cancel Plan
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to cancel your subscription? You'll continue to have access until your current billing period ends on {user?.subscriptionExpiresAt ? new Date(user.subscriptionExpiresAt).toLocaleDateString() : 'the end of your billing period'}.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
-                                  <AlertDialogAction 
-                                    className="bg-red-600 hover:bg-red-700"
-                                    onClick={() => cancelSubscriptionMutation.mutate()}
-                                    disabled={cancelSubscriptionMutation.isPending}
-                                  >
-                                    {cancelSubscriptionMutation.isPending ? "Cancelling..." : "Cancel Subscription"}
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                          {/* Progress Bar for Active Subscriptions */}
+                          {user?.subscriptionStatus === "active" && user?.subscriptionExpiresAt && (
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-xs text-muted-foreground">
+                                <span>Time remaining</span>
+                                <span>
+                                  {Math.max(0, Math.ceil((new Date(user.subscriptionExpiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))} days
+                                </span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+                                <div 
+                                  className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                                  style={{
+                                    width: `${Math.max(10, Math.min(100, 
+                                      ((new Date(user.subscriptionExpiresAt).getTime() - new Date().getTime()) / 
+                                       (30 * 24 * 60 * 60 * 1000)) * 100
+                                    ))}%`
+                                  }}
+                                />
+                              </div>
+                            </div>
                           )}
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+                          <div className="flex gap-2">
+                            {!user?.subscriptionTier && (
+                              <Button 
+                                variant="default" 
+                                className="bg-blue-600 hover:bg-blue-700"
+                                onClick={() => setSubscriptionModalOpen(true)}
+                              >
+                                <Zap className="h-4 w-4 mr-2" />
+                                Upgrade Plan
+                              </Button>
+                            )}
+                            
+                            {user?.subscriptionTier && user?.subscriptionStatus !== "active" && (
+                              <Button 
+                                variant="default" 
+                                className="bg-blue-600 hover:bg-blue-700"
+                                onClick={() => setSubscriptionModalOpen(true)}
+                              >
+                                <RefreshCw className="h-4 w-4 mr-2" />
+                                Purchase Again
+                              </Button>
+                            )}
+
+                            {user?.subscriptionStatus === "active" && user?.subscriptionTier && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                                    <X className="h-4 w-4 mr-2" />
+                                    Cancel Plan
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to cancel your subscription? You'll continue to have access until your current billing period ends on {user?.subscriptionExpiresAt ? new Date(user.subscriptionExpiresAt).toLocaleDateString() : 'the end of your billing period'}.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                      className="bg-red-600 hover:bg-red-700"
+                                      onClick={() => cancelSubscriptionMutation.mutate()}
+                                      disabled={cancelSubscriptionMutation.isPending}
+                                    >
+                                      {cancelSubscriptionMutation.isPending ? "Cancelling..." : "Cancel Subscription"}
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </CardContent>
