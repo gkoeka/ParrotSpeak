@@ -81,7 +81,7 @@ Dark mode preference: Should persist when selected.
 - ✓ **Expired Account Billing Display (July 15, 2025)**: **UX ENHANCED** - Updated billing section to show "Your plan is complete" for users with expired subscriptions instead of showing inactive plan names, providing clearer messaging about account status.
 - ✓ **Plan Name Capitalization Fix (July 15, 2025)**: **DISPLAY CONSISTENCY** - Fixed subscription tier display to show "Lifetime Plan" instead of "lifetime Plan" across both web and mobile platforms for proper capitalization consistency.
 - ✓ **Login Sessions Removal (July 15, 2025)**: **MOBILE-FOCUSED CLEANUP** - Removed Login Sessions section from Security settings as it's not needed for mobile-only app deployment on iOS/Android. Eliminated related getBrowserInfo() function and simplified security interface for mobile users.
-- ✓ **Welsh Flag Update & Dzongkha Language Support (July 15, 2025)**: **CULTURAL ACCURACY** - Updated Welsh flag from Union Jack to proper Welsh dragon flag (cy.svg). Added Dzongkha (Bhutanese) language support with proper Bhutan flag. Both changes applied to web and mobile platforms for complete language parity.
+- ✓ **Welsh Flag Update & Dzongkha Language Support (July 15, 2025)**: **CULTURAL ACCURACY** - Updated Welsh flag from Union Jack to proper Welsh dragon flag (gb-wls.svg). Added Dzongkha (Bhutanese) language support with proper Bhutan flag. Both changes applied to web and mobile platforms for complete language parity.
 
 ### Technical Improvements
 - Enhanced voice selection logic for better cross-language support

@@ -318,7 +318,7 @@ const languages: Language[] = [
     code: "cy-GB",
     name: "Welsh",
     country: "Wales",
-    flag: "https://flagcdn.com/cy.svg"
+    flag: "https://flagcdn.com/gb-wls.svg"
   },
   {
     code: "dz-BT",
