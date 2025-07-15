@@ -98,20 +98,19 @@ const ProfileScreen: React.FC = () => {
           )}
         </View>
         
-        {(!user?.subscriptionStatus || user.subscriptionStatus !== 'active') && (
-          <>
-            <View style={styles.upgradeBanner}>
-              <Text style={styles.upgradeText}>
-                Upgrade to enjoy full features of ParrotSpeak
-              </Text>
-              <TouchableOpacity 
-                style={styles.upgradeButton}
-                onPress={() => setShowSubscriptionModal(true)}
-              >
-                <Text style={styles.upgradeButtonText}>Upgrade</Text>
-              </TouchableOpacity>
-            </View>
-          </>
+        {/* Only show Current Plan section for users who have ever had a subscription */}
+        {(user?.subscriptionTier || user?.subscriptionStatus) && (
+          <View style={styles.upgradeBanner}>
+            <Text style={styles.upgradeText}>
+              Upgrade to enjoy full features of ParrotSpeak
+            </Text>
+            <TouchableOpacity 
+              style={styles.upgradeButton}
+              onPress={() => setShowSubscriptionModal(true)}
+            >
+              <Text style={styles.upgradeButtonText}>Upgrade</Text>
+            </TouchableOpacity>
+          </View>
         )}
         
         <View style={styles.actionContainer}>
