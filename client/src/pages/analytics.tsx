@@ -24,7 +24,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import Header from '@/components/header';
-import { Star, BarChart2, Zap, MessageCircle } from 'lucide-react';
+import { BarChart2, Zap, MessageCircle } from 'lucide-react';
 
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year'>('month');
@@ -67,16 +67,7 @@ export default function AnalyticsPage() {
     }
   });
   
-  const { data: qualityStats, isLoading: isLoadingQuality } = useQuery({
-    queryKey: ['/api/analytics/translation-quality'],
-    queryFn: async () => {
-      const response = await fetch('/api/analytics/translation-quality', {
-        credentials: 'include'
-      });
-      if (!response.ok) throw new Error('Failed to fetch quality statistics');
-      return response.json();
-    }
-  });
+
   
   const { data: topLanguages, isLoading: isLoadingLanguages } = useQuery({
     queryKey: ['/api/analytics/top-languages'],
@@ -121,7 +112,7 @@ export default function AnalyticsPage() {
           </Select>
         </div>
         
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
           {/* Messages Card */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -167,31 +158,7 @@ export default function AnalyticsPage() {
               </p>
             </CardContent>
           </Card>
-          
-          {/* Success Rate Card */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Success Rate
-              </CardTitle>
-              <Star className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {isLoadingQuality ? (
-                <Skeleton className="h-8 w-full" />
-              ) : (
-                <div className="text-2xl font-bold">
-                  {qualityStats?.totalTranslations > 0 ? 'Active' : 'No data'}
-                </div>
-              )}
-              <p className="text-xs text-muted-foreground">
-                {qualityStats?.totalTranslations > 0 ? 
-                  'Translation system operational' :
-                  'No translations yet'}
-              </p>
-            </CardContent>
-          </Card>
-          
+
           {/* Average Response Time Card */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
