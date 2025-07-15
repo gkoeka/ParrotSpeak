@@ -122,6 +122,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/conversations', async (req: Request, res: Response) => {
     try {
       const userId = req.user?.id;
+      
+      // For authenticated users, check subscription status
+      if (userId) {
+        const { hasSubscription } = await checkSubscriptionStatus(userId);
+        if (!hasSubscription) {
+          // Return empty array for expired/inactive users to hide conversation history
+          return res.json([]);
+        }
+      }
+      
       const conversations = await storage.getConversations(userId);
       res.json(conversations);
     } catch (error) {

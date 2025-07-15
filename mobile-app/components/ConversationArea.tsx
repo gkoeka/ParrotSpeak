@@ -48,19 +48,23 @@ export default function ConversationArea({
   
   // Initialize baseline on first render to prevent auto-playback of historical messages
   useEffect(() => {
-    if (messages.length > 0) {
-      // Set baseline to current messages (historical messages) to prevent auto-playback
-      baselineMessageCountRef.current = messages.length;
-      lastMessageCountRef.current = messages.length;
-      
-      // Mark historical messages to prevent auto-playback
+    console.log(`[ConversationArea] Initial setup - messages.length: ${messages.length}`);
+    
+    // Always set baseline to current message count to prevent auto-playback of existing messages
+    baselineMessageCountRef.current = messages.length;
+    lastMessageCountRef.current = messages.length;
+    
+    // Mark initial load as complete immediately for empty conversations
+    // For conversations with existing messages, add a longer delay to ensure they're historical
+    if (messages.length === 0) {
+      initialLoadCompleteRef.current = true;
+      console.log(`[ConversationArea] Empty conversation - initial load complete`);
+    } else {
+      // Longer delay for conversations with existing messages to ensure they're treated as historical
       setTimeout(() => {
         initialLoadCompleteRef.current = true;
-      }, 1000); // Give time for initial load to complete
-    } else {
-      baselineMessageCountRef.current = 0;
-      lastMessageCountRef.current = 0;
-      initialLoadCompleteRef.current = true;
+        console.log(`[ConversationArea] Historical conversation loaded - initial load complete`);
+      }, 2000); // Increased to 2 seconds
     }
   }, []);
   
@@ -71,24 +75,31 @@ export default function ConversationArea({
       // CRITICAL FIX: Only auto-play NEW real-time messages, not historical ones
       const currentMessageCount = messages.length;
       
-      // Only auto-play if:
-      // 1. Initial load is complete
-      // 2. Message count is beyond baseline (truly new messages)
-      if (initialLoadCompleteRef.current && 
-          currentMessageCount > Math.max(lastMessageCountRef.current, baselineMessageCountRef.current)) {
+      // STRICT: Only auto-play if this is genuinely a NEW real-time message
+      const isNewRealTimeMessage = initialLoadCompleteRef.current && 
+                                   currentMessageCount > baselineMessageCountRef.current &&
+                                   currentMessageCount > lastMessageCountRef.current;
+      
+      if (isNewRealTimeMessage) {
         const latestMessage = messages[messages.length - 1];
         
         // Only auto-play if it's a translation (not user message) and hasn't been played before
         if (!latestMessage.isUser && !latestMessage.hasBeenSpoken) {
-          console.log(`[ConversationArea] Auto-playing NEW REAL-TIME translation: ${latestMessage.id.slice(0, 6)}...`);
+          console.log(`[ConversationArea] Auto-playing NEW REAL-TIME translation: ${latestMessage.id.slice(0, 6)}... (count: ${currentMessageCount} > baseline: ${baselineMessageCountRef.current})`);
           
           // Add a slight delay to ensure the UI has time to render
           setTimeout(() => {
             playAudio(latestMessage);
           }, 300);
+        } else {
+          console.log(`[ConversationArea] Skipping auto-playback - message is user message or already spoken`);
         }
-      } else if (!initialLoadCompleteRef.current) {
-        console.log(`[ConversationArea] Skipping auto-playback - initial load not complete (historical messages)`);
+      } else {
+        if (!initialLoadCompleteRef.current) {
+          console.log(`[ConversationArea] Skipping auto-playback - initial load not complete (${currentMessageCount} messages loading)`);
+        } else {
+          console.log(`[ConversationArea] Skipping auto-playback - not a new message (count: ${currentMessageCount}, baseline: ${baselineMessageCountRef.current}, last: ${lastMessageCountRef.current})`);
+        }
       }
       
       // Update the reference value with current count
