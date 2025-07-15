@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -13,12 +13,14 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
+import { SubscriptionModal } from '../components/SubscriptionModal';
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Profile'>;
 
 const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
   const { user, logout, isLoading } = useAuth();
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -104,22 +106,9 @@ const ProfileScreen: React.FC = () => {
               </Text>
               <TouchableOpacity 
                 style={styles.upgradeButton}
-                onPress={() => Alert.alert(
-                  'Subscription Options',
-                  'Would you like to view our subscription plans?',
-                  [
-                    {
-                      text: 'Cancel',
-                      style: 'cancel'
-                    },
-                    {
-                      text: 'View Plans',
-                      onPress: () => navigation.navigate('SubscriptionPlans')
-                    }
-                  ]
-                )}
+                onPress={() => setShowSubscriptionModal(true)}
               >
-                <Text style={styles.upgradeButtonText}>View Plans</Text>
+                <Text style={styles.upgradeButtonText}>Upgrade</Text>
               </TouchableOpacity>
             </View>
           </>
@@ -139,6 +128,13 @@ const ProfileScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <SubscriptionModal
+        visible={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        hasEverSubscribed={!!user?.subscriptionTier || user?.subscriptionStatus === 'expired'}
+        feature="profile_upgrade"
+      />
     </View>
   );
 };
