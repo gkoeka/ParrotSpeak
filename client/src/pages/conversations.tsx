@@ -34,7 +34,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Conversation } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import { formatRelativeTime, formatConversationTime } from '@/lib/date-utils';
-import { MoreVertical, Star, StarOff, Trash2, Edit, MessageSquare, MessageCircle, Plus } from 'lucide-react';
+import { MoreVertical, Star, StarOff, Trash2, Edit, MessageSquare, MessageCircle, Plus, Clock, RefreshCw } from 'lucide-react';
 import Header from '@/components/header';
 
 export default function ConversationsPage() {
@@ -46,11 +46,22 @@ export default function ConversationsPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Fetch current user info
+  const { data: user } = useQuery({
+    queryKey: ['/api/auth/user'],
+  });
+
   // Fetch all conversations
   const { data: conversations, isLoading } = useQuery<Conversation[]>({
     queryKey: ['/api/conversations'],
     refetchInterval: 10000, // Refresh every 10 seconds to catch new conversations
   });
+
+  // Check if user has ever had a subscription
+  const hasEverSubscribed = !!(user?.subscription_tier || 
+    user?.subscription_status === 'expired' || 
+    user?.subscription_status === 'active' ||
+    user?.subscription_expires_at);
 
   // Toggle favorite status
   const toggleFavoriteMutation = useMutation({
@@ -211,20 +222,54 @@ export default function ConversationsPage() {
         </div>
       ) : groupedConversations.length === 0 ? (
         <div className="text-center py-16 px-4">
-          <div className="bg-gray-50 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
-            <MessageCircle className="h-10 w-10 text-gray-400" />
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No conversations yet</h3>
-          <p className="text-gray-600 mb-8 max-w-md mx-auto">
-            Ready to break down language barriers? Start your first conversation and connect with the world!
-          </p>
-          <Button 
-            onClick={() => navigate('/')} 
-            size="lg"
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
-          >
-            Start Your First Chat
-          </Button>
+          {hasEverSubscribed ? (
+            // Expired/returning customer experience
+            <>
+              <div className="bg-amber-50 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+                <Clock className="h-10 w-10 text-amber-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">Welcome Back!</h3>
+              <p className="text-gray-600 mb-8 max-w-lg mx-auto leading-relaxed">
+                Your conversation history is temporarily hidden. Renew your subscription to restore access to all your past conversations and continue connecting with the world.
+              </p>
+              <div className="space-y-3">
+                <Button 
+                  onClick={() => navigate('/checkout')} 
+                  size="lg"
+                  className="bg-amber-600 hover:bg-amber-700 text-white px-8 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 mr-4"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Renew Subscription
+                </Button>
+                <Button 
+                  onClick={() => navigate('/')} 
+                  variant="outline"
+                  size="lg"
+                  className="px-6 py-3 border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200"
+                >
+                  Start New Conversation
+                </Button>
+              </div>
+            </>
+          ) : (
+            // New user experience
+            <>
+              <div className="bg-gray-50 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+                <MessageCircle className="h-10 w-10 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Ready to break down language barriers?</h3>
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                Start your first conversation and connect with the world!
+              </p>
+              <Button 
+                onClick={() => navigate('/')} 
+                size="lg"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+              >
+                Start Your First Chat
+              </Button>
+            </>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
