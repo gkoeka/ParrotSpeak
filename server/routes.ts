@@ -62,20 +62,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
   app.use(express.static(path.join(process.cwd(), 'public')));
   
-  // Serve client files for web app
-  app.use('/src', express.static(path.join(process.cwd(), 'client/src')));
-  app.use('/client', express.static(path.join(process.cwd(), 'client')));
+  // Configure MIME types for JavaScript modules
+  express.static.mime.define({'application/javascript': ['js', 'mjs']});
+  express.static.mime.define({'text/javascript': ['js', 'mjs']});
+  
+  // Serve client files for web app with proper MIME types
+  app.use('/src', express.static(path.join(process.cwd(), 'client/src'), {
+    setHeaders: (res, path) => {
+      if (path.endsWith('.js') || path.endsWith('.mjs') || path.endsWith('.tsx') || path.endsWith('.ts')) {
+        res.setHeader('Content-Type', 'application/javascript');
+      }
+    }
+  }));
+  app.use('/client', express.static(path.join(process.cwd(), 'client'), {
+    setHeaders: (res, path) => {
+      if (path.endsWith('.js') || path.endsWith('.mjs') || path.endsWith('.tsx') || path.endsWith('.ts')) {
+        res.setHeader('Content-Type', 'application/javascript');
+      }
+    }
+  }));
 
-  // Root route - serve mobile emulator by default
+  // Serve built client files
+  const distPath = path.join(process.cwd(), 'dist');
+  if (fs.existsSync(distPath)) {
+    app.use(express.static(distPath));
+  }
+
+  // Root route - serve mobile emulator by default  
   app.get('/', (req: Request, res: Response) => {
     if (req.query.webapp) {
-      // Serve the simple web app for mobile emulator iframe
-      const webappPath = path.join(process.cwd(), 'public/webapp.html');
-      if (fs.existsSync(webappPath)) {
-        res.sendFile(webappPath);
-      } else {
-        res.status(404).send('Web app not found');
-      }
+      // Create a simple HTML page that loads the React app
+      res.send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParrotSpeak</title>
+    <script type="module">
+        import { createRoot } from '/client/src/main.tsx';
+    </script>
+    <style>
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+        #root { min-height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="module" src="/client/src/main.tsx"></script>
+</body>
+</html>
+      `)
     } else if (req.query.api) {
       // Serve API status when specifically requested
       res.json({ 
