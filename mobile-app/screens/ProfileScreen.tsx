@@ -98,8 +98,8 @@ const ProfileScreen: React.FC = () => {
           )}
         </View>
         
-        {/* Only show Current Plan section for users who have ever had a paid subscription */}
-        {(user?.subscriptionTier || user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'expired') && (
+        {/* Show Current Plan section for users with any subscription interaction */}
+        {(user?.subscriptionTier || user?.subscriptionStatus) && (
           <View style={styles.upgradeBanner}>
             <Text style={styles.upgradeText}>
               Upgrade to enjoy full features of ParrotSpeak
