@@ -1,12 +1,11 @@
 /**
- * NIST SP 800-63B Compliant Password Validation
+ * Enhanced Password Validation for ParrotSpeak
  * 
- * NIST Guidelines:
+ * Security Requirements:
  * - Minimum 8 characters, maximum 64 characters
- * - No composition rules (no requirements for uppercase, lowercase, numbers, special chars)
- * - No password hints
- * - Check against known breached passwords (future enhancement)
- * - Rate limiting on authentication attempts (handled elsewhere)
+ * - Must contain letters and numbers (alphanumeric)
+ * - Must contain at least 1 special character
+ * - Check against known weak passwords
  */
 
 export interface PasswordValidationResult {
@@ -16,20 +15,38 @@ export interface PasswordValidationResult {
 }
 
 /**
- * Validates password according to NIST SP 800-63B guidelines
+ * Validates password according to ParrotSpeak security requirements
  */
 export function validatePassword(password: string): PasswordValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
-  // Check minimum length (NIST: 8 characters)
+  // Check minimum length
   if (password.length < 8) {
     errors.push('Password must be at least 8 characters long');
   }
 
-  // Check maximum length (NIST: 64 characters)
+  // Check maximum length
   if (password.length > 64) {
     errors.push('Password must be no more than 64 characters long');
+  }
+
+  // Check for letters (both uppercase and lowercase count)
+  const hasLetters = /[a-zA-Z]/.test(password);
+  if (!hasLetters) {
+    errors.push('Password must contain at least one letter');
+  }
+
+  // Check for numbers
+  const hasNumbers = /\d/.test(password);
+  if (!hasNumbers) {
+    errors.push('Password must contain at least one number');
+  }
+
+  // Check for special characters
+  const hasSpecialChars = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  if (!hasSpecialChars) {
+    errors.push('Password must contain at least one special character (!@#$%^&*(),.?":{}|<>)');
   }
 
   // Check for common weak passwords
@@ -81,16 +98,14 @@ export function validatePassword(password: string): PasswordValidationResult {
     warnings.push('Consider using a longer password for better security');
   }
 
-  // Check for variety in character types (informational, not required)
+  // Additional strength recommendations
   const hasLowercase = /[a-z]/.test(password);
   const hasUppercase = /[A-Z]/.test(password);
-  const hasNumbers = /\d/.test(password);
-  const hasSpecialChars = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-  const characterTypes = [hasLowercase, hasUppercase, hasNumbers, hasSpecialChars].filter(Boolean).length;
   
-  if (characterTypes < 2) {
-    warnings.push('Consider using a mix of different character types for better security');
+  if (hasLetters && hasNumbers && hasSpecialChars) {
+    if (!hasLowercase || !hasUppercase) {
+      warnings.push('Consider using both uppercase and lowercase letters for extra security');
+    }
   }
 
   return {
@@ -123,10 +138,13 @@ export function getPasswordStrength(password: string): 'weak' | 'fair' | 'good' 
   const hasNumbers = /\d/.test(password);
   const hasSpecialChars = /[!@#$%^&*(),.?":{}|<>]/.test(password);
   
-  if (hasLowercase) score += 1;
-  if (hasUppercase) score += 1;
-  if (hasNumbers) score += 1;
-  if (hasSpecialChars) score += 1;
+  // Required elements
+  if (hasLowercase || hasUppercase) score += 1; // Letters
+  if (hasNumbers) score += 1; // Numbers
+  if (hasSpecialChars) score += 1; // Special chars
+  
+  // Bonus for both cases
+  if (hasLowercase && hasUppercase) score += 1;
   
   // Avoid patterns
   if (!/(.)\1{2,}/.test(password)) score += 1;
@@ -141,7 +159,18 @@ export function getPasswordStrength(password: string): 'weak' | 'fair' | 'good' 
  * Generate password requirements text for UI
  */
 export function getPasswordRequirementsText(): string {
-  return 'Password must be between 8-64 characters. No other requirements - use a unique password you can remember.';
+  return 'Password must be 8-64 characters with letters, numbers, and at least one special character (!@#$%^&*).';
+}
+
+/**
+ * Get friendly password requirements for UX
+ */
+export function getPasswordRequirementsArray(): string[] {
+  return [
+    'At least 8 characters long',
+    'Contains letters and numbers',
+    'Includes at least one special character (!@#$%^&*)'
+  ];
 }
 
 /**

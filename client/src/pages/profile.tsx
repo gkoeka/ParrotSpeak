@@ -858,9 +858,23 @@ export default function ProfilePage() {
                         value={passwordForm.newPassword}
                         onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
                       />
-                      <p className="text-sm text-muted-foreground">
-                        Password must be between 8-64 characters. No other requirements - use a unique password you can remember.
-                      </p>
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <div className="font-medium">Your new password must include:</div>
+                        <ul className="text-xs space-y-1 ml-2">
+                          <li className="flex items-center gap-2">
+                            <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                            At least 8 characters long
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                            Letters and numbers
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                            At least one special character (!@#$%^&*)
+                          </li>
+                        </ul>
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="confirmPassword">Confirm New Password</Label>

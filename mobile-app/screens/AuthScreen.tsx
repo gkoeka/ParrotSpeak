@@ -89,7 +89,7 @@ const AuthScreen: React.FC = () => {
       setPasswordError('Password is required');
       isValid = false;
     } else if (!isLogin) {
-      // Use NIST-compliant password validation for registration
+      // Enhanced password validation for registration
       const passwordValidation = await validatePassword(password);
       if (!passwordValidation.isValid) {
         setPasswordError(passwordValidation.errors.join('. '));

@@ -25,13 +25,9 @@ const registerSchema = z.object({
     .string()
     .min(8, "Password must be at least 8 characters")
     .max(64, "Password must be no more than 64 characters")
-    .refine(async (password) => {
-      const { validatePassword } = await import('@shared/password-validation');
-      const validation = validatePassword(password);
-      return validation.isValid;
-    }, {
-      message: "Password must be between 8-64 characters"
-    }),
+    .regex(/[a-zA-Z]/, "Password must contain at least one letter")
+    .regex(/\d/, "Password must contain at least one number")
+    .regex(/[!@#$%^&*(),.?":{}|<>]/, "Password must contain at least one special character"),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
 });
@@ -271,8 +267,22 @@ export default function AuthPage() {
                             <FormControl>
                               <Input placeholder="••••••••" type="password" {...field} />
                             </FormControl>
-                            <FormDescription>
-                              Password must be between 8-64 characters. No other requirements - use a unique password you can remember.
+                            <FormDescription className="space-y-1">
+                              <div className="font-medium text-sm">Your password must include:</div>
+                              <ul className="text-xs space-y-1 ml-2">
+                                <li className="flex items-center gap-2">
+                                  <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                                  At least 8 characters long
+                                </li>
+                                <li className="flex items-center gap-2">
+                                  <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                                  Letters and numbers
+                                </li>
+                                <li className="flex items-center gap-2">
+                                  <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                                  At least one special character (!@#$%^&*)
+                                </li>
+                              </ul>
                             </FormDescription>
                             <FormMessage />
                           </FormItem>

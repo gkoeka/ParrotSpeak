@@ -62,12 +62,14 @@ export const registerUserSchema = createInsertSchema(users, {
   password: (schema) => schema
     .min(8, "Password must be at least 8 characters")
     .max(64, "Password must be no more than 64 characters")
-    .refine(async (password) => {
-      const { validatePassword } = await import('./password-validation');
-      const validation = validatePassword(password);
-      return validation.isValid;
-    }, {
-      message: "Password must be between 8-64 characters"
+    .refine(password => /[a-zA-Z]/.test(password), {
+      message: "Password must contain at least one letter"
+    })
+    .refine(password => /\d/.test(password), {
+      message: "Password must contain at least one number"
+    })
+    .refine(password => /[!@#$%^&*(),.?":{}|<>]/.test(password), {
+      message: "Password must contain at least one special character"
     }),
 }).pick({
   email: true,
