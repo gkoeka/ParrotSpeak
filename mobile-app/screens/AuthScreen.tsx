@@ -194,6 +194,36 @@ const AuthScreen: React.FC = () => {
         <View style={styles.formContainer}>
           <Text style={styles.headerText}>{isLogin ? 'Sign In' : 'Create Account'}</Text>
           
+          {/* Social Sign In Options */}
+          <View style={styles.socialButtonsContainer}>
+            <TouchableOpacity 
+              style={[styles.socialButton, styles.googleButton]} 
+              onPress={handleGoogleSignIn}
+            >
+              <FontAwesome name="google" size={18} color="#DB4437" />
+              <Text style={styles.socialButtonText}>
+                {isLogin ? 'Sign in with Google' : 'Sign up with Google'}
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.socialButton, styles.appleButton]} 
+              onPress={handleAppleSignIn}
+            >
+              <FontAwesome name="apple" size={18} color="#000" />
+              <Text style={styles.socialButtonText}>
+                {isLogin ? 'Sign in with Apple' : 'Sign up with Apple'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          
+          {/* Divider */}
+          <View style={styles.orContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.orText}>OR</Text>
+            <View style={styles.divider} />
+          </View>
+          
           {/* Email Input */}
           <View style={styles.inputContainer}>
             <Icon name="mail" size={18} color="#888" style={styles.inputIcon} />
@@ -295,33 +325,6 @@ const AuthScreen: React.FC = () => {
               <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
             </TouchableOpacity>
           )}
-          
-          {/* Social Sign In Options */}
-          <View style={styles.orContainer}>
-            <View style={styles.divider} />
-            <Text style={styles.orText}>OR</Text>
-            <View style={styles.divider} />
-          </View>
-          
-          <View style={styles.socialButtonsContainer}>
-            {/* Google Sign In Button */}
-            <TouchableOpacity 
-              style={[styles.socialButton, styles.googleButton]} 
-              onPress={handleGoogleSignIn}
-            >
-              <FontAwesome name="google" size={18} color="#DB4437" />
-              <Text style={styles.socialButtonText}>Google</Text>
-            </TouchableOpacity>
-            
-            {/* Apple Sign In Button */}
-            <TouchableOpacity 
-              style={[styles.socialButton, styles.appleButton]} 
-              onPress={handleAppleSignIn}
-            >
-              <FontAwesome name="apple" size={18} color="#000" />
-              <Text style={styles.socialButtonText}>Apple</Text>
-            </TouchableOpacity>
-          </View>
           
           {/* Toggle between Login and Register */}
           <TouchableOpacity onPress={toggleAuthMode} style={styles.toggleContainer}>

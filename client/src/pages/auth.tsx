@@ -125,6 +125,26 @@ export default function AuthPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  {/* Social Sign In Options */}
+                  <div className="space-y-3 mb-6">
+                    <Button variant="outline" className="w-full" disabled>
+                      Sign in with Google (coming soon)
+                    </Button>
+                    <Button variant="outline" className="w-full" disabled>
+                      Sign in with Apple (coming soon)
+                    </Button>
+                  </div>
+                  
+                  {/* Divider */}
+                  <div className="relative mb-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">Or continue with email</span>
+                    </div>
+                  </div>
+
                   <Form {...loginForm}>
                     <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
                       <FormField
@@ -182,16 +202,6 @@ export default function AuthPage() {
                       Register here
                     </button>
                   </div>
-                  <div className="mt-4 w-full">
-                    <Button variant="outline" className="w-full" disabled>
-                      Sign in with Google (coming soon)
-                    </Button>
-                  </div>
-                  <div className="mt-2 w-full">
-                    <Button variant="outline" className="w-full" disabled>
-                      Sign in with Apple (coming soon)
-                    </Button>
-                  </div>
                 </CardFooter>
               </Card>
             </TabsContent>
@@ -206,6 +216,26 @@ export default function AuthPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  {/* Social Sign In Options */}
+                  <div className="space-y-3 mb-6">
+                    <Button variant="outline" className="w-full" disabled>
+                      Sign up with Google (coming soon)
+                    </Button>
+                    <Button variant="outline" className="w-full" disabled>
+                      Sign up with Apple (coming soon)
+                    </Button>
+                  </div>
+                  
+                  {/* Divider */}
+                  <div className="relative mb-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">Or continue with email</span>
+                    </div>
+                  </div>
+
                   <Form {...registerForm}>
                     <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
                       <FormField
