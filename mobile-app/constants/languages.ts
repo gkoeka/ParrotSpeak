@@ -313,6 +313,18 @@ const languages: Language[] = [
     name: "Mongolian",
     country: "Mongolia",
     flag: "https://flagcdn.com/mn.svg"
+  },
+  {
+    code: "cy-GB",
+    name: "Welsh",
+    country: "Wales",
+    flag: "https://flagcdn.com/cy.svg"
+  },
+  {
+    code: "dz-BT",
+    name: "Dzongkha",
+    country: "Bhutan",
+    flag: "https://flagcdn.com/bt.svg"
   }
 ];
 

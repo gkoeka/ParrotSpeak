@@ -443,8 +443,8 @@ export const languages: Language[] = [
   {
     code: "cy-GB",
     name: "Welsh",
-    country: "United Kingdom",
-    flag: "https://flagcdn.com/gb.svg"
+    country: "Wales",
+    flag: "https://flagcdn.com/cy.svg"
   },
   {
     code: "eu-ES",
@@ -469,5 +469,13 @@ export const languages: Language[] = [
     name: "Icelandic",
     country: "Iceland",
     flag: "https://flagcdn.com/is.svg"
+  },
+  
+  // South Asian Languages
+  {
+    code: "dz-BT",
+    name: "Dzongkha",
+    country: "Bhutan",
+    flag: "https://flagcdn.com/bt.svg"
   }
 ];
