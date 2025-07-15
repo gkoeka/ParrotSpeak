@@ -37,9 +37,34 @@ export function SubscriptionModal({
     : "Please subscribe to keep making meaningful connections worldwide";
   const buttonText = hasEverSubscribed ? "Renew" : "Subscribe";
 
-  const handleUpgrade = () => {
+  const handleUpgrade = (planId: string) => {
     onClose();
-    navigation.navigate('Profile');
+    // Navigate to checkout with the selected plan
+    navigation.navigate('Checkout', { 
+      plan: planId, 
+      amount: getPlanAmount(planId), 
+      interval: getPlanInterval(planId) 
+    });
+  };
+
+  const getPlanAmount = (planId: string) => {
+    const plans: { [key: string]: number } = {
+      '1week': 4.99,
+      '1month': 14.99,
+      '3months': 39.99,
+      '6months': 69.99,
+      '1year': 99.99,
+      'lifetime': 299.99
+    };
+    return plans[planId] || 14.99;
+  };
+
+  const getPlanInterval = (planId: string) => {
+    if (planId === 'lifetime') return 'lifetime';
+    if (planId === '1year') return 'year';
+    if (planId.includes('month')) return 'month';
+    if (planId.includes('week')) return 'week';
+    return 'month';
   };
 
   return (
@@ -65,24 +90,91 @@ export function SubscriptionModal({
             {/* Description */}
             <Text style={styles.description}>{description}</Text>
             
-            {/* Buttons */}
-            <View style={styles.buttonContainer}>
+            {/* Plan Options */}
+            <View style={styles.plansContainer}>
+              <Text style={styles.plansTitle}>One-Time Purchase</Text>
+              
               <TouchableOpacity
-                style={styles.primaryButton}
-                onPress={handleUpgrade}
+                style={styles.planButton}
+                onPress={() => handleUpgrade('1week')}
                 activeOpacity={0.8}
               >
-                <Text style={styles.primaryButtonText}>{buttonText}</Text>
+                <View style={styles.planInfo}>
+                  <Text style={styles.planName}>1 Week</Text>
+                  <Text style={styles.planDuration}>7 days access</Text>
+                </View>
+                <Text style={styles.planPrice}>$4.99</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
-                style={styles.secondaryButton}
-                onPress={onClose}
+                style={styles.planButton}
+                onPress={() => handleUpgrade('1month')}
                 activeOpacity={0.8}
               >
-                <Text style={styles.secondaryButtonText}>Maybe later</Text>
+                <View style={styles.planInfo}>
+                  <Text style={styles.planName}>1 Month</Text>
+                  <Text style={styles.planDuration}>30 days access</Text>
+                </View>
+                <Text style={styles.planPrice}>$14.99</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.planButton}
+                onPress={() => handleUpgrade('3months')}
+                activeOpacity={0.8}
+              >
+                <View style={styles.planInfo}>
+                  <Text style={styles.planName}>3 Months</Text>
+                  <Text style={styles.planDuration}>90 days access</Text>
+                </View>
+                <Text style={styles.planPrice}>$39.99</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.planButton}
+                onPress={() => handleUpgrade('6months')}
+                activeOpacity={0.8}
+              >
+                <View style={styles.planInfo}>
+                  <Text style={styles.planName}>6 Months</Text>
+                  <Text style={styles.planDuration}>180 days access</Text>
+                </View>
+                <Text style={styles.planPrice}>$69.99</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.planButton}
+                onPress={() => handleUpgrade('1year')}
+                activeOpacity={0.8}
+              >
+                <View style={styles.planInfo}>
+                  <Text style={styles.planName}>1 Year</Text>
+                  <Text style={styles.planDuration}>365 days access</Text>
+                </View>
+                <Text style={styles.planPrice}>$99.99</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.planButton, styles.lifetimeButton]}
+                onPress={() => handleUpgrade('lifetime')}
+                activeOpacity={0.8}
+              >
+                <View style={styles.planInfo}>
+                  <Text style={[styles.planName, styles.lifetimeText]}>Lifetime</Text>
+                  <Text style={[styles.planDuration, styles.lifetimeText]}>One-time purchase</Text>
+                </View>
+                <Text style={[styles.planPrice, styles.lifetimeText]}>$299.99</Text>
               </TouchableOpacity>
             </View>
+            
+            {/* Close Button */}
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={onClose}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.closeButtonText}>Maybe later</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -145,30 +237,57 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: 24,
   },
-  buttonContainer: {
+  plansContainer: {
     width: '100%',
-    gap: 12,
+    marginBottom: 16,
   },
-  primaryButton: {
-    backgroundColor: '#2563eb',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+  plansTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 12,
+  },
+  planButton: {
+    borderWidth: 1,
+    borderColor: '#d1d5db',
     borderRadius: 8,
-    width: '100%',
+    padding: 12,
+    marginBottom: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  primaryButtonText: {
-    color: 'white',
+  lifetimeButton: {
+    backgroundColor: '#fef3c7',
+    borderColor: '#f59e0b',
+  },
+  planInfo: {
+    flex: 1,
+  },
+  planName: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#111827',
+  },
+  planDuration: {
+    fontSize: 12,
+    color: '#6b7280',
+  },
+  planPrice: {
     fontSize: 16,
     fontWeight: '600',
+    color: '#111827',
   },
-  secondaryButton: {
+  lifetimeText: {
+    color: '#92400e',
+  },
+  closeButton: {
     paddingVertical: 12,
     paddingHorizontal: 24,
     width: '100%',
     alignItems: 'center',
   },
-  secondaryButtonText: {
+  closeButtonText: {
     color: '#6b7280',
     fontSize: 16,
     fontWeight: '500',
