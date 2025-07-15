@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ActivityIndicator, View } from 'react-native';
 
 // Auth Provider
@@ -20,6 +21,8 @@ import SubscriptionPlansScreen from './screens/SubscriptionPlansScreen';
 import PasswordResetScreen from './screens/PasswordResetScreen';
 import FeedbackScreen from './screens/FeedbackScreen';
 import CheckoutScreen from './screens/CheckoutScreen';
+import CameraScreen from './screens/CameraScreen';
+import BottomTabNavigator from './components/BottomTabNavigator';
 
 // Define the stack navigator params
 export type RootStackParamList = {
@@ -28,6 +31,7 @@ export type RootStackParamList = {
   ConversationsList: undefined;
   Analytics: undefined;
   Settings: undefined;
+  Camera: undefined;
   Auth: undefined;
   Profile: undefined;
   SubscriptionPlans: undefined;
@@ -65,6 +69,7 @@ function AuthNavigator() {
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="Conversation" component={ConversationScreen} />
           <Stack.Screen name="ConversationsList" component={ConversationsListScreen} />
+          <Stack.Screen name="Camera" component={CameraScreen} />
           <Stack.Screen name="Analytics" component={AnalyticsScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="Profile" component={ProfileScreen} />
@@ -83,12 +88,24 @@ function AuthNavigator() {
   );
 }
 
+// Main App Navigator with Bottom Tab
+function AppWithTabs() {
+  const { user } = useAuth();
+  
+  return (
+    <View style={{ flex: 1 }}>
+      <AuthNavigator />
+      {user && <BottomTabNavigator />}
+    </View>
+  );
+}
+
 export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
         <NavigationContainer>
-          <AuthNavigator />
+          <AppWithTabs />
         </NavigationContainer>
       </AuthProvider>
       <StatusBar style="dark" />
