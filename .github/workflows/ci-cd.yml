@@ -70,7 +70,7 @@ jobs:
 
     - name: Install mobile dependencies
       working-directory: ./mobile-app
-      run: npm ci
+      run: npm install --legacy-peer-deps
 
     - name: TypeScript type checking (mobile)
       working-directory: ./mobile-app
