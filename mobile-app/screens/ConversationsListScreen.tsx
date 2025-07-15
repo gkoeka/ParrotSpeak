@@ -17,14 +17,18 @@ import { fetchConversations, updateConversation, deleteConversation } from '../a
 import Icon from 'react-native-vector-icons/Feather';
 import { formatConversationTime } from '../utils/date-utils';
 import Header from '../components/Header';
+import { useAuth } from '../contexts/AuthContext';
+import { SubscriptionModal } from '../components/SubscriptionModal';
 
 type ConversationsListNavigationProp = StackNavigationProp<RootStackParamList, 'ConversationsList'>;
 
 export default function ConversationsListScreen() {
   const navigation = useNavigation<ConversationsListNavigationProp>();
+  const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   
   // Function to load conversations
   const loadConversations = async () => {
@@ -167,21 +171,57 @@ export default function ConversationsListScreen() {
     </TouchableOpacity>
   );
   
+  // Check if user has ever had a subscription
+  const hasEverSubscribed = !!(user?.subscriptionTier || 
+    user?.subscriptionStatus === 'expired' || 
+    user?.subscriptionStatus === 'active');
+
   // Empty state when no conversations
-  const renderEmptyState = () => (
-    <View style={styles.emptyContainer}>
-      <Icon name="message-square" size={48} color="#ccc" />
-      <Text style={styles.emptyTitle}>No conversations yet</Text>
-      <Text style={styles.emptyText}>Start a new conversation by tapping the button below</Text>
-      <TouchableOpacity
-        style={styles.newButton}
-        onPress={() => navigation.navigate('Home')}
-      >
-        <Icon name="plus" size={24} color="#fff" />
-        <Text style={styles.newButtonText}>New Conversation</Text>
-      </TouchableOpacity>
-    </View>
-  );
+  const renderEmptyState = () => {
+    if (hasEverSubscribed) {
+      // Expired/returning customer - show personalized message
+      return (
+        <View style={styles.emptyContainer}>
+          <View style={styles.expiredIconContainer}>
+            <Icon name="clock" size={48} color="#f59e0b" />
+          </View>
+          <Text style={styles.expiredTitle}>Welcome Back!</Text>
+          <Text style={styles.expiredText}>
+            Your conversation history is temporarily hidden. Renew your subscription to restore access to all your past conversations and continue connecting with the world.
+          </Text>
+          <TouchableOpacity
+            style={styles.renewButton}
+            onPress={() => setShowSubscriptionModal(true)}
+          >
+            <Icon name="refresh-cw" size={20} color="#fff" />
+            <Text style={styles.renewButtonText}>Renew Subscription</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.newChatButton}
+            onPress={() => navigation.navigate('Home')}
+          >
+            <Text style={styles.newChatButtonText}>Start New Conversation</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    } else {
+      // New user - show original message
+      return (
+        <View style={styles.emptyContainer}>
+          <Icon name="message-square" size={48} color="#ccc" />
+          <Text style={styles.emptyTitle}>Ready to break down language barriers?</Text>
+          <Text style={styles.emptyText}>Start your first conversation and connect with the world!</Text>
+          <TouchableOpacity
+            style={styles.newButton}
+            onPress={() => navigation.navigate('Home')}
+          >
+            <Icon name="plus" size={24} color="#fff" />
+            <Text style={styles.newButtonText}>Start Your First Chat</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+  };
   
   return (
     <View style={styles.container}>
@@ -208,6 +248,13 @@ export default function ConversationsListScreen() {
           }
         />
       )}
+
+      <SubscriptionModal
+        visible={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        hasEverSubscribed={hasEverSubscribed}
+        feature="conversation_history"
+      />
     </View>
   );
 }
@@ -344,5 +391,53 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: '#666',
+  },
+  expiredIconContainer: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#fef3c7',
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  expiredTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 12,
+    color: '#333',
+    textAlign: 'center',
+  },
+  expiredText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
+    paddingHorizontal: 8,
+  },
+  renewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f59e0b',
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    borderRadius: 25,
+    marginBottom: 12,
+  },
+  renewButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  newChatButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  newChatButtonText: {
+    color: '#4F46E5',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
