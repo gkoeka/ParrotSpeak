@@ -34,7 +34,8 @@ const generalLimiter = rateLimit({
 const slowDownMiddleware = slowDown({
   windowMs: 15 * 60 * 1000, // 15 minutes
   delayAfter: 100, // allow 100 requests per 15 minutes, then...
-  delayMs: 500 // begin adding 500ms of delay per request above 100
+  delayMs: () => 500, // new v2 syntax for consistent delay
+  validate: { delayMs: false } // disable warning
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
