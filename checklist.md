@@ -14,7 +14,11 @@
 - [ ] Environment variables configured (APPLE_ID, APPLE_PASSWORD, etc.)
 
 ### App Store Assets
-- [ ] App icons (all required sizes) - See docs/app-store-assets.md
+- [ ] assets/icon.png present and correct size (at least 1024x1024)
+- [ ] assets/adaptive-icon.png for Android (at least 432x432, PNG)
+- [ ] assets/splash.png for splash screen (at least 1242x2436, PNG)
+- [ ] assets/favicon.png present for web
+- [ ] No broken asset references in config or code
 - [ ] Screenshots for all devices (iPhone, iPad, Android)
 - [ ] App Store description and keywords
 - [ ] Privacy Policy accessible at /privacy
@@ -28,6 +32,26 @@
 - [ ] Age rating assessment (ESRB/PEGI)
 
 ## 🔧 Technical Infrastructure
+
+### Repository & Version Control
+- [x] All source code pushed to GitHub (https://github.com/gkoeka/ParrotSpeak)
+- [x] Repository up to date
+- [x] .gitignore excludes node_modules, .expo, build artifacts
+- [ ] Main branch protection enabled (recommended)
+
+### Dependencies & Configuration
+- [ ] All dependencies compatible with current Expo SDK (npx expo install --check)
+- [ ] Unused types packages removed (e.g., @types/react-native)
+- [ ] npm audit run, critical/high vulnerabilities resolved
+- [ ] All package.json scripts tested (build, start, etc.)
+
+### Expo & EAS Configuration
+- [ ] Only one of app.json or app.config.js present (not both)
+- [ ] expo.name, expo.slug, expo.version, expo.sdkVersion correct
+- [ ] android.package and ios.bundleIdentifier set in config
+- [ ] extra.eas.projectId present and matches Expo dashboard UUID
+- [ ] Expo config validates with no errors (npx expo doctor)
+- [ ] Expo owner set correctly for EAS (owner: "gkoeka")
 
 ### Authentication & Security
 - [x] Password requirements (8+ chars, upper/lower/number/special)
@@ -124,6 +148,25 @@
 
 ## 🧪 Testing & Quality Assurance
 
+### Code Quality
+- [ ] Linting and type-checking pass (or temporarily disabled with plan to revisit)
+- [ ] All TODO and FIXME comments addressed
+- [ ] No console.log or debug code in production build
+
+### Expo & Build Testing
+- [ ] Can run npx expo start locally and see app in Expo Go
+- [ ] Can run npx eas build --platform android with no errors
+- [ ] Can run npx eas build --platform ios with no errors
+- [ ] All required environment variables set for builds
+- [ ] Android/iOS credentials set up via EAS for app store distribution
+- [ ] .easignore configured to reduce build size (optional)
+
+### Device & Platform Testing
+- [ ] All critical flows tested on physical device (Expo Go or built app)
+- [ ] Auth flows tested (login, logout, registration, Google/Apple login)
+- [ ] Permissions requests tested (camera, audio, storage) on both platforms
+- [ ] All user-facing text reviewed for typos/clarity
+
 ### Core Features Testing
 - [x] French TTS working
 - [x] Language label persistence
@@ -187,7 +230,14 @@
 - [ ] Submit for review
 - [ ] Monitor review status
 
+### Documentation
+- [ ] README.md explains setup, development, and build instructions
+- [ ] All special steps or caveats documented
+
 ### Launch Preparation
+- [ ] Review security best practices (Expo, API, dependencies)
+- [ ] Confirm all warnings in Expo/EAS are addressed or understood
+- [ ] Confirm EAS build completes and produces installable APK/IPA
 - [ ] Marketing materials ready
 - [ ] Press kit prepared
 - [ ] Support documentation
@@ -215,14 +265,19 @@
 ## Quick Commands
 
 ```bash
-# Check app status
+# Development
 npm run dev
+npx expo start
 
-# Push to GitHub
+# Expo validation
+npx expo doctor
+npx expo install --check
+npm audit
+
+# Build & Deploy
+npx eas build --platform android
+npx eas build --platform ios
 ./push-to-github.sh
-
-# Build for production
-npm run build
 
 # Database operations
 npm run db:push
