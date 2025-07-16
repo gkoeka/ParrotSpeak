@@ -54,14 +54,14 @@ jobs:
       - name: Build iOS (Production)
         if: steps.check-expo.outputs.expo_project == 'true' && github.ref == 'refs/heads/main'
         working-directory: ./mobile-app
-        run: eas build --platform ios --non-interactive --no-wait
+        run: eas build --platform ios --profile production --non-interactive --no-wait
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: Build Android (Production)
         if: steps.check-expo.outputs.expo_project == 'true' && github.ref == 'refs/heads/main'
         working-directory: ./mobile-app
-        run: eas build --platform android --non-interactive --no-wait
+        run: eas build --platform android --profile production --non-interactive --no-wait
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
