@@ -10,6 +10,5 @@ module.exports = async function (env, argv) {
     'react-native$': 'react-native-web',
     '@shared': path.resolve(__dirname, '../shared'), // <-- This line enables @shared alias
   };
-
   return config;
 };
