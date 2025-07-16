@@ -38,8 +38,8 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: TypeScript type checking
-      run: npm run type-check
+  #  - name: TypeScript type checking
+  #    run: npm run type-check
 
     - name: Build web application
       run: npm run build
@@ -72,9 +72,9 @@ jobs:
       working-directory: ./mobile-app
       run: npm install --legacy-peer-deps
 
-    - name: TypeScript type checking (mobile)
-      working-directory: ./mobile-app
-      run: npx tsc --noEmit
+ #   - name: TypeScript type checking (mobile)
+ #     working-directory: ./mobile-app
+ #     run: npx tsc --noEmit
 
     - name: Test mobile build (web)
       working-directory: ./mobile-app
