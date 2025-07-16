@@ -1,7 +1,7 @@
 export default {
   expo: {
-    name: "ParrotSpeak Mobile",
-    slug: "parrotspeak-mobile",
+    name: "ParrotSpeak",
+    slug: "parrotspeak",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/icon.png",
@@ -11,9 +11,7 @@ export default {
       resizeMode: "contain",
       backgroundColor: "#ffffff"
     },
-    assetBundlePatterns: [
-      "**/*"
-    ],
+    assetBundlePatterns: ["**/*"],
     ios: {
       supportsTablet: true
     },
@@ -27,6 +25,11 @@ export default {
       favicon: "./assets/favicon.png",
       bundler: "webpack"
     },
-    platforms: ["ios", "android", "web"]
+    platforms: ["ios", "android", "web"],
+    extra: {
+      eas: {
+        projectId: "gkoeka/projects/parrotspeak"
+      }
+    }
   }
 };
