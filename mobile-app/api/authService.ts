@@ -21,7 +21,7 @@ async function safeFetch(
     return response;
   } catch (err) {
     clearTimeout(timeout);
-    if (err instanceof DOMException && err.name === "AbortError") {
+    if (err && typeof err === "object" && (err as any).name === "AbortError") {
       console.error(`Request timed out: ${url}`);
     } else {
       console.error(`Network error for ${url}:`, err);
