@@ -1,6 +1,6 @@
 {
   "cli": {
-    "version": ">= 5.9.0"
+    "version": ">= 16.17.0"
   },
   "build": {
     "development": {
@@ -15,7 +15,10 @@
     },
     "production": {
       "android": {
-        "buildType": "apk"
+        "buildType": "aab",
+        "env": {
+          "EAS_NO_VCS": "1"
+        }
       }
     }
   },

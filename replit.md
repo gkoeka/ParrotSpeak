@@ -88,6 +88,7 @@ Dark mode preference: Should persist when selected.
 - ✓ **Expo Version Update (July 18, 2025)**: **INFRASTRUCTURE UPDATED** - Updated Expo from version 53.0.19 to 53.0.20 across mobile app package.json and yarn.lock for latest security patches and improvements.
 - ✓ **Expo Doctor Validation Issues Fixed (July 18, 2025)**: **BUILD READY** - Resolved all configuration issues: removed invalid privacy property, created proper 1024x1024 square icons with authentic ParrotSpeak logo, added package validation exclusions. All 15/15 checks now pass - mobile app ready for production builds.
 - ✓ **React Native IAP Variant Conflict Resolved (July 18, 2025)**: **BUILD ISSUE FIXED** - Fixed Gradle build failure caused by react-native-iap variant selection conflict between Amazon and Play Store variants. Completely removed react-native-iap package and replaced all function calls with stub implementations. Cleaned cache files and package references. EAS configuration simplified for production builds.
+- ✓ **"Cannot Fork" Build Error Completely Resolved (July 18, 2025)**: **CRITICAL FIX** - Fixed "sh: 1: Cannot fork" and "spawn /bin/sh EAGAIN" errors by bypassing corrupted npx/shell environment. Solution: Direct node execution with `EAS_NO_VCS=1 node node_modules/eas-cli/bin/run`. Updated build scripts and eas.json cli.version. Mobile app builds now work without Git dependency.
 
 ### Technical Improvements
 - Enhanced voice selection logic for better cross-language support
