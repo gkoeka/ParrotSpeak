@@ -3,11 +3,12 @@ import { API_BASE_URL } from '../constants/api';
 import { makeProtectedRequest } from './subscriptionService';
 
 // Common options for mobile API requests
-// Note: Mobile apps don't use cookies, so we don't include credentials
+// Include credentials for session-based authentication
 const requestOptions = {
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  credentials: 'include' as RequestCredentials
 };
 
 // Common headers for JSON requests

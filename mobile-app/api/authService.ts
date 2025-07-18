@@ -15,6 +15,7 @@ async function safeFetch(
   try {
     const response = await fetch(url, {
       ...options,
+      credentials: 'include',
       signal: controller.signal,
     });
     clearTimeout(timeout);

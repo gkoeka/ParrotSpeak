@@ -73,10 +73,10 @@ export async function makeProtectedRequest<T>(
     const response = await fetch(`${API_BASE_URL}${url}`, {
       ...options,
       headers: {
-        ...getHeaders(true),
+        ...getHeaders(),
         ...options.headers,
       },
-      // Note: Mobile apps don't use cookies for auth
+      credentials: 'include',
     });
     
     if (!response.ok) {

@@ -4,7 +4,7 @@
 // For local development: Use "http://10.0.2.2:5000" for Android emulator or "http://localhost:5000" for iOS simulator
 // For production: Use your deployed API URL
 
-export const API_BASE_URL = "https://workspace.gregkoeka.repl.co"; // Updated to match Replit URL
+export const API_BASE_URL = "https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev"; // Updated to current Replit URL
 
 // API Endpoints
 export const ENDPOINTS = {
@@ -73,9 +73,8 @@ export const getHeaders = (includeAuth = false, token?: string) => {
     "Content-Type": "application/json",
   };
   
-  if (includeAuth && token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
+  // For mobile app, we'll use session-based auth instead of token auth
+  // The server handles authentication via session cookies
   
   return headers;
 };
