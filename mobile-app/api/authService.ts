@@ -36,7 +36,7 @@ export async function getCurrentUser(): Promise<any> {
     });
 
     if (!response.ok) {
-      // Return null for unauthenticated users instead of throwing
+      // Return null for unauthenticated users (this is normal)
       if (response.status === 401) {
         return null;
       }
@@ -45,8 +45,11 @@ export async function getCurrentUser(): Promise<any> {
 
     return await response.json();
   } catch (error) {
-    console.error('Error getting current user:', error instanceof Error ? error.message : 'Unknown error');
-    // Return null instead of throwing to prevent auth initialization errors
+    // Only log network errors, not auth failures
+    if (error instanceof Error && !error.message.includes('Failed to get user')) {
+      console.error('Network error getting current user:', error.message);
+    }
+    // Return null for network errors to prevent auth initialization crashes
     return null;
   }
 }
