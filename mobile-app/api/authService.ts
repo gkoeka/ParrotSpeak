@@ -45,7 +45,7 @@ export async function getCurrentUser(): Promise<any> {
 
     return await response.json();
   } catch (error) {
-    console.error('Error getting current user:', error);
+    console.error('Error getting current user:', error instanceof Error ? error.message : 'Unknown error');
     // Return null instead of throwing to prevent auth initialization errors
     return null;
   }
