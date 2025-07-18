@@ -46,8 +46,9 @@ export async function getCurrentUser(): Promise<any> {
     return await response.json();
   } catch (error) {
     // Only log network errors, not auth failures
-    if (error instanceof Error && !error.message.includes('Failed to get user')) {
-      console.error('Network error getting current user:', error.message);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (!errorMessage.includes('Failed to get user')) {
+      console.error('Network error getting current user:', errorMessage);
     }
     // Return null for network errors to prevent auth initialization crashes
     return null;
