@@ -36,13 +36,18 @@ export async function getCurrentUser(): Promise<any> {
     });
 
     if (!response.ok) {
+      // Return null for unauthenticated users instead of throwing
+      if (response.status === 401) {
+        return null;
+      }
       throw new Error(`Failed to get user: ${response.statusText}`);
     }
 
     return await response.json();
   } catch (error) {
     console.error('Error getting current user:', error);
-    throw error;
+    // Return null instead of throwing to prevent auth initialization errors
+    return null;
   }
 }
 
@@ -83,7 +88,8 @@ export async function loginWithApple(): Promise<any> {
  */
 export async function validateSession(): Promise<any> {
   // TODO: Implement your real session validation logic here!
-  return { user: null }; // return fake user for now
+  // For now, return null to indicate no valid session
+  return null;
 }
 
 /**

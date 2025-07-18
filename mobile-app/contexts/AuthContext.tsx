@@ -54,11 +54,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (storedUser) {
           // Then validate with the server
           const validatedUser = await validateSession();
-          setUser(validatedUser);
+          if (validatedUser) {
+            setUser(validatedUser);
+          }
         }
+        // No error for unauthenticated users - this is normal
       } catch (err) {
         console.error('Auth initialization error:', err);
-        setError(err instanceof Error ? err : new Error('Authentication failed'));
+        // Don't set error for normal unauthenticated state
+        if (err instanceof Error && !err.message.includes('401') && !err.message.includes('Failed to get user')) {
+          setError(err);
+        }
       } finally {
         setIsLoading(false);
       }
