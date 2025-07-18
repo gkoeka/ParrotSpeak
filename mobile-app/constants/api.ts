@@ -1,8 +1,8 @@
 // API configuration
 
-// For the Replit preview environment, use a relative URL so it works within preview window
-// This will make API calls relative to the current domain
-export const API_BASE_URL = '';
+// For the Replit environment, use the Replit URL to connect to the backend
+// This allows the mobile app to reach the backend server
+export const API_BASE_URL = 'https://workspace.gregkoeka.repl.co';
 
 // For development environments, you'd specify the full URL:
 // export const API_BASE_URL = 'http://localhost:5000';
