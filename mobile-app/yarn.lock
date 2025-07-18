@@ -3939,9 +3939,9 @@ expo-updates@~0.28.17:
     ignore "^5.3.1"
     resolve-from "^5.0.0"
 
-expo@^53.0.19:
-  version "53.0.19"
-  resolved "https://registry.npmjs.org/expo/-/expo-53.0.19.tgz"
+expo@^53.0.20:
+  version "53.0.20"
+  resolved "https://registry.npmjs.org/expo/-/expo-53.0.20.tgz"
   integrity sha512-hZWEKw6h5dlfKy6+c3f2exx5x3Loio8p0b2s/Pk1eQfTffqpkQRVVlOzcTWU1RSuMfc47ZMpr97pUJWQczOGsQ==
   dependencies:
     "@babel/runtime" "^7.20.0"
