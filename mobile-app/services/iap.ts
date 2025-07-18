@@ -1,21 +1,36 @@
 /**
  * In-App Purchase Service for Google Play Store and App Store
  * Handles subscription management, receipt validation, and purchase flows
+ * Note: Temporarily stubbed - react-native-iap removed for build compatibility
  */
 
-import {
-  initConnection,
-  getSubscriptions,
-  requestSubscription,
-  getAvailablePurchases,
-  finishTransaction,
-  purchaseErrorListener,
-  purchaseUpdatedListener,
-  Product,
-  Purchase,
-  PurchaseError,
-  SubscriptionPurchase,
-} from 'react-native-iap';
+// Stub interfaces to replace react-native-iap types
+interface Product {
+  productId: string;
+  price: string;
+  currency: string;
+  localizedPrice: string;
+  title: string;
+  description: string;
+}
+
+interface Purchase {
+  productId: string;
+  transactionId: string;
+  transactionDate: number;
+  transactionReceipt: string;
+  purchaseToken?: string;
+}
+
+interface PurchaseError {
+  code: string;
+  message: string;
+}
+
+interface SubscriptionPurchase extends Purchase {
+  autoRenewingAndroid?: boolean;
+  originalTransactionDateIOS?: number;
+}
 
 import { Platform } from 'react-native';
 import { API_BASE_URL } from '../constants/api';
@@ -122,18 +137,19 @@ export class IAPService {
    */
   public async initialize(): Promise<void> {
     try {
-      console.log('Initializing IAP service...');
+      console.log('Initializing IAP service (stubbed)...');
       
-      await initConnection();
+      // Stub implementation - react-native-iap temporarily removed
+      // await initConnection();
       
-      // Set up purchase listeners
-      this.purchaseUpdateSubscription = purchaseUpdatedListener(
-        this.handlePurchaseUpdate.bind(this)
-      );
+      // Set up purchase listeners (stubbed)
+      // this.purchaseUpdateSubscription = purchaseUpdatedListener(
+      //   this.handlePurchaseUpdate.bind(this)
+      // );
       
-      this.purchaseErrorSubscription = purchaseErrorListener(
-        this.handlePurchaseError.bind(this)
-      );
+      // this.purchaseErrorSubscription = purchaseErrorListener(
+      //   this.handlePurchaseError.bind(this)
+      // );
 
       await this.loadProducts();
       this.isInitialized = true;
@@ -152,7 +168,8 @@ export class IAPService {
       const productIds = getProductIds();
       console.log('Loading products:', productIds);
       
-      this.availableProducts = await getSubscriptions(productIds);
+      // Stub implementation
+      this.availableProducts = []; // await getSubscriptions(productIds);
       console.log('Available products:', this.availableProducts);
     } catch (error) {
       console.error('Failed to load products:', error);
@@ -178,7 +195,8 @@ export class IAPService {
 
       console.log('Purchasing subscription:', productId);
       
-      await requestSubscription(productId);
+      // Stub implementation
+      // await requestSubscription(productId);
       
       // For now, simulate purchase for testing
       console.log('Simulating purchase for:', productId);
@@ -200,7 +218,8 @@ export class IAPService {
       const isValid = await this.validateReceipt(purchase);
       
       if (isValid) {
-        await finishTransaction(purchase);
+        // Stub implementation
+        // await finishTransaction(purchase);
         console.log('Purchase completed successfully');
       } else {
         console.error('Receipt validation failed');
@@ -256,7 +275,8 @@ export class IAPService {
     try {
       console.log('Restoring purchases...');
       
-      const purchases = await getAvailablePurchases();
+      // Stub implementation
+      const purchases: any[] = []; // await getAvailablePurchases();
       console.log('Available purchases:', purchases);
       
       // Validate each purchase with backend
