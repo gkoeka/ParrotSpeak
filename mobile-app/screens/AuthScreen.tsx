@@ -131,15 +131,15 @@ const AuthScreen: React.FC = () => {
     try {
       if (isLogin) {
         await login({ email, password });
-        navigation.navigate('Home');
+        // Navigation will be handled by AuthContext/App.tsx when user state changes
       } else {
         await register({ email, firstName, lastName, password });
-        navigation.navigate('Home');
+        // Navigation will be handled by AuthContext/App.tsx when user state changes
       }
     } catch (error) {
       Alert.alert(
         isLogin ? 'Login Failed' : 'Registration Failed',
-        error instanceof Error ? error.message : 'An unexpected error occurred'
+        error instanceof Error ? error.message : 'Please check your details and try again'
       );
     }
   };

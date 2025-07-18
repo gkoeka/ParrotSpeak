@@ -1,113 +1,148 @@
-import { API_BASE_URL } from '../constants/api';
+import { API_BASE_URL } from "../constants/api";
 
-// Common headers for mobile API requests
 const requestHeaders = {
-  'Content-Type': 'application/json'
+  "Content-Type": "application/json",
 };
+
+// Utility: Safe fetch with error and timeout handling
+async function safeFetch(
+  url: string,
+  options?: RequestInit,
+  timeoutMs = 15000, // 15 seconds default timeout
+): Promise<Response | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    return response;
+  } catch (err) {
+    clearTimeout(timeout);
+    if (err instanceof DOMException && err.name === "AbortError") {
+      console.error(`Request timed out: ${url}`);
+    } else {
+      console.error(`Network error for ${url}:`, err);
+    }
+    return null; // Always return null on network errors
+  }
+}
 
 /**
  * Log out the current user
  */
-export async function logout(): Promise<void> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
-      method: 'POST',
-      headers: requestHeaders
-    });
+export async function logout(): Promise<boolean> {
+  const response = await safeFetch(`${API_BASE_URL}/api/auth/logout`, {
+    method: "POST",
+    headers: requestHeaders,
+  });
+  if (!response) return false; // network error
 
-    if (!response.ok) {
-      throw new Error(`Failed to logout: ${response.statusText}`);
-    }
-
-    return;
-  } catch (error) {
-    console.error('Error logging out:', error);
-    throw error;
+  if (!response.ok) {
+    console.warn(`Logout failed: ${response.status} ${response.statusText}`);
+    return false;
   }
+  return true;
 }
 
 /**
  * Get current user information
  */
-export async function getCurrentUser(): Promise<any> {
+export async function getCurrentUser(): Promise<any | null> {
+  const response = await safeFetch(`${API_BASE_URL}/api/auth/user`, {
+    headers: requestHeaders,
+  });
+  if (!response) return null; // network error, treat as unauthenticated
+
+  if (!response.ok) {
+    if (response.status === 401) return null; // Unauthenticated (normal)
+    console.warn(
+      `Failed to get user: ${response.status} ${response.statusText}`,
+    );
+    return null;
+  }
+
   try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/user`, {
-      headers: requestHeaders
-    });
-
-    if (!response.ok) {
-      // Return null for unauthenticated users (this is normal)
-      if (response.status === 401) {
-        return null;
-      }
-      throw new Error(`Failed to get user: ${response.statusText}`);
-    }
-
     return await response.json();
-  } catch (error) {
-    // Only log network errors, not auth failures
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    if (!errorMessage.includes('Failed to get user')) {
-      console.error('Network error getting current user:', errorMessage);
-    }
-    // Return null for network errors to prevent auth initialization crashes
+  } catch (e) {
+    console.error("Error parsing user JSON:", e);
     return null;
   }
 }
 
 /**
- * Login (stub implementation)
+ * Login (stub, example real logic)
  */
-export async function login(credentials: any): Promise<any> {
-  // TODO: Implement your real login logic here!
-  return { user: null }; // return fake user for now
+export async function login(credentials: {
+  email: string;
+  password: string;
+}): Promise<any | null> {
+  const response = await safeFetch(`${API_BASE_URL}/api/auth/login`, {
+    method: "POST",
+    headers: requestHeaders,
+    body: JSON.stringify(credentials),
+  });
+  if (!response) return null;
+  if (!response.ok) {
+    // Optionally handle 401 vs other codes differently
+    return null;
+  }
+  try {
+    return await response.json();
+  } catch (e) {
+    console.error("Error parsing login JSON:", e);
+    return null;
+  }
 }
 
-/**
- * Register (stub implementation)
- */
-export async function register(credentials: any): Promise<any> {
-  // TODO: Implement your real registration logic here!
-  return { user: null }; // return fake user for now
+// Repeat similar for register, Google/Apple login, etc
+
+export async function register(credentials: {
+  email: string;
+  firstName: string;
+  lastName?: string;
+  password: string;
+}): Promise<any | null> {
+  const response = await safeFetch(`${API_BASE_URL}/api/auth/register`, {
+    method: "POST",
+    headers: requestHeaders,
+    body: JSON.stringify(credentials),
+  });
+  if (!response) return null;
+  if (!response.ok) {
+    return null;
+  }
+  try {
+    return await response.json();
+  } catch (e) {
+    console.error("Error parsing register JSON:", e);
+    return null;
+  }
 }
 
-/**
- * Google login (stub implementation)
- */
-export async function loginWithGoogle(): Promise<any> {
-  // TODO: Implement your real Google login logic here!
-  return { user: null }; // return fake user for now
-}
-
-/**
- * Apple login (stub implementation)
- */
-export async function loginWithApple(): Promise<any> {
-  // TODO: Implement your real Apple login logic here!
-  return { user: null }; // return fake user for now
-}
-
-/**
- * Validate session (stub implementation)
- */
-export async function validateSession(): Promise<any> {
-  // TODO: Implement your real session validation logic here!
-  // For now, return null to indicate no valid session
+export async function loginWithGoogle(): Promise<any | null> {
+  // ...Google OAuth flow here
   return null;
 }
 
-/**
- * Check subscription access (stub implementation)
- */
-export function checkSubscriptionAccess(user: any): any {
-  // TODO: Implement real checkSubscriptionAccess
-  return {};
+export async function loginWithApple(): Promise<any | null> {
+  // ...Apple OAuth flow here
+  return null;
 }
 
-/**
- * Is feature protected (stub implementation)
- */
-export function isFeatureProtected(feature: any): boolean {
-  // TODO: Implement real isFeatureProtected logic
+export async function validateSession(): Promise<any | null> {
+  // ...Validate session logic here
+  return null;
+}
+
+export function checkSubscriptionAccess(user: any): boolean {
+  // TODO: check user.subscription etc
+  return !!user && !!user.subscription && user.subscription.active;
+}
+
+export function isFeatureProtected(feature: string): boolean {
+  // TODO: Real logic based on feature flags/config
   return false;
 }

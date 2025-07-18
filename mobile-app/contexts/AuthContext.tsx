@@ -1,16 +1,16 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { 
-  User, 
-  login, 
-  register, 
-  logout, 
-  getCurrentUser, 
-  validateSession, 
+import React, { createContext, useState, useEffect, useContext } from "react";
+import {
+  User,
+  login,
+  register,
+  logout,
+  getCurrentUser,
+  validateSession,
   loginWithGoogle,
   loginWithApple,
-  LoginCredentials, 
-  RegisterCredentials 
-} from '../api/authService';
+  LoginCredentials,
+  RegisterCredentials,
+} from "../api/authService";
 
 interface AuthContextType {
   user: User | null;
@@ -23,7 +23,6 @@ interface AuthContextType {
   logout: () => Promise<void>;
 }
 
-// Create context with a default value
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
@@ -35,121 +34,101 @@ const AuthContext = createContext<AuthContextType>({
   logout: async () => {},
 });
 
-// Custom hook to use the auth context
 export const useAuth = () => useContext(AuthContext);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Check for existing session on load
+  // On mount: load user (unauth = normal, not error)
   useEffect(() => {
+    let isMounted = true;
     const checkAuth = async () => {
+      setIsLoading(true);
+      setError(null);
       try {
-        setIsLoading(true);
-        // First try to get stored user
-        const storedUser = await getCurrentUser();
-        
-        if (storedUser) {
-          // Then validate with the server
-          const validatedUser = await validateSession();
-          if (validatedUser) {
-            setUser(validatedUser);
-          }
-        }
-        // No error for unauthenticated users - this is normal
+        const currentUser = await getCurrentUser();
+        if (!isMounted) return;
+        setUser(currentUser); // currentUser may be null (unauth), that's fine
       } catch (err) {
-        console.error('Auth initialization error:', err);
-        // Don't set error for normal unauthenticated state
-        if (err instanceof Error && !err.message.includes('401') && !err.message.includes('Failed to get user')) {
-          setError(err);
-        }
+        if (!isMounted) return;
+        // Only set error for network/server issues
+        setError(err instanceof Error ? err : new Error("Failed to load user"));
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
-
     checkAuth();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // Login function
+  // Generic handler template for all actions
+  const runWithLoading = async <T,>(
+    action: () => Promise<T>,
+    setUserOnSuccess?: (data: T) => void,
+  ) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await action();
+      if (setUserOnSuccess) setUserOnSuccess(result);
+      return result;
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error("Unknown auth error"));
+      throw err; // Optional: throw if you want UI to handle further
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Auth actions
   const handleLogin = async (credentials: LoginCredentials) => {
-    try {
-      setIsLoading(true);
-      setError(null);
+    await runWithLoading(async () => {
       const loggedInUser = await login(credentials);
+      if (!loggedInUser) throw new Error("Invalid email or password");
       setUser(loggedInUser);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Login failed'));
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
+      return loggedInUser;
+    });
   };
 
-  // Register function
   const handleRegister = async (credentials: RegisterCredentials) => {
-    try {
-      setIsLoading(true);
-      setError(null);
+    await runWithLoading(async () => {
       const registeredUser = await register(credentials);
+      if (!registeredUser) throw new Error("Registration failed. Please check your details and try again.");
       setUser(registeredUser);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Registration failed'));
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
+      return registeredUser;
+    });
   };
 
-  // Google login function
   const handleGoogleLogin = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+    await runWithLoading(async () => {
       const googleUser = await loginWithGoogle();
+      if (!googleUser) throw new Error("Google login failed");
       setUser(googleUser);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Google login failed'));
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
-  // Apple login function
   const handleAppleLogin = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+    await runWithLoading(async () => {
       const appleUser = await loginWithApple();
+      if (!appleUser) throw new Error("Apple login failed");
       setUser(appleUser);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Apple login failed'));
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
-  // Logout function
   const handleLogout = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+    await runWithLoading(async () => {
       await logout();
       setUser(null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Logout failed'));
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
-  // Value to be provided to consumers
-  const value = {
+  const value: AuthContextType = {
     user,
     isLoading,
     error,
