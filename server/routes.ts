@@ -154,8 +154,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId
       );
       
-      // Track conversation start for internal analytics
-      await InternalAnalyticsService.startConversationTracking(conversation.id, userId);
+      // Track conversation start for internal analytics (non-blocking)
+      InternalAnalyticsService.startConversationTracking(conversation.id, userId)
+        .catch(err => console.error('Analytics tracking failed:', err));
       
       res.status(201).json(conversation);
     } catch (error) {
@@ -179,7 +180,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/conversations/:id/messages', requireAuth, requireSubscription, async (req: Request, res: Response) => {
     try {
+      // Validate request body
+      if (!req.body || typeof req.body !== 'object') {
+        return res.status(400).json({ message: 'Invalid request body. Expected JSON object.' });
+      }
+
       const { text, sourceLanguage, targetLanguage } = req.body;
+      
+      if (!text || !sourceLanguage || !targetLanguage) {
+        return res.status(400).json({ 
+          message: 'Missing required fields: text, sourceLanguage, targetLanguage' 
+        });
+      }
+
       const conversationId = req.params.id;
       const userId = req.user?.id;
       const startTime = Date.now();
@@ -194,21 +207,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId
       );
 
-      // Track user message for analytics
-      await InternalAnalyticsService.updateConversationMetrics(conversationId, {
+      // Track user message for analytics (non-blocking)
+      InternalAnalyticsService.updateConversationMetrics(conversationId, {
         isUser: true
-      });
+      }).catch(err => console.error('Analytics tracking failed:', err));
 
       // Perform translation
       const translationResult = await translateText(text, sourceLanguage, targetLanguage);
       const translationTime = Date.now() - startTime;
       
-      // Track translation for analytics
-      await InternalAnalyticsService.updateConversationMetrics(conversationId, {
+      // Track translation for analytics (non-blocking)
+      InternalAnalyticsService.updateConversationMetrics(conversationId, {
         isUser: false,
         translationTime,
         failed: false
-      });
+      }).catch(err => console.error('Analytics tracking failed:', err));
       
       res.status(201).json({
         id: messageId,
