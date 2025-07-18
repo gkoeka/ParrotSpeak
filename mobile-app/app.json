@@ -44,7 +44,6 @@
     "plugins": [
       "expo-av",
       "expo-file-system",
-      "expo-speech",
       "expo-camera",
       "expo-image-picker"
     ],

@@ -21,17 +21,12 @@ import Icon from 'react-native-vector-icons/Feather';
 import { Ionicons } from '@expo/vector-icons';
 import { FontAwesome } from '@expo/vector-icons';
 import ParrotSpeakLogo from '../components/ParrotSpeakLogo';
+import { validatePassword as validatePasswordUtil } from '../shared/password-validation';
 
 type AuthScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Auth'>;
 
 // Email validation regex
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// NIST-compliant password validation (import from shared)
-const validatePassword = async (password: string) => {
-  const { validatePassword } = await import('@shared/password-validation');
-  return validatePassword(password);
-};
 
 const AuthScreen: React.FC = () => {
   const navigation = useNavigation<AuthScreenNavigationProp>();
@@ -94,7 +89,7 @@ const AuthScreen: React.FC = () => {
       isValid = false;
     } else if (!isLogin) {
       // Enhanced password validation for registration
-      const passwordValidation = await validatePassword(password);
+      const passwordValidation = validatePasswordUtil(password);
       if (!passwordValidation.isValid) {
         setPasswordError(passwordValidation.errors.join('. '));
         isValid = false;
