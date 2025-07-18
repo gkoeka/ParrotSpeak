@@ -83,6 +83,7 @@ Dark mode preference: Should persist when selected.
 - ✓ **Login Sessions Removal (July 15, 2025)**: **MOBILE-FOCUSED CLEANUP** - Removed Login Sessions section from Security settings as it's not needed for mobile-only app deployment on iOS/Android. Eliminated related getBrowserInfo() function and simplified security interface for mobile users.
 - ✓ **Welsh Flag Update & Dzongkha Language Support (July 15, 2025)**: **CULTURAL ACCURACY** - Updated Welsh flag from Union Jack to proper Welsh dragon flag (gb-wls.svg). Added Dzongkha (Bhutanese) language support with proper Bhutan flag. Both changes applied to web and mobile platforms for complete language parity.
 - ✓ **Profile Billing Current Plan UI Enhancement (July 15, 2025)**: **UX IMPROVED** - Completely redesigned Current Plan section with status badges (green/amber/gray), visual icons (shield, clock, crown), gradient background, progress indicators for active subscriptions, and action buttons moved to bottom with separator. Much cleaner and more professional appearance with clear visual hierarchy.
+- ✓ **Package Manager Standardization (July 16, 2025)**: **INFRASTRUCTURE CLEANUP** - Resolved package manager conflicts by standardizing on NPM for main project and Yarn for mobile app. Removed conflicting root-level yarn.lock file. Fixed security vulnerabilities including high-severity multer DoS issue and moderate esbuild development server vulnerabilities. All npm audit issues resolved.
 
 ### Technical Improvements
 - Enhanced voice selection logic for better cross-language support

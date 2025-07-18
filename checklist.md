@@ -40,9 +40,11 @@
 - [ ] Main branch protection enabled (recommended)
 
 ### Dependencies & Configuration
+- [x] Package manager consistency: NPM for main project, Yarn for mobile app
+- [x] Conflicting yarn.lock removed from root level
 - [ ] All dependencies compatible with current Expo SDK (npx expo install --check)
 - [ ] Unused types packages removed (e.g., @types/react-native)
-- [ ] npm audit run, critical/high vulnerabilities resolved
+- [x] npm audit run, critical/high vulnerabilities resolved
 - [ ] All package.json scripts tested (build, start, etc.)
 
 ### Expo & EAS Configuration
