@@ -9,29 +9,18 @@
     },
     "preview": {
       "distribution": "internal",
-      "ios": {
-        "buildConfiguration": "Release"
-      },
       "android": {
         "buildType": "apk"
       }
     },
     "production": {
-      "ios": {
-        "buildConfiguration": "Release"
-      },
       "android": {
-        "buildType": "apk"
+        "buildType": "aab"
       }
     }
   },
   "submit": {
     "production": {
-      "ios": {
-        "appleId": "your-apple-id@example.com",
-        "ascAppId": "your-app-store-connect-app-id",
-        "appleTeamId": "your-apple-team-id"
-      },
       "android": {
         "serviceAccountKeyPath": "./google-play-service-account.json",
         "track": "production"
