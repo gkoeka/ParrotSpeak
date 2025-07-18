@@ -15,7 +15,7 @@
     },
     "production": {
       "android": {
-        "buildType": "aab",
+        "buildType": "apk",
         "env": {
           "EAS_NO_VCS": "1"
         }
