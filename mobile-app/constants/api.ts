@@ -1,8 +1,8 @@
 // API configuration
 
-// For the Replit environment, use the Replit URL to connect to the backend
+// For the Replit environment, use the current Replit URL to connect to the backend
 // This allows the mobile app to reach the backend server
-export const API_BASE_URL = 'https://workspace.gregkoeka.repl.co';
+export const API_BASE_URL = 'https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev';
 
 // For development environments, you'd specify the full URL:
 // export const API_BASE_URL = 'http://localhost:5000';
