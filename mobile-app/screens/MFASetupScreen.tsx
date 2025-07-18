@@ -41,7 +41,6 @@ export default function MFASetupScreen() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/mfa/setup`, {
         method: 'POST',
-        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -72,7 +71,6 @@ export default function MFASetupScreen() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/mfa/verify-setup`, {
         method: 'POST',
-        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },

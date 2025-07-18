@@ -49,7 +49,7 @@ export default function Header({
               onPress={() => navigation.navigate('Feedback')}
               accessibilityLabel="Feedback"
             >
-              <Icon name="lightbulb" size={18} color="#4F46E5" />
+              <Icon name="help-circle" size={18} color="#4F46E5" />
               <Text style={styles.feedbackText}>Feedback</Text>
             </TouchableOpacity>
             

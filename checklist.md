@@ -50,6 +50,10 @@
 - [x] AuthService.ts line 42 network request failed error fixed (removed credentials from all auth calls)
 - [x] All mobile API services cleaned up: conversation, auth, language, analytics, subscription services
 - [x] CORS issues completely resolved - mobile app can now connect to backend properly
+- [x] ReferenceError credentialsOption fixed (removed from MFASetupScreen.tsx)
+- [x] API_BASE_URL mismatch resolved (config.ts updated to match Replit URL)
+- [x] Invalid lightbulb icon fixed (changed to help-circle in Header.tsx)
+- [x] ALL EXPO GO BUNDLING ERRORS COMPLETELY RESOLVED
 - [ ] All dependencies compatible with current Expo SDK (npx expo install --check)
 - [ ] Unused types packages removed (e.g., @types/react-native)
 - [x] npm audit run, critical/high vulnerabilities resolved

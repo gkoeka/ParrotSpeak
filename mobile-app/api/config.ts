@@ -4,7 +4,7 @@
 // For local development: Use "http://10.0.2.2:5000" for Android emulator or "http://localhost:5000" for iOS simulator
 // For production: Use your deployed API URL
 
-export const API_BASE_URL = "https://parrotspeak.app"; // Update this to your production URL when deploying
+export const API_BASE_URL = "https://workspace.gregkoeka.repl.co"; // Updated to match Replit URL
 
 // API Endpoints
 export const ENDPOINTS = {
