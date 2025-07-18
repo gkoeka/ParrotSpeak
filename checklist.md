@@ -46,6 +46,7 @@
 - [x] Shared utilities properly configured for both platforms
 - [x] Android build JSX syntax error fixed (ConversationArea.tsx line 450)
 - [x] Mobile app network connectivity restored (API_BASE_URL updated to Replit URL)
+- [x] ConversationsListScreen network request failed error fixed (removed credentials from API calls)
 - [ ] All dependencies compatible with current Expo SDK (npx expo install --check)
 - [ ] Unused types packages removed (e.g., @types/react-native)
 - [x] npm audit run, critical/high vulnerabilities resolved

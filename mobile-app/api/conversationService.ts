@@ -2,9 +2,12 @@ import { Conversation, Message } from '../types';
 import { API_BASE_URL } from '../constants/api';
 import { makeProtectedRequest } from './subscriptionService';
 
-// Common options that include credentials for all API requests
-const credentialsOption = {
-  credentials: 'include' as RequestCredentials // Include cookies for authentication
+// Common options for mobile API requests
+// Note: Mobile apps don't use cookies, so we don't include credentials
+const requestOptions = {
+  headers: {
+    'Content-Type': 'application/json'
+  }
 };
 
 // Common headers for JSON requests
@@ -15,7 +18,7 @@ const jsonHeaders = {
 // Get all conversations
 export async function fetchConversations(): Promise<Conversation[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/conversations`, credentialsOption);
+    const response = await fetch(`${API_BASE_URL}/api/conversations`, requestOptions);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch conversations: ${response.statusText}`);
@@ -31,7 +34,7 @@ export async function fetchConversations(): Promise<Conversation[]> {
 // Get a specific conversation by ID
 export async function fetchConversation(id: string): Promise<Conversation> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/conversations/${id}`, credentialsOption);
+    const response = await fetch(`${API_BASE_URL}/api/conversations/${id}`, requestOptions);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch conversation: ${response.statusText}`);
@@ -97,8 +100,7 @@ export async function updateConversation(
     const response = await fetch(`${API_BASE_URL}/api/conversations/${id}`, {
       method: 'PATCH',
       headers: jsonHeaders,
-      body: JSON.stringify(updates),
-      ...credentialsOption
+      body: JSON.stringify(updates)
     });
     
     if (!response.ok) {
@@ -117,7 +119,7 @@ export async function deleteConversation(id: string): Promise<void> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/conversations/${id}`, {
       method: 'DELETE',
-      ...credentialsOption
+      headers: jsonHeaders
     });
     
     if (!response.ok) {
@@ -137,8 +139,7 @@ export async function markMessageAsSpoken(id: string): Promise<void> {
     // Fix the API URL - should be /api/messages/{id}/mark-spoken
     const response = await fetch(`${API_BASE_URL}/api/messages/${id}/mark-spoken`, {
       method: 'PATCH',
-      headers: jsonHeaders,
-      ...credentialsOption
+      headers: jsonHeaders
     });
     
     if (!response.ok) {
