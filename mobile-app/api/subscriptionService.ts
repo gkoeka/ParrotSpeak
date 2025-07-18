@@ -76,7 +76,7 @@ export async function makeProtectedRequest<T>(
         ...getHeaders(true),
         ...options.headers,
       },
-      credentials: 'include',
+      // Note: Mobile apps don't use cookies for auth
     });
     
     if (!response.ok) {

@@ -1,9 +1,9 @@
 import { API_BASE_URL } from '../constants/api';
 import { makeProtectedRequest } from './subscriptionService';
 
-// Common options that include credentials for all API requests
-const credentialsOption = {
-  credentials: 'include' as RequestCredentials
+// Headers for mobile API requests
+const requestHeaders = {
+  'Content-Type': 'application/json'
 };
 
 // Common headers for JSON requests
@@ -16,7 +16,9 @@ const jsonHeaders = {
  */
 export async function getUserAnalytics(timeframe: '7d' | '30d' | '90d' = '30d') {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/analytics/user?timeframe=${timeframe}`, credentialsOption);
+    const response = await fetch(`${API_BASE_URL}/api/analytics/user?timeframe=${timeframe}`, {
+      headers: requestHeaders
+    });
     
     if (!response.ok) {
       throw new Error(`Failed to fetch user analytics: ${response.statusText}`);
@@ -34,7 +36,9 @@ export async function getUserAnalytics(timeframe: '7d' | '30d' | '90d' = '30d') 
  */
 export async function getTranslationQualityMetrics() {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/analytics/translation-quality`, credentialsOption);
+    const response = await fetch(`${API_BASE_URL}/api/analytics/translation-quality`, {
+      headers: requestHeaders
+    });
     
     if (!response.ok) {
       throw new Error(`Failed to fetch translation quality metrics: ${response.statusText}`);
@@ -52,7 +56,9 @@ export async function getTranslationQualityMetrics() {
  */
 export async function getLanguageUsagePatterns() {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/analytics/language-usage`, credentialsOption);
+    const response = await fetch(`${API_BASE_URL}/api/analytics/language-usage`, {
+      headers: requestHeaders
+    });
     
     if (!response.ok) {
       throw new Error(`Failed to fetch language usage patterns: ${response.statusText}`);
@@ -74,7 +80,9 @@ export async function getConversationInsights(conversationId?: string) {
       ? `${API_BASE_URL}/api/analytics/conversation-insights?conversationId=${conversationId}`
       : `${API_BASE_URL}/api/analytics/conversation-insights`;
       
-    const response = await fetch(url, credentialsOption);
+    const response = await fetch(url, {
+      headers: requestHeaders
+    });
     
     if (!response.ok) {
       throw new Error(`Failed to fetch conversation insights: ${response.statusText}`);
@@ -129,8 +137,7 @@ export async function trackFeatureUsage(
         feature,
         metadata,
         timestamp: new Date().toISOString()
-      }),
-      ...credentialsOption
+      })
     });
     
     if (!response.ok) {
@@ -150,7 +157,9 @@ export async function trackFeatureUsage(
  */
 export async function getPerformanceMetrics(timeframe: '24h' | '7d' | '30d' = '7d') {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/analytics/performance?timeframe=${timeframe}`, credentialsOption);
+    const response = await fetch(`${API_BASE_URL}/api/analytics/performance?timeframe=${timeframe}`, {
+      headers: requestHeaders
+    });
     
     if (!response.ok) {
       throw new Error(`Failed to fetch performance metrics: ${response.statusText}`);
@@ -168,7 +177,9 @@ export async function getPerformanceMetrics(timeframe: '24h' | '7d' | '30d' = '7
  */
 export async function getEngagementMetrics() {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/analytics/engagement`, credentialsOption);
+    const response = await fetch(`${API_BASE_URL}/api/analytics/engagement`, {
+      headers: requestHeaders
+    });
     
     if (!response.ok) {
       throw new Error(`Failed to fetch engagement metrics: ${response.statusText}`);
@@ -186,7 +197,9 @@ export async function getEngagementMetrics() {
  */
 export async function exportAnalyticsData(format: 'csv' | 'json' = 'json') {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/analytics/export?format=${format}`, credentialsOption);
+    const response = await fetch(`${API_BASE_URL}/api/analytics/export?format=${format}`, {
+      headers: requestHeaders
+    });
     
     if (!response.ok) {
       throw new Error(`Failed to export analytics data: ${response.statusText}`);

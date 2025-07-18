@@ -1,9 +1,9 @@
 import { Language } from '../types';
 import { API_BASE_URL } from '../constants/api';
 
-// Common options that include credentials for all API requests
-const credentialsOption = {
-  credentials: 'include' as RequestCredentials // Include cookies for authentication
+// Headers for mobile API requests
+const requestHeaders = {
+  'Content-Type': 'application/json'
 };
 
 // Common headers for JSON requests
@@ -120,8 +120,7 @@ export async function recognizeSpeech(
       body: JSON.stringify({
         audio: audioBase64,
         language: languageCode
-      }),
-      ...credentialsOption
+      })
     });
     
     if (!response.ok) {
@@ -150,8 +149,7 @@ export async function translateText(
         text,
         sourceLanguage,
         targetLanguage
-      }),
-      ...credentialsOption
+      })
     });
     
     if (!response.ok) {

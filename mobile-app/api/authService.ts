@@ -1,8 +1,8 @@
 import { API_BASE_URL } from '../constants/api';
 
-// Common options that include credentials for all API requests
-const credentialsOption = {
-  credentials: 'include' as RequestCredentials
+// Common headers for mobile API requests
+const requestHeaders = {
+  'Content-Type': 'application/json'
 };
 
 /**
@@ -12,7 +12,7 @@ export async function logout(): Promise<void> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
       method: 'POST',
-      ...credentialsOption
+      headers: requestHeaders
     });
 
     if (!response.ok) {
@@ -31,7 +31,9 @@ export async function logout(): Promise<void> {
  */
 export async function getCurrentUser(): Promise<any> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/user`, credentialsOption);
+    const response = await fetch(`${API_BASE_URL}/api/auth/user`, {
+      headers: requestHeaders
+    });
 
     if (!response.ok) {
       throw new Error(`Failed to get user: ${response.statusText}`);
