@@ -145,9 +145,14 @@ export default function ConversationScreen() {
         return null;
       }
 
-      // Implement actual speech recognition and translation
+      // TODO: Implement actual speech recognition 
+      // For now using mock text - this should be replaced with real speech transcription
       const mockText = "Hello, this is a test translation";
-      const result = await translateText(mockText, sourceLanguage.code, targetLanguage.code);
+      const result = await translateText({
+        text: mockText,
+        sourceLanguage: sourceLanguage.code,
+        targetLanguage: targetLanguage.code
+      });
       
       // Add the translated message to the conversation
       const newMessage: Message = {
