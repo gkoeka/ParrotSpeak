@@ -13,6 +13,8 @@
     "db:seed": "tsx db/seed.ts"
   },
   "dependencies": {
+    "@expo/config-plugins": "^10.1.2",
+    "@expo/prebuild-config": "^9.0.11",
     "@hookform/resolvers": "^5.1.1",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@neondatabase/serverless": "^0.10.4",
