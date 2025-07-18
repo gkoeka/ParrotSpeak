@@ -243,26 +243,25 @@ export default function ConversationArea({
         
         <View style={styles.messageInfo}>
           <Text style={styles.messageLanguage}>
-          {item.isUser ? sourceLanguage.name : targetLanguage.name}
-        </Text>
-        <View style={styles.translationInfo}>
-          <Icon 
-            name={item.isUser ? "check-circle" : "globe"} 
-            size={12} 
-            color="#666" 
-            style={styles.translationIcon} 
-          />
-          <Text style={styles.translationText}>
-            {item.isUser 
-              ? `Translated to ${targetLanguage.name}` 
-              : `Translated from ${sourceLanguage.name}`}
+            {item.isUser ? sourceLanguage.name : targetLanguage.name}
           </Text>
+          <View style={styles.translationInfo}>
+            <Icon 
+              name={item.isUser ? "check-circle" : "globe"} 
+              size={12} 
+              color="#666" 
+              style={styles.translationIcon} 
+            />
+            <Text style={styles.translationText}>
+              {item.isUser 
+                ? `Translated to ${targetLanguage.name}` 
+                : `Translated from ${sourceLanguage.name}`}
+            </Text>
+          </View>
         </View>
       </View>
-    )
+    );
   };
-    </View>
-  );
   
   return (
     <View style={styles.container}>
