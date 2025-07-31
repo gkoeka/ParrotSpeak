@@ -2,7 +2,7 @@
 
 ## Overview
 
-ParrotSpeak is a comprehensive voice-to-voice translation platform featuring both web and mobile applications. The system enables real-time cross-language communication using AI-powered speech recognition, translation, and synthesis. It includes subscription-based access control, conversation management, analytics, and enterprise-grade security features.
+ParrotSpeak is a comprehensive voice-to-voice translation platform with web and mobile applications. Its core purpose is to enable real-time cross-language communication through AI-powered speech recognition, translation, and synthesis. Key capabilities include subscription-based access control, conversation management, analytics, and enterprise-grade security features. The vision is to provide seamless global communication, leveraging market potential in cross-cultural interactions and international business.
 
 ## User Preferences
 
@@ -12,224 +12,48 @@ Dark mode preference: Should persist when selected.
 **Change Management**: Always check with user before making extensive changes, especially to core functionality. No rapid bulk changes without approval.
 **Server Restart Protocol**: Always restart the server after making changes to expedite testing and ensure changes take effect immediately.
 **Business Terminology**: Use "Customer" for anyone who has ever paid (past subscribers, expired plans, one-time purchases). "Subscriber" implies ongoing subscription which may not apply to all payment models.
-**Subscription Modal Messaging**: 
+**Subscription Modal Messaging**:
 - New Users: "Connect with Others" / "Please purchase a plan that fits your needs..." / "Choose your plan"
 - Returning Customers: "Keep the Conversation Going" / "Choose a plan again to keep connecting..." / "Choose a plan again"
 **Modal Navigation**: Subscription prompts route to '/checkout' page for plan selection, with proper close functionality via X button or "Maybe later"
 **App Store Setup**: User will need DUNS number before setting up developer accounts. Must remember all app store setup information, credentials, and certificate processes for future reference when DUNS number is obtained.
 
-## Recent Changes (July 2025)
-
-### Username Removal Complete (July 15, 2025)
-- ✓ **USERNAME COMPLETELY REMOVED**: Eliminated username field from database schema, registration forms, and all display logic across platforms
-- ✓ **SIMPLIFIED REGISTRATION FLOW**: Updated to require only email, firstName (required for marketing), lastName (optional), and password  
-- ✓ **ENHANCED PASSWORD SECURITY**: Implemented composition rules requiring uppercase + lowercase + number + special character + 8+ characters with friendly UX checklist
-- ✓ **IMPROVED ERROR HANDLING**: Fixed registration error handling to provide specific feedback for duplicate emails and other validation issues
-- ✓ **DATABASE MIGRATION COMPLETE**: Successfully removed username column, made firstName required, updated all related queries and relationships
-- ✓ **DISPLAY NAME UPDATE**: All user displays now use "firstName lastName" format with proper fallbacks to email when names not available
-- ✓ **CROSS-PLATFORM CONSISTENCY**: Updated both web app and mobile app registration forms, profile displays, and admin panels
-- ✓ **COMPREHENSIVE AUDIT COMPLETED**: Fixed all remaining username references in database queries, scripts, services, and components to prevent runtime failures
-
-### Application Restoration Complete (July 15, 2025)
-- ✓ **Full Application Restored**: Git revert successfully restored working state with proper web app and mobile emulator
-- ✓ **All Core Features Verified**: Voice transcription, translation, WebSocket communication, user authentication all functioning
-- ✓ **Performance Confirmed**: Translation speeds 1.5-2 seconds, real-time WebSocket connections stable
-- ✓ **User Interface Restored**: Both mobile emulator and direct webapp routes serving correctly
-- ✓ **API Endpoints Active**: All authentication, conversation, and translation endpoints responding properly
-- ✓ **Logo Standardization Complete**: Implemented consistent ParrotSpeak logo across all screens using unified Header component. Single source of truth for easy future updates. Production-ready for app store builds.
-
-### Fixed Critical Issues
-- ✓ **French Text-to-Speech**: Resolved silent failure issue with comprehensive fallback system and enhanced voice detection
-- ✓ **Language Label Persistence**: Fixed bug where past translation labels changed when switching languages
-- ✓ **Interface Cleanup**: Removed debug elements for clean user experience
-- ✓ **French TTS Silent Failure Fix (July 11, 2025)**: Enhanced automatic English fallback for French TTS with 1.5-second timeout + actual audio verification to catch "fake success" scenarios
-- ✓ **Language Label Persistence Fix (July 11, 2025)**: Fixed WebSocket handler that was incorrectly swapping language labels on translated messages
-- ✓ **French TTS Final Fix (July 12, 2025)**: **CONFIRMED WORKING** - User hears actual French speech. Fixed variable scoping bug (targetVoice being reset to null) and increased timeout from 1s to 5s for French voices
-- ✓ **Feedback System Complete (July 12, 2025)**: **VERIFIED WORKING** - Fixed missing API endpoint, feedback now stores in database AND sends email notifications to greg.koeka@gmail.com. Complete end-to-end workflow tested and confirmed.
-- ✓ **Auto-Playback Control Fix (July 12, 2025)**: **VERIFIED WORKING** - Fixed unwanted auto-playback of historical conversation messages. Auto-playback now only occurs for real-time translations, not when opening old conversations. Smart conversation loading detection implemented.
-- ✓ **Auto-Playback Critical Bug Fix (July 12, 2025)**: **TESTED AND CONFIRMED** - Found and fixed critical bug in `isInitialLoad` logic that was causing historical conversations to auto-play. Root cause: Two separate loading states (metadata vs messages) weren't synchronized. Fixed by combining both: `isInitialLoad = isLoadingConversation || isLoadingMessages`. Verified by testing - no `mark-spoken` API calls occur when opening historical conversations.
-- ✓ **Mobile Manual Playback Controls (July 12, 2025)**: **FIXED** - Root cause: PlaybackControls only rendered when ALL handlers (onPlay, onPause, onStop) provided, but onPause/onStop were conditionally undefined. Fixed conversation-area.tsx to always provide all handlers. PlaybackControls should now appear for all translation messages with play/pause/stop buttons.
-- ✓ **Pause/Resume Button State Management (July 12, 2025)**: **VERIFIED WORKING** - Fixed critical issue where pause button wouldn't change back to play button when audio finished naturally. Root cause: Conflicting useEffect logic in PlaybackControls component. Fixed by consolidating state synchronization and removing conflicting state management. User confirmed all button states now work correctly: Play→Pause→Resume and automatic Play button display when audio ends naturally.
-- ✓ **Static Mockup Audit Complete (July 12, 2025)**: **VERIFIED** - Comprehensive audit removed all static mockups. Fixed routing confusion where mobile-app-preview served wrong file. Confirmed mobile-phone-emulator.html loads authentic content via iframe. Removed public/mobile-preview-static.html static mockup. Deleted mobile-app-preview.html to prevent future routing confusion.
-- ✓ **Auto-Playback Architecture Simplification (July 12, 2025)**: **VERIFIED WORKING** - Removed complex SpeechManager service that was blocking new translation auto-playback. Replaced with simple auto-playback logic directly in ConversationArea component. New system tracks spoken messages in ref and auto-plays new translations immediately. Much cleaner and more reliable than previous service approach.
-- ✓ **Speech Settings API Fix (July 12, 2025)**: **FIXED** - Added missing PATCH endpoint for `/api/speech-settings` that was causing auto-play toggle errors. The endpoint was missing from main routes file, preventing users from updating voice playback preferences. Auto-play toggle now works properly with proper authentication and error handling.
-- ✓ **Analytics Dashboard Language Pairs Fix (July 12, 2025)**: **VERIFIED WORKING** - Fixed analytics dashboard showing "→ undefined" instead of actual language pair data. Root cause: Frontend was incorrectly parsing already-formatted language pairs and looking for wrong property names. Fixed formatLanguagePair function and changed `lang.totalMessages` to `lang.count` to match backend response. Both web and mobile analytics now display real translation data.
-- ✓ **Device Detection Accuracy Fix (July 12, 2025)**: **VERIFIED WORKING** - Fixed hardcoded "Chrome on Windows" display in Profile page session info. Added proper browser and OS detection with special handling for Replit desktop app environment. Now shows accurate device information.
-- ✓ **Analytics Opt-Out System Verification (July 12, 2025)**: **LIVE TESTED AND CONFIRMED** - Comprehensive test of privacy controls shows complete effectiveness. When user disables analytics, zero tracking events are sent to any service. Consent check occurs before every analytics call, with immediate early return if disabled. Translation functionality remains fully operational while respecting user privacy choice.
-- ✓ **GitHub Repository Setup Complete (July 12, 2025)**: **SUCCESSFULLY DEPLOYED** - ParrotSpeak codebase successfully pushed to https://github.com/gkoeka/ParrotSpeak with all project files. Includes comprehensive GitHub templates (PR templates, issue templates, CI/CD workflows), repository documentation, and proper .gitignore configuration. Repository now ready for collaborative development and deployment workflows.
-- ✓ **GitHub Authentication Resolution (July 13, 2025)**: **VERIFIED WORKING** - Resolved previous git authentication issues by creating fresh repository and using proper Personal Access Token with workflow scope. Successfully pushed all 97.3% TypeScript codebase to private GitHub repository.
-- ✓ **JavaScript Error Fix (July 13, 2025)**: **FIXED** - Resolved "Cannot read properties of undefined (reading 'target')" error in camera functionality with proper null checking for event handlers.
-- ✓ **GitHub Push Workflow Setup (July 13, 2025)**: **COMPLETED** - Created automated push script `push-to-github.sh` and documentation for easy future code uploads to GitHub repository.
-- ✓ **In-App Purchase Integration (July 14, 2025)**: **PHASE 1 & 2 COMPLETE** - Implemented comprehensive IAP system for both Google Play Store and Apple App Store. Created IAP service, updated checkout screen, built backend receipt validation, and prepared complete store deployment documentation. Ready for store account setup with DUNS number.
-- ✓ **Subscription Modal UI/UX Improvements (July 14, 2025)**: **VERIFIED WORKING** - Updated subscription prompt messaging for clearer business terminology and improved user experience. Implemented proper navigation to checkout page and fixed dialog close functionality across both chat and camera features.
-- ✓ **IAP-Based Checkout System (July 14, 2025)**: **IMPLEMENTED** - Completely replaced Stripe payment system with In-App Purchase (IAP) based checkout for app store distribution. Mobile users see IAP purchase flow, web users see mobile app download prompts. Aligns with native app store monetization strategy.
-- ✓ **Production Receipt Validation (July 14, 2025)**: **IMPLEMENTED** - Replaced mock validation with real Google Play Developer API and Apple App Store receipt validation. Smart fallback system uses development mode until credentials are configured. Production-ready for immediate app store submission.
-- ✓ **Legal Documents Complete (July 14, 2025)**: **VERIFIED COMPLETE** - Created comprehensive Privacy Policy (18.8KB PDF) and Terms of Service (21.3KB PDF) covering IAP billing, GDPR/CCPA compliance, and app store requirements. Both available as web pages (/privacy, /terms) and PDF downloads. App store submission ready.
-- ✓ **App Store Setup Documentation (July 14, 2025)**: **COMPLETE GUIDES CREATED** - Documented complete process for app store submission including environment variable setup (docs/environment-setup.md), production certificate generation (docs/production-certificates-guide.md), and legal document summary. Ready for implementation once DUNS number obtained and developer accounts created.
-- ✓ **Stripe Code Removal (July 14, 2025)**: **CLEANED UP COMPLETELY** - Removed all unused Stripe code including webhook service, API imports, security headers, and user API fields. Updated legal documents to reflect app store payment processing. Codebase now focused entirely on IAP model with no Stripe dependencies.
-- ✓ **Subscription Modal UI Update Complete (July 15, 2025)**: **VERIFIED WORKING** - Updated SubscriptionModal to match exact Chat modal design with dark theme, proper plan sections (One-Time Purchase & Recurring Plans), and all 6 subscription options. Profile/Billing upgrade button now triggers same comprehensive modal as chat/camera features.
-- ✓ **Expired User Access Control (July 15, 2025)**: **IMPLEMENTED** - Expired subscription users no longer see conversation history. API endpoint returns empty array for users without active subscriptions, effectively hiding all past conversations until subscription is renewed.
-- ✓ **Auto-Playback Fix Enhanced (July 15, 2025)**: **STRENGTHENED** - Improved auto-playback prevention logic with stricter conditions, longer historical conversation detection delay (2 seconds), and enhanced logging. Auto-playback now only occurs for genuinely new real-time translations, never for historical conversations.
-- ✓ **Expired Customer Experience Complete (July 15, 2025)**: **DUAL PLATFORM IMPLEMENTATION** - Created personalized "Welcome Back!" experience for expired customers across both web app and mobile emulator. Features amber clock icon, reassuring messaging about safely stored conversations, "Purchase another plan" CTA triggering subscription modal, and clean interface without header clutter. Consistent experience whether accessed via direct web app or mobile emulator iframe.
-- ✓ **Auto-Playback Historical Conversations Fixed (July 15, 2025)**: **CRITICAL BUG RESOLVED** - Fixed auto-playback occurring when opening historical conversations. Root cause: Both web and mobile conversation components couldn't distinguish between initial conversation loading vs new real-time messages. Implemented immediate historical conversation detection, proper message count tracking, and enhanced protection with multiple fail-safes against unwanted auto-playback.
-- ✓ **Analytics Data Integrity Restored (July 15, 2025)**: **VERIFIED WORKING** - Fixed misleading "4.2/5.0" translation quality ratings appearing for new users with no translations. Removed hardcoded mock data from analytics endpoint, implemented authentic data-only approach with proper empty states. Analytics now only display real user feedback data, eliminating false metrics that confused new users.
-- ✓ **Translation Quality Rating System Removed (July 15, 2025)**: **DESIGN FLAW ELIMINATED** - Removed fundamentally flawed translation quality rating feature. Users cannot judge translation accuracy in languages they don't speak (that's why they need ParrotSpeak). Replaced with meaningful internal success metrics like conversation completion rates, user retention, and technical performance tracking for business intelligence.
-- ✓ **Password Change Functionality Implemented (July 15, 2025)**: **SECURITY FEATURE COMPLETE** - Fixed non-functional password change in security settings. Created `/api/auth/change-password` endpoint with proper validation, bcrypt hashing, and current password verification. Frontend now has complete form handling with validation, loading states, and user feedback. Password change CTA now works properly with proper error handling and success notifications.
-- ✓ **Enhanced Password Security Requirements (July 15, 2025)**: **SECURITY STRENGTHENED** - Implemented comprehensive password requirements across all platforms: 8+ characters with uppercase letter, lowercase letter, number, and special character. Created friendly UX with detailed 5-item visual checklist in registration and password change forms. Cross-platform validation consistency maintained using shared validation utility.
-- ✓ **Authentication Form Social Sign-In Repositioning (July 15, 2025)**: **UX IMPROVED** - Moved Google/Apple sign-in buttons above email field in both login and register views across web and mobile platforms. Added elegant dividers with "Or continue with email" text for modern authentication flow design.
-- ✓ **Auth Page Spacing Optimization (July 15, 2025)**: **LAYOUT REFINED** - Reduced spacing between tagline and authentication forms by 50% on both web and mobile platforms for tighter, more focused user experience.
-- ✓ **Expired Account Billing Display (July 15, 2025)**: **UX ENHANCED** - Updated billing section to show "Your plan is complete" for users with expired subscriptions instead of showing inactive plan names, providing clearer messaging about account status.
-- ✓ **Plan Name Capitalization Fix (July 15, 2025)**: **DISPLAY CONSISTENCY** - Fixed subscription tier display to show "Lifetime Plan" instead of "lifetime Plan" across both web and mobile platforms for proper capitalization consistency.
-- ✓ **Login Sessions Removal (July 15, 2025)**: **MOBILE-FOCUSED CLEANUP** - Removed Login Sessions section from Security settings as it's not needed for mobile-only app deployment on iOS/Android. Eliminated related getBrowserInfo() function and simplified security interface for mobile users.
-- ✓ **Welsh Flag Update & Dzongkha Language Support (July 15, 2025)**: **CULTURAL ACCURACY** - Updated Welsh flag from Union Jack to proper Welsh dragon flag (gb-wls.svg). Added Dzongkha (Bhutanese) language support with proper Bhutan flag. Both changes applied to web and mobile platforms for complete language parity.
-- ✓ **Profile Billing Current Plan UI Enhancement (July 15, 2025)**: **UX IMPROVED** - Completely redesigned Current Plan section with status badges (green/amber/gray), visual icons (shield, clock, crown), gradient background, progress indicators for active subscriptions, and action buttons moved to bottom with separator. Much cleaner and more professional appearance with clear visual hierarchy.
-- ✓ **Package Manager Standardization (July 16, 2025)**: **INFRASTRUCTURE CLEANUP** - Resolved package manager conflicts by standardizing on NPM for main project and Yarn for mobile app. Removed conflicting root-level yarn.lock file. Fixed security vulnerabilities including high-severity multer DoS issue and moderate esbuild development server vulnerabilities. All npm audit issues resolved.
-- ✓ **Expo Go Bundling Errors Completely Resolved (July 18, 2025)**: **MOBILE APP DEPLOYMENT READY** - Fixed all network request failed errors by eliminating credential issues in MFASetupScreen.tsx, corrected API_BASE_URL mismatch between config.ts and constants/api.ts, and replaced invalid "lightbulb" Feather icon with "help-circle". Mobile app now bundles successfully in Expo Go without any errors and can properly connect to backend server.
-- ✓ **Expo Version Update (July 18, 2025)**: **INFRASTRUCTURE UPDATED** - Updated Expo from version 53.0.19 to 53.0.20 across mobile app package.json and yarn.lock for latest security patches and improvements.
-- ✓ **Expo Doctor Validation Issues Fixed (July 18, 2025)**: **BUILD READY** - Resolved all configuration issues: removed invalid privacy property, created proper 1024x1024 square icons with authentic ParrotSpeak logo, added package validation exclusions. All 15/15 checks now pass - mobile app ready for production builds.
-- ✓ **React Native IAP Variant Conflict Resolved (July 18, 2025)**: **BUILD ISSUE FIXED** - Fixed Gradle build failure caused by react-native-iap variant selection conflict between Amazon and Play Store variants. Completely removed react-native-iap package and replaced all function calls with stub implementations. Cleaned cache files and package references. EAS configuration simplified for production builds.
-- ✓ **"Cannot Fork" Build Error Completely Resolved (July 18, 2025)**: **CRITICAL FIX** - Fixed "sh: 1: Cannot fork" and "spawn /bin/sh EAGAIN" errors by bypassing corrupted npx/shell environment. Solution: Direct node execution with `EAS_NO_VCS=1 node node_modules/eas-cli/bin/run`. Updated build scripts and eas.json cli.version. Mobile app builds now work without Git dependency.
-
-### Technical Improvements
-- Enhanced voice selection logic for better cross-language support
-- Added timeout detection for speech synthesis failures
-- Implemented graceful fallbacks for unsupported languages
-- **Universal Language Audit System**: Created comprehensive speech support testing for all 70+ languages
-- **Smart Fallback Strategy**: Native voice → English → Spanish → first available voice for maximum compatibility
-
-### Lessons Learned
-- **July 11, 2025**: Mobile app store preparation caused routing issues due to bulk changes without user approval
-- **Key Learning**: Always discuss scope and get approval before making extensive changes to core systems
-- **Future Protocol**: Check with user before any changes that could affect multiple files or core functionality
-- **CRITICAL RECURRING ISSUE (July 12, 2025)**: I repeatedly claim fixes work without testing them first, despite user feedback. This has happened multiple times with French TTS fixes.
-- **MANDATORY TESTING PROTOCOL**: 
-  1. Create test page/environment FIRST
-  2. Run actual test and observe results  
-  3. Only report success/failure AFTER confirming real results
-  4. Never claim "this should fix it" - only report "this does fix it" after verification
-- **SUCCESS**: French TTS protocol followed correctly - fixed code, tested with user, confirmed working
-
 ## System Architecture
 
-### Full-Stack TypeScript Application
-- **Frontend**: React with TypeScript, Vite build system
-- **Backend**: Express.js with TypeScript
-- **Mobile**: React Native with Expo
-- **Database**: PostgreSQL with Drizzle ORM
-- **Real-time**: WebSocket connections for live translation streaming
+ParrotSpeak is built as a full-stack TypeScript application.
 
-### Core Technologies
-- **UI Framework**: shadcn/ui components with Tailwind CSS
-- **Authentication**: Passport.js with local and Google OAuth strategies
-- **Payment Processing**: In-App Purchases (IAP) for mobile app stores
-- **Speech Services**: OpenAI Whisper API for transcription
-- **Translation**: Custom translation service with multiple provider support
-- **Analytics**: Mixpanel integration for user behavior tracking
-- **Email**: SendGrid for transactional emails
+### Core Technologies and Design Patterns
+- **Frontend**: React with TypeScript, using Vite for building. shadcn/ui components and Tailwind CSS for modular, responsive UI/UX. React Query for server state and Zustand for client state management. Wouter for client-side routing.
+- **Backend**: Express.js with TypeScript, providing RESTful endpoints and WebSocket support for real-time communication. Middleware stack includes Helmet for security, rate limiting, and session management.
+- **Mobile**: React Native with Expo, ensuring cross-platform deployment with feature parity to the web application. React Navigation handles navigation, and React Context is used for shared state.
+- **Database**: PostgreSQL with Drizzle ORM for schema management, hosted on Neon for serverless capabilities.
+- **Authentication**: Passport.js with local and Google OAuth strategies, utilizing session-based authentication with a PostgreSQL session store.
+- **Subscription Protection**: Critical translation features are protected by middleware, ensuring active subscriptions are required. Unsubscribed users see personalized prompts and restricted access to conversation history.
+- **Data Flow**: Audio input is captured, sent to the server, processed by OpenAI Whisper for speech recognition, translated, and the translated text is returned via WebSocket. All conversation data is encrypted at rest using AES-256 with individual user keys, and all API communication uses HTTPS.
+- **UI/UX Decisions**: Focus on a mobile-first design with responsive breakpoints. Consistent use of a unified Header component and standard ParrotSpeak logo across all platforms. Subscription modals are designed for clear messaging and seamless navigation. Dark mode preference is persistent.
+- **Key Feature Protection**: Voice-to-voice, text, and visual translation, real-time conversation streaming, new conversation creation, and message sending are all subscription-protected. Free features include account management, settings, conversation history viewing (for active subscribers), and profile management.
 
-## Key Components
-
-### Frontend Architecture
-- **Component Structure**: Modular React components with TypeScript
-- **State Management**: React Query for server state, Zustand for client state
-- **Routing**: Wouter for lightweight client-side routing
-- **Styling**: Tailwind CSS with custom design system
-- **Mobile Responsive**: Mobile-first design with responsive breakpoints
-
-### Backend Architecture
-- **API Design**: RESTful endpoints with WebSocket support
-- **Middleware Stack**: Helmet security, rate limiting, session management
-- **Authentication**: Session-based auth with PostgreSQL session store
-- **Subscription Protection**: Middleware to protect all translation features
-- **File Handling**: Multer for secure file uploads with validation
-
-### Database Schema
-- **Users**: Complete user management with subscription status
-- **Conversations**: Encrypted conversation storage with user isolation
-- **Messages**: Individual message storage with encryption
-- **Voice Profiles**: Custom voice settings per user
-- **Analytics**: Usage tracking and performance metrics
-- **Sessions**: Secure session management
-
-### Mobile Application
-- **Platform**: React Native with Expo for cross-platform deployment
-- **Navigation**: React Navigation stack navigator
-- **Services**: Separate API service layer for backend communication
-- **State**: Shared state management with React Context
-- **Features**: Complete feature parity with web application
-
-## Data Flow
-
-### Translation Process
-1. **Voice Input**: User speaks into microphone
-2. **Audio Capture**: Client captures audio and sends to server
-3. **Speech Recognition**: OpenAI Whisper processes audio to text
-4. **Translation**: Text translated using translation service
-5. **Response**: Translated text returned via WebSocket
-6. **Storage**: Conversation and messages stored with encryption
-
-### Subscription Protection
-1. **Subscription Check**: All translation features require active subscription
-2. **Modal Display**: Custom modals shown for subscription prompts
-3. **Graceful Degradation**: Non-translation features remain accessible
-4. **State Management**: Subscription status tracked across application
-
-### User Data Encryption
-1. **At Rest**: All conversation data encrypted using AES-256
-2. **User Keys**: Individual encryption keys per user
-3. **Guest Protection**: Guest conversations encrypted with default key
-4. **Secure Transmission**: HTTPS for all API communication
+### Technical Implementations
+- **Speech Services**: Integration with OpenAI Whisper API for transcription.
+- **Translation**: Custom translation service supporting multiple providers.
+- **File Handling**: Multer is used for secure file uploads with validation.
+- **Enhanced Voice Selection**: Logic for better cross-language support, including timeout detection for speech synthesis failures and graceful fallbacks for unsupported languages (native voice → English → Spanish → first available voice).
+- **Security**: Comprehensive security headers, API rate limiting, server-side input validation, and secure session configuration.
 
 ## External Dependencies
 
 ### Core Services
-- **OpenAI API**: Speech recognition via Whisper
-- **In-App Purchases**: Payment processing via Apple App Store and Google Play Store
-- **SendGrid**: Email delivery service
-- **PostgreSQL**: Primary database (Neon serverless)
+- **OpenAI API**: Used for speech recognition via Whisper.
+- **In-App Purchases (IAP)**: Primary payment processing for mobile app stores (Apple App Store and Google Play Store).
+- **SendGrid**: Used for transactional email delivery.
+- **PostgreSQL**: The primary database, utilizing Neon for serverless capabilities.
 
 ### Development Tools
-- **Drizzle Kit**: Database migrations and schema management
-- **TypeScript**: Type safety across frontend and backend
-- **ESBuild**: Fast production builds
-- **Expo CLI**: Mobile app development and deployment
+- **Drizzle Kit**: Utilized for database migrations and schema management.
+- **TypeScript**: Provides type safety across the entire stack.
+- **ESBuild**: Used for fast production builds.
+- **Expo CLI**: Essential for mobile app development and deployment.
 
 ### Analytics and Monitoring
-- **Mixpanel**: User behavior analytics and feature tracking
-- **FullStory**: Session recording and user experience monitoring
-
-## Deployment Strategy
-
-### Production Environment
-- **Web App**: Static frontend with Express.js API server
-- **Mobile App**: Expo managed workflow for iOS/Android deployment
-- **Database**: Neon PostgreSQL with connection pooling
-- **CDN**: Asset delivery via Vite build optimization
-
-### Security Implementation
-- **Headers**: Comprehensive security headers via Helmet
-- **Rate Limiting**: API protection with express-rate-limit
-- **Input Validation**: Server-side validation for all inputs
-- **Session Security**: Secure session configuration with HTTPS
-- **CORS**: Proper cross-origin resource sharing configuration
-
-### Environment Configuration
-- **Development**: Local development with hot reloading
-- **Staging**: Preview deployments for testing
-- **Production**: Optimized builds with security hardening
-- **Mobile**: Expo managed workflow for app store deployment
-
-### Key Features Protected by Subscription
-- Voice-to-voice translation
-- Text translation
-- Visual translation (camera/image)
-- Real-time conversation streaming
-- New conversation creation
-- Message sending in conversations
-
-### Free Features (Always Available)
-- User account management
-- Settings and preferences
-- Conversation history viewing
-- Profile management
-- Analytics viewing (own data)
+- **Mixpanel**: Integrated for user behavior analytics and feature tracking.
+- **FullStory**: Used for session recording and user experience monitoring.
