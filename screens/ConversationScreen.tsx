@@ -1,0 +1,102 @@
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import Header from '../components/Header';
+import VoiceInputControls from '../components/VoiceInputControls';
+import PlaybackControls from '../components/PlaybackControls';
+import LanguageSelector from '../components/LanguageSelector';
+
+export default function ConversationScreen() {
+  const [messages, setMessages] = useState<Array<{
+    id: string;
+    text: string;
+    translation: string;
+    fromLanguage: string;
+    toLanguage: string;
+    timestamp: Date;
+  }>>([]);
+
+  return (
+    <View style={styles.container}>
+      <Header />
+      
+      <LanguageSelector />
+      
+      <ScrollView style={styles.messagesContainer}>
+        {messages.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>
+              Start speaking to begin your conversation
+            </Text>
+          </View>
+        ) : (
+          messages.map((message) => (
+            <View key={message.id} style={styles.messageCard}>
+              <Text style={styles.originalText}>{message.text}</Text>
+              <Text style={styles.translatedText}>{message.translation}</Text>
+              <Text style={styles.languagePair}>
+                {message.fromLanguage} → {message.toLanguage}
+              </Text>
+            </View>
+          ))
+        )}
+      </ScrollView>
+      
+      <View style={styles.controlsContainer}>
+        <VoiceInputControls onMessage={(message) => setMessages(prev => [...prev, message])} />
+        <PlaybackControls />
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  messagesContainer: {
+    flex: 1,
+    padding: 16,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  },
+  messageCard: {
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  originalText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#1a1a1a',
+  },
+  translatedText: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 8,
+  },
+  languagePair: {
+    fontSize: 12,
+    color: '#3366FF',
+    fontWeight: '500',
+  },
+  controlsContainer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e9ecef',
+  },
+});

@@ -1,12 +1,56 @@
 {
   "expo": {
-    "extra": {
-      "eas": {
-        "projectId": "ab2db282-813b-4211-9c0c-58d3ae0109bb"
+    "name": "ParrotSpeak",
+    "slug": "parrotspeak",
+    "owner": "gkoeka",
+    "version": "1.0.0",
+    "sdkVersion": "53.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#4F46E5"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.parrotspeak.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "ParrotSpeak needs access to your microphone to translate your speech.",
+        "NSCameraUsageDescription": "ParrotSpeak needs access to your camera to translate text in images.",
+        "NSPhotoLibraryUsageDescription": "ParrotSpeak needs access to your photo library to translate text in images."
       }
     },
     "android": {
-      "package": "com.parrotspeak.app"
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#4F46E5"
+      },
+      "package": "com.parrotspeak.app",
+      "versionCode": 1,
+      "permissions": [
+        "RECORD_AUDIO",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-av",
+      "expo-file-system",
+      "expo-camera",
+      "expo-image-picker"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "432bc810-3ba5-4443-ac0d-25978617b7e5"
+      }
     }
   }
 }

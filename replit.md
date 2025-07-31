@@ -2,7 +2,9 @@
 
 ## Overview
 
-ParrotSpeak is a comprehensive voice-to-voice translation platform with web and mobile applications. Its core purpose is to enable real-time cross-language communication through AI-powered speech recognition, translation, and synthesis. Key capabilities include subscription-based access control, conversation management, analytics, and enterprise-grade security features. The vision is to provide seamless global communication, leveraging market potential in cross-cultural interactions and international business.
+ParrotSpeak is a comprehensive voice-to-voice translation platform built as a mobile-only application with React Native and Expo. Its core purpose is to enable real-time cross-language communication through AI-powered speech recognition, translation, and synthesis. Key capabilities include subscription-based access control, conversation management, analytics, and enterprise-grade security features. The vision is to provide seamless global communication, leveraging market potential in cross-cultural interactions and international business.
+
+**Architecture Decision (January 2025)**: Transitioned from dual web/mobile architecture to streamlined mobile-only approach for better aesthetic consistency, simplified maintenance, and unified development experience.
 
 ## User Preferences
 
@@ -20,12 +22,11 @@ Dark mode preference: Should persist when selected.
 
 ## System Architecture
 
-ParrotSpeak is built as a full-stack TypeScript application.
+ParrotSpeak is built as a mobile-first TypeScript application with a clean API backend.
 
 ### Core Technologies and Design Patterns
-- **Frontend**: React with TypeScript, using Vite for building. shadcn/ui components and Tailwind CSS for modular, responsive UI/UX. React Query for server state and Zustand for client state management. Wouter for client-side routing.
-- **Backend**: Express.js with TypeScript, providing RESTful endpoints and WebSocket support for real-time communication. Middleware stack includes Helmet for security, rate limiting, and session management.
-- **Mobile**: React Native with Expo, ensuring cross-platform deployment with feature parity to the web application. React Navigation handles navigation, and React Context is used for shared state.
+- **Mobile App**: React Native with Expo for cross-platform deployment. React Navigation for screen navigation, React Context for authentication and state management, TypeScript for type safety.
+- **Backend**: Express.js with TypeScript, providing RESTful API endpoints and WebSocket support for real-time communication. Middleware stack includes Helmet for security, rate limiting, and session management.
 - **Database**: PostgreSQL with Drizzle ORM for schema management, hosted on Neon for serverless capabilities.
 - **Authentication**: Passport.js with local and Google OAuth strategies, utilizing session-based authentication with a PostgreSQL session store.
 - **Subscription Protection**: Critical translation features are protected by middleware, ensuring active subscriptions are required. Unsubscribed users see personalized prompts and restricted access to conversation history.

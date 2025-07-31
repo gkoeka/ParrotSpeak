@@ -3,7 +3,7 @@ import rateLimit from "express-rate-limit";
 import slowDown from "express-slow-down";
 import helmet from "helmet";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+// Mobile-only API server - no frontend serving needed
 import { setupAuth } from "./auth";
 
 const app = express();
@@ -55,7 +55,7 @@ app.use((req, res, next) => {
         logLine = logLine.slice(0, 79) + "…";
       }
 
-      log(logLine);
+      console.log(`${new Date().toLocaleTimeString()} [express] ${logLine}`);
     }
   });
 
@@ -76,14 +76,8 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
+  // Mobile-only API server - no frontend serving needed
+  console.log("✅ Mobile-only API server initialized");
 
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
@@ -94,6 +88,6 @@ app.use((req, res, next) => {
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
-    log(`serving on port ${port}`);
+    console.log(`${new Date().toLocaleTimeString()} [express] 🚀 API server running on port ${port}`);
   });
 })();
