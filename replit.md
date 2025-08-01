@@ -8,6 +8,8 @@ ParrotSpeak is a comprehensive voice-to-voice translation platform built as a mo
 
 **MVP Launch Decision (August 1, 2025)**: Camera and visual translation functionality temporarily disabled for initial release. All camera-related code has been preserved in comments for future implementation. This decision focuses the MVP on core voice translation features while maintaining the codebase for future visual translation capabilities.
 
+**Dependency Cleanup (August 1, 2025)**: Successfully completed comprehensive Expo SDK 53 dependency alignment. Removed react-native-web conflicts, aligned all React Native packages to compatible versions (react-native-reanimated ~3.8.0, react-native-gesture-handler ~2.24.0, etc.), and resolved Metro bundler issues. Project now runs on Metro 0.82.5 with tunnel connectivity for improved mobile device access.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

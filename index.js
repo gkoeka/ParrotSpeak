@@ -1,5 +1,5 @@
 import { registerRootComponent } from 'expo';
-import App from './App.minimal';
+import App from './App';
 
-// Register the minimal JS test app
+// Register the main ParrotSpeak app
 registerRootComponent(App);
