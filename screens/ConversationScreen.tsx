@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Header from '../components/Header';
 import VoiceInputControls from '../components/VoiceInputControls';
-import PlaybackControls from '../components/PlaybackControls';
+
 import LanguageSelector from '../components/LanguageSelector';
 
 export default function ConversationScreen() {
@@ -16,8 +16,8 @@ export default function ConversationScreen() {
     timestamp: Date;
   }>>([]);
   
-  const [sourceLanguage, setSourceLanguage] = useState('en-US');
-  const [targetLanguage, setTargetLanguage] = useState('es-ES');
+  const [sourceLanguage, setSourceLanguage] = useState('en');
+  const [targetLanguage, setTargetLanguage] = useState('es');
 
   return (
     <View style={styles.container}>
@@ -63,7 +63,6 @@ export default function ConversationScreen() {
           sourceLanguage={sourceLanguage}
           targetLanguage={targetLanguage}
         />
-        <PlaybackControls />
       </View>
     </View>
   );
