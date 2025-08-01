@@ -48,6 +48,9 @@
     "googleapis": "^152.0.0",
     "helmet": "^8.1.0",
     "memoizee": "^0.4.17",
+    "metro": "^0.82.0",
+    "metro-config": "^0.82.5",
+    "metro-resolver": "^0.82.5",
     "mixpanel": "^0.18.1",
     "multer": "^2.0.1",
     "openai": "^4.104.0",
@@ -87,10 +90,5 @@
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
-  },
-  "overrides": {
-    "metro": "^0.82.0",
-    "metro-config": "^0.82.0",
-    "metro-resolver": "^0.82.0"
   }
 }

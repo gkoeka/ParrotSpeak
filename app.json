@@ -29,18 +29,21 @@
       },
       "package": "com.parrotspeak.app",
       "versionCode": 1,
-      "permissions": [
-        "RECORD_AUDIO"
-      ]
+      "permissions": ["RECORD_AUDIO"]
     },
-    "plugins": [
-      "expo-av",
-      "expo-file-system"
-    ],
-    "newArchEnabled": false,
+    "plugins": ["expo-av", "expo-file-system"],
+    "experiments": {
+      "turboModules": false
+    },
     "extra": {
       "eas": {
         "projectId": "432bc810-3ba5-4443-ac0d-25978617b7e5"
+      },
+      "expo-module-scripts": {
+        "android": {
+          "jsEngine": "hermes",
+          "enableNewArchitecture": false
+        }
       }
     }
   }
