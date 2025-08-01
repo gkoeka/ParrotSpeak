@@ -33,9 +33,6 @@
         "RECORD_AUDIO"
       ]
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
     "plugins": [
       "expo-av",
       "expo-file-system"

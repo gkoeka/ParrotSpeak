@@ -1,13 +1,12 @@
 import { Audio } from 'expo-av';
 import * as Speech from 'expo-speech';
 import * as FileSystem from 'expo-file-system';
-import { Platform } from 'react-native';
 import { recognizeSpeech } from './languageService';
 
-// Platform-safe speech service with fallbacks
-const isSpeechAvailable = Platform.OS !== 'web' && Speech;
-const isAudioAvailable = Platform.OS !== 'web' && Audio;
-const isFileSystemAvailable = Platform.OS !== 'web' && FileSystem;
+// Mobile-only speech service with module availability checks
+const isSpeechAvailable = !!Speech;
+const isAudioAvailable = !!Audio;
+const isFileSystemAvailable = !!FileSystem;
 
 // Interface for voice profile
 export interface VoiceProfile {
@@ -28,9 +27,9 @@ export async function speakText(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
-      // Check if speech is available on this platform
+      // Check if speech module is available
       if (!isSpeechAvailable) {
-        console.log('Speech not available on this platform:', text);
+        console.log('Speech module not available:', text);
         if (onDone) onDone();
         resolve();
         return;
@@ -121,9 +120,9 @@ export interface SpeechRecognitionResult {
 }
 
 export async function startRecording(): Promise<{ uri: string }> {
-  // Platform check for future Audio.Recording implementation
+  // Check if Audio module is available for recording
   if (!isAudioAvailable) {
-    console.log('Audio recording not available on this platform');
+    console.log('Audio module not available for recording');
     return { uri: 'mock-recording-uri' };
   }
   
@@ -144,9 +143,9 @@ export async function processRecording(
   recordingUri: string,
   languageCode: string
 ): Promise<string> {
-  // Platform check for future FileSystem usage
+  // Check if FileSystem module is available
   if (!isFileSystemAvailable) {
-    console.log('FileSystem not available on this platform');
+    console.log('FileSystem module not available');
     return 'Mock transcription - FileSystem unavailable';
   }
   
