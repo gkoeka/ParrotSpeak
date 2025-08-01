@@ -1,29 +1,16 @@
-// Import API configuration from centralized config - try JS version first for compatibility
-let API_BASE_URL, API_CONFIG;
+// Mobile-compatible API configuration using environment variables
+// React Native/Expo only supports process.env with EXPO_PUBLIC_ prefix
 
-try {
-  // Try JavaScript version first (most compatible)
-  const config = require('./envConfig.js');
-  API_BASE_URL = config.API_BASE_URL;
-  API_CONFIG = config.API_CONFIG;
-} catch (error) {
-  // Fallback to TypeScript version
-  try {
-    const config = require('./envConfig');
-    API_BASE_URL = config.API_BASE_URL;
-    API_CONFIG = config.API_CONFIG;
-  } catch (fallbackError) {
-    // Ultimate fallback
-    console.warn('Could not load environment config, using defaults');
-    API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev";
-    API_CONFIG = {
-      baseURL: API_BASE_URL,
-      source: 'fallback',
-      environment: 'unknown',
-      timestamp: new Date().toISOString()
-    };
-  }
-}
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev";
+
+const API_CONFIG = {
+  baseURL: API_BASE_URL,
+  source: 'environment',
+  environment: __DEV__ ? 'development' : 'production',
+  timestamp: new Date().toISOString()
+};
+
+console.log('🦜 ParrotSpeak API Config:', API_CONFIG);
 
 // Re-export for compatibility
 export { API_BASE_URL, API_CONFIG };
