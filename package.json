@@ -39,6 +39,7 @@
     "drizzle-zod": "^0.6.0",
     "expo": "^53.0.20",
     "expo-av": "^15.1.7",
+    "expo-speech": "^13.1.7",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
     "express-session": "^1.18.1",

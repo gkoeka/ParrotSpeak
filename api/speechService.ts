@@ -1,7 +1,11 @@
 import { Audio } from 'expo-av';
 import * as Speech from 'expo-speech';
 import * as FileSystem from 'expo-file-system';
+import { Platform } from 'react-native';
 import { recognizeSpeech } from './languageService';
+
+// Platform-safe speech service with fallbacks
+const isSpeechAvailable = Platform.OS !== 'web' && Speech;
 
 // Interface for voice profile
 export interface VoiceProfile {
@@ -22,6 +26,14 @@ export async function speakText(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     try {
+      // Check if speech is available on this platform
+      if (!isSpeechAvailable) {
+        console.log('Speech not available on this platform:', text);
+        if (onDone) onDone();
+        resolve();
+        return;
+      }
+
       // Use voice profile settings if provided, otherwise use defaults
       const options = {
         language: languageCode,
@@ -51,13 +63,18 @@ export async function speakText(
 
 // Check if speech is currently playing
 export function isSpeaking(): Promise<boolean> {
+  if (!isSpeechAvailable) {
+    return Promise.resolve(false);
+  }
   return Speech.isSpeakingAsync();
 }
 
 // Stop any ongoing speech
 export function stopSpeaking(): void {
   try {
-    Speech.stop();
+    if (isSpeechAvailable) {
+      Speech.stop();
+    }
   } catch (error) {
     console.log("Error stopping speech:", error);
   }
@@ -66,6 +83,8 @@ export function stopSpeaking(): void {
 // Pause ongoing speech
 export function pauseSpeaking(): void {
   try {
+    if (!isSpeechAvailable) return;
+    
     // Not all platforms support pause, so we use a try-catch block
     if (Speech.pause) {
       Speech.pause();
@@ -81,6 +100,8 @@ export function pauseSpeaking(): void {
 // Resume paused speech
 export function resumeSpeaking(): void {
   try {
+    if (!isSpeechAvailable) return;
+    
     // Not all platforms support resume, so we use a try-catch block
     if (Speech.resume) {
       Speech.resume();
