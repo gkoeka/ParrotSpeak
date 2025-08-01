@@ -93,12 +93,7 @@ export default function LanguageSelector({
     onTargetLanguageChange(tempSource);
   };
 
-  const testModal = () => {
-    Alert.alert(
-      'Debug Info', 
-      `Languages loaded: ${allLanguages.length}\nFiltered: ${filteredLanguages.length}\nSearch: "${searchTerm}"`
-    );
-  };
+
 
   const renderLanguageModal = (
     isVisible: boolean,
@@ -123,11 +118,8 @@ export default function LanguageSelector({
               {/* Modal Header */}
               <View style={styles.modalHeader}>
                 <Text style={[styles.modalTitle, isDark && styles.modalTitleDark]}>
-                  {title}
+                  Select Language
                 </Text>
-                <TouchableOpacity onPress={testModal} style={styles.debugButton}>
-                  <Text style={styles.debugButtonText}>Debug ({filteredLanguages.length})</Text>
-                </TouchableOpacity>
               </View>
               
               {/* Search Input */}
@@ -152,6 +144,7 @@ export default function LanguageSelector({
                   contentContainerStyle={styles.scrollContent}
                   showsVerticalScrollIndicator={true}
                   keyboardShouldPersistTaps="handled"
+                  keyboardDismissMode="on-drag"
                   bounces={true}
                 >
                   {filteredLanguages.length > 0 ? (
@@ -176,7 +169,7 @@ export default function LanguageSelector({
                             setSearchTerm('');
                             onClose();
                           }}
-                          activeOpacity={0.7}
+                          activeOpacity={0.6}
                         >
                           <View style={styles.languageRow}>
                             {/* Flag */}
@@ -184,26 +177,38 @@ export default function LanguageSelector({
                               <Text style={styles.flagText}>{flag}</Text>
                             </View>
                             
-                            {/* Language Info */}
-                            <View style={styles.languageDetails}>
-                              <Text style={[
-                                styles.languageName, 
-                                isDark && styles.languageNameDark,
-                                isSelected && styles.languageNameSelected
-                              ]}>
+                            {/* Language Name */}
+                            <View style={styles.languageMainInfo}>
+                              <Text 
+                                style={[
+                                  styles.languageName, 
+                                  isDark && styles.languageNameDark,
+                                  isSelected && styles.languageNameSelected
+                                ]}
+                                numberOfLines={1}
+                                ellipsizeMode="tail"
+                              >
                                 {language.name}
                               </Text>
-                              <Text style={[
-                                styles.languageNative, 
-                                isDark && styles.languageNativeDark,
-                                isSelected && styles.languageNativeSelected
-                              ]}>
+                            </View>
+                            
+                            {/* Native Name */}
+                            <View style={styles.languageNativeInfo}>
+                              <Text 
+                                style={[
+                                  styles.languageNative, 
+                                  isDark && styles.languageNativeDark,
+                                  isSelected && styles.languageNativeSelected
+                                ]}
+                                numberOfLines={1}
+                                ellipsizeMode="tail"
+                              >
                                 {language.nativeName}
                               </Text>
                             </View>
                             
-                            {/* Metadata */}
-                            <View style={styles.languageMetadata}>
+                            {/* ISO Code */}
+                            <View style={styles.languageCodeContainer}>
                               <Text style={[
                                 styles.languageCode, 
                                 isDark && styles.languageCodeDark,
@@ -211,7 +216,14 @@ export default function LanguageSelector({
                               ]}>
                                 {language.code.toUpperCase()}
                               </Text>
-                              <Text style={styles.speechIcon}>
+                            </View>
+                            
+                            {/* Speech Icon */}
+                            <View style={styles.speechContainer}>
+                              <Text style={[
+                                styles.speechIcon,
+                                !language.speechSupported && styles.speechIconDisabled
+                              ]}>
                                 {language.speechSupported ? '🎤' : '📝'}
                               </Text>
                             </View>
@@ -379,20 +391,20 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 20,
+    padding: 24,
     width: '100%',
     maxWidth: 400,
     height: '90%',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.25,
+        shadowRadius: 16,
       },
       android: {
-        elevation: 10,
+        elevation: 12,
       },
     }),
   },
@@ -400,37 +412,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#2a2a2a',
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 20,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: '700',
     color: '#333',
-    flex: 1,
+    textAlign: 'center',
   },
   modalTitleDark: {
     color: '#e0e0e0',
   },
-  debugButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  debugButtonText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '600',
-  },
   searchInput: {
     backgroundColor: '#f8f9fa',
-    borderRadius: 10,
-    padding: 15,
+    borderRadius: 12,
+    padding: 16,
     fontSize: 16,
-    marginBottom: 15,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: '#e9ecef',
     color: '#333',
@@ -448,16 +447,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingVertical: 5,
+    paddingVertical: 8,
   },
   languageItem: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    marginVertical: 4,
-    paddingVertical: 16,
+    marginVertical: 3,
+    paddingVertical: 12,
     paddingHorizontal: 16,
     borderWidth: 1,
     borderColor: '#f0f0f0',
+    minHeight: 64,
+    justifyContent: 'center',
   },
   languageItemDark: {
     backgroundColor: '#3a3a3a',
@@ -475,23 +476,23 @@ const styles = StyleSheet.create({
   languageRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    height: 40,
   },
   flagContainer: {
-    width: 40,
+    width: 36,
     alignItems: 'center',
   },
   flagText: {
-    fontSize: 28,
+    fontSize: 24,
   },
-  languageDetails: {
-    flex: 1,
-    marginLeft: 15,
+  languageMainInfo: {
+    flex: 2,
+    marginLeft: 12,
   },
   languageName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 4,
   },
   languageNameDark: {
     color: '#e0e0e0',
@@ -500,8 +501,12 @@ const styles = StyleSheet.create({
     color: '#6366f1',
     fontWeight: '700',
   },
+  languageNativeInfo: {
+    flex: 2,
+    marginLeft: 8,
+  },
   languageNative: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#666',
     fontStyle: 'italic',
   },
@@ -511,14 +516,14 @@ const styles = StyleSheet.create({
   languageNativeSelected: {
     color: '#8b7fd1',
   },
-  languageMetadata: {
-    alignItems: 'flex-end',
+  languageCodeContainer: {
+    width: 44,
+    alignItems: 'center',
   },
   languageCode: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#999',
     fontWeight: '700',
-    marginBottom: 4,
   },
   languageCodeDark: {
     color: '#888',
@@ -526,8 +531,15 @@ const styles = StyleSheet.create({
   languageCodeSelected: {
     color: '#6366f1',
   },
+  speechContainer: {
+    width: 32,
+    alignItems: 'center',
+  },
   speechIcon: {
-    fontSize: 18,
+    fontSize: 16,
+  },
+  speechIconDisabled: {
+    opacity: 0.4,
   },
   emptyState: {
     padding: 40,
@@ -551,10 +563,10 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     backgroundColor: '#f8f9fa',
-    paddingVertical: 15,
+    paddingVertical: 16,
     paddingHorizontal: 20,
-    borderRadius: 10,
-    marginTop: 15,
+    borderRadius: 12,
+    marginTop: 16,
     alignItems: 'center',
   },
   cancelButtonDark: {
