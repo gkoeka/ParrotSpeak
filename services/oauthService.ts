@@ -2,7 +2,7 @@ import * as AuthSession from 'expo-auth-session';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { GoogleSignin, statusCodes, ConfigureParams } from '@react-native-google-signin/google-signin';
 import { Platform } from 'react-native';
-import { API_BASE_URL } from '../constants/api';
+import { API_BASE_URL } from '../api/config';
 
 // Configure Google Sign-In
 const googleConfig: ConfigureParams = {
