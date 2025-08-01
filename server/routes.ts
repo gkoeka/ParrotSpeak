@@ -129,6 +129,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(404).send('Mobile UI test page not found');
   });
 
+  // Spanish dialect comprehensive test page
+  app.get('/test-spanish-comprehensive.html', (req: Request, res: Response) => {
+    const testPath = path.join(process.cwd(), 'test-spanish-comprehensive.html');
+    if (fs.existsSync(testPath)) {
+      return res.sendFile(testPath);
+    }
+    res.status(404).send('Spanish dialect test page not found');
+  });
+
   // Test script for playback controls
   app.get('/verify-playback-test.js', (req: Request, res: Response) => {
     const scriptPath = path.join(process.cwd(), 'verify-playback-test.js');
