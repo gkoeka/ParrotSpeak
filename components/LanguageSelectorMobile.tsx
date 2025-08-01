@@ -9,7 +9,8 @@ import {
   TextInput, 
   useColorScheme,
   Platform,
-  SafeAreaView
+  SafeAreaView,
+  Dimensions
 } from 'react-native';
 import { getSupportedLanguages } from '../constants/languageConfiguration';
 
@@ -293,6 +294,8 @@ export default function LanguageSelector({
   );
 }
 
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
   // Main Container
   container: {
@@ -361,7 +364,7 @@ const styles = StyleSheet.create({
   // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -370,24 +373,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 40,
+    paddingVertical: 60,
   },
   modalContent: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    width: '100%',
-    maxWidth: 400,
-    maxHeight: '85%',
+    borderRadius: 12,
+    padding: 16,
+    width: Math.min(screenWidth * 0.6, 400),
+    maxHeight: screenHeight * 0.75,
+    alignSelf: 'center',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.25,
-        shadowRadius: 16,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
       },
       android: {
-        elevation: 12,
+        elevation: 8,
       },
     }),
   },
@@ -398,10 +401,10 @@ const styles = StyleSheet.create({
   // Header
   headerContainer: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     color: '#333',
     textAlign: 'center',
@@ -413,10 +416,11 @@ const styles = StyleSheet.create({
   // Search Input
   searchInput: {
     backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     fontSize: 16,
-    marginBottom: 16,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#e9ecef',
     color: '#333',
@@ -430,12 +434,14 @@ const styles = StyleSheet.create({
   // Language List
   listWrapper: {
     flex: 1,
+    maxHeight: screenHeight * 0.5,
   },
   languageScrollView: {
     flex: 1,
   },
   scrollViewContent: {
-    paddingVertical: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
   
   // Language Row
@@ -443,13 +449,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: 12,
-    marginVertical: 2,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginVertical: 3,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: '#f0f0f0',
-    minHeight: 68,
+    minHeight: 64,
   },
   languageRowDark: {
     backgroundColor: '#3a3a3a',
@@ -467,12 +473,12 @@ const styles = StyleSheet.create({
   
   // Flag Column
   flagColumn: {
-    width: 32,
+    width: 28,
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   flagEmoji: {
-    fontSize: 24,
+    fontSize: 20,
   },
   
   // Names Column (Stacked Vertically)
@@ -481,7 +487,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   englishName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#333',
     marginBottom: 2,
@@ -494,7 +500,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   nativeName: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#666',
     fontStyle: 'italic',
   },
@@ -509,13 +515,13 @@ const styles = StyleSheet.create({
   rightColumn: {
     alignItems: 'flex-end',
     justifyContent: 'center',
-    minWidth: 50,
+    minWidth: 40,
   },
   isoCode: {
-    fontSize: 12,
+    fontSize: 10,
     color: '#999',
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: 3,
   },
   isoCodeDark: {
     color: '#888',
@@ -524,7 +530,7 @@ const styles = StyleSheet.create({
     color: '#6366f1',
   },
   micIcon: {
-    fontSize: 16,
+    fontSize: 14,
   },
   micIconDisabled: {
     opacity: 0.4,
@@ -555,10 +561,10 @@ const styles = StyleSheet.create({
   // Cancel Button
   cancelButton: {
     backgroundColor: '#f8f9fa',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    marginTop: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 12,
     alignItems: 'center',
   },
   cancelButtonDark: {
