@@ -1,5 +1,6 @@
 import { Language } from '../types';
 import { API_BASE_URL } from '../constants/api';
+import { mobileFetch } from '../utils/networkUtils';
 
 // Headers for mobile API requests
 const requestHeaders = {
@@ -144,10 +145,9 @@ export async function translateText(
   targetLanguage: string
 ): Promise<{ translation: string; originalText: string }> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/translate`, {
+    const response = await mobileFetch(`${API_BASE_URL}/api/translate`, {
       method: 'POST',
       headers: jsonHeaders,
-      credentials: 'include', // Include cookies for session-based auth
       body: JSON.stringify({
         text,
         sourceLanguage,

@@ -60,6 +60,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     crossOriginEmbedderPolicy: false,
   }));
 
+  // Health check endpoint for network testing
+  app.get('/api/health', (req: Request, res: Response) => {
+    res.json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      server: 'ParrotSpeak API',
+      version: '1.0.0'
+    });
+  });
+
   // Static files and uploads
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 

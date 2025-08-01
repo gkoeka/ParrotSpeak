@@ -1,8 +1,12 @@
 // API configuration
 
-// For the Replit environment, use the current Replit URL to connect to the backend
-// This allows the mobile app to reach the backend server
-export const API_BASE_URL = 'https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev';
+// Dynamic API URL for development vs production
+// This ensures the mobile app connects to the correct server
+declare const __DEV__: boolean;
+
+export const API_BASE_URL = __DEV__ 
+  ? "http://localhost:5000"  // Local development server
+  : "https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev"; // Production Replit URL
 
 // For development environments, you'd specify the full URL:
 // export const API_BASE_URL = 'http://localhost:5000';

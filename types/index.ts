@@ -1,0 +1,36 @@
+// Type definitions for ParrotSpeak mobile app
+
+export interface Language {
+  code: string;
+  name: string;
+  country: string;
+  flag: string;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  subscriptionStatus?: string;
+  subscriptionTier?: string;
+  subscriptionExpiresAt?: Date | null;
+  profileImageUrl?: string | null;
+  emailVerified?: boolean;
+}
+
+export interface AuthResponse {
+  user: User;
+}
+
+export interface TranslationResponse {
+  translation: string;
+  originalText: string;
+}
+
+export interface NetworkTestResult {
+  success: boolean;
+  error?: string;
+  responseTime?: number;
+}
