@@ -13,101 +13,131 @@ const jsonHeaders = {
   'X-Demo-Mode': 'true' // Enable demo mode for testing
 };
 
-// This is a static implementation since the API doesn't currently provide a language endpoint
+// Comprehensive language service using the server API endpoint
 export async function getLanguages(): Promise<Language[]> {
-  // We'll use a static list of languages to match our web version
-  return [
-    {
-      code: "en-US",
-      name: "English",
-      country: "United States",
-      flag: "https://flagcdn.com/us.svg"
-    },
-    {
-      code: "es-ES",
-      name: "Spanish",
-      country: "Spain",
-      flag: "https://flagcdn.com/es.svg"
-    },
-    {
-      code: "fr-FR",
-      name: "French",
-      country: "France",
-      flag: "https://flagcdn.com/fr.svg"
-    },
-    {
-      code: "de-DE",
-      name: "German",
-      country: "Germany",
-      flag: "https://flagcdn.com/de.svg"
-    },
-    {
-      code: "it-IT",
-      name: "Italian",
-      country: "Italy",
-      flag: "https://flagcdn.com/it.svg"
-    },
-    {
-      code: "ja-JP",
-      name: "Japanese",
-      country: "Japan",
-      flag: "https://flagcdn.com/jp.svg"
-    },
-    {
-      code: "zh-CN",
-      name: "Chinese",
-      country: "China",
-      flag: "https://flagcdn.com/cn.svg"
-    },
-    {
-      code: "ru-RU",
-      name: "Russian",
-      country: "Russia",
-      flag: "https://flagcdn.com/ru.svg"
-    },
-    {
-      code: "ar-SA",
-      name: "Arabic",
-      country: "Saudi Arabia",
-      flag: "https://flagcdn.com/sa.svg"
-    },
-    {
-      code: "hi-IN",
-      name: "Hindi",
-      country: "India",
-      flag: "https://flagcdn.com/in.svg"
-    },
-    {
-      code: "pt-BR",
-      name: "Portuguese",
-      country: "Brazil",
-      flag: "https://flagcdn.com/br.svg"
-    },
-    {
-      code: "ko-KR",
-      name: "Korean",
-      country: "South Korea",
-      flag: "https://flagcdn.com/kr.svg"
-    },
-    {
-      code: "tr-TR",
-      name: "Turkish",
-      country: "Turkey",
-      flag: "https://flagcdn.com/tr.svg"
-    },
-    {
-      code: "vi-VN",
-      name: "Vietnamese",
-      country: "Vietnam",
-      flag: "https://flagcdn.com/vn.svg"
-    },
-    {
-      code: "th-TH",
-      name: "Thai",
-      country: "Thailand",
-      flag: "https://flagcdn.com/th.svg"
+  try {
+    const response = await mobileFetch(`${API_BASE_URL}/api/languages`, {
+      method: 'GET',
+      headers: requestHeaders
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Languages API failed: ${response.statusText}`);
     }
-  ];
+    
+    const data = await response.json();
+    
+    // Convert server format to client format for compatibility
+    const languages = data.languages.map((lang: any) => ({
+      code: lang.code,
+      name: lang.name,
+      country: lang.country || 'Unknown',
+      flag: lang.flag || '',
+      nativeName: lang.nativeName || lang.name,
+      speechSupported: lang.speechSupported || false,
+      speechToTextSupported: lang.speechToTextSupported || false,
+      textToSpeechSupported: lang.textToSpeechSupported || false,
+      translationQuality: lang.translationQuality || 'medium',
+      popularity: lang.popularity || 1
+    }));
+    
+    console.log(`✅ Loaded ${languages.length} languages (${data.meta.withSpeechSupport} with speech support)`);
+    return languages;
+    
+  } catch (error) {
+    console.error('Error fetching languages from API:', error);
+    
+    // Fallback to essential languages if API fails
+    return [
+      {
+        code: "en",
+        name: "English",
+        country: "United States",
+        flag: "https://flagcdn.com/us.svg",
+        nativeName: "English",
+        speechSupported: true,
+        speechToTextSupported: true,
+        textToSpeechSupported: true,
+        translationQuality: 'high',
+        popularity: 10
+      },
+      {
+        code: "es",
+        name: "Spanish",
+        country: "Spain",
+        flag: "https://flagcdn.com/es.svg",
+        nativeName: "Español",
+        speechSupported: true,
+        speechToTextSupported: true,
+        textToSpeechSupported: true,
+        translationQuality: 'high',
+        popularity: 9
+      },
+      {
+        code: "fr",
+        name: "French",
+        country: "France",
+        flag: "https://flagcdn.com/fr.svg",
+        nativeName: "Français",
+        speechSupported: true,
+        speechToTextSupported: true,
+        textToSpeechSupported: true,
+        translationQuality: 'high',
+        popularity: 8
+      },
+      {
+        code: "de",
+        name: "German",
+        country: "Germany",
+        flag: "https://flagcdn.com/de.svg",
+        nativeName: "Deutsch",
+        speechSupported: true,
+        speechToTextSupported: true,
+        textToSpeechSupported: true,
+        translationQuality: 'high',
+        popularity: 7
+      }
+    ];
+  }
+}
+
+// Get languages with speech synthesis support only
+export async function getLanguagesWithSpeechSupport(): Promise<Language[]> {
+  try {
+    const response = await mobileFetch(`${API_BASE_URL}/api/languages?speechOnly=true`, {
+      method: 'GET',
+      headers: requestHeaders
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Speech languages API failed: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data.languages.map((lang: any) => ({
+      code: lang.code,
+      name: lang.name,
+      country: lang.country || 'Unknown',
+      flag: lang.flag || '',
+      nativeName: lang.nativeName || lang.name,
+      speechSupported: true,
+      speechToTextSupported: lang.speechToTextSupported || false,
+      textToSpeechSupported: lang.textToSpeechSupported || false,
+      translationQuality: lang.translationQuality || 'medium',
+      popularity: lang.popularity || 1
+    }));
+    
+  } catch (error) {
+    console.error('Error fetching speech-supported languages:', error);
+    
+    // Fallback to major languages with confirmed speech support
+    return [
+      { code: "en", name: "English", nativeName: "English", speechSupported: true },
+      { code: "es", name: "Spanish", nativeName: "Español", speechSupported: true },
+      { code: "fr", name: "French", nativeName: "Français", speechSupported: true },
+      { code: "de", name: "German", nativeName: "Deutsch", speechSupported: true }
+    ];
+  }
 }
 
 // Speech recognition function using the server API

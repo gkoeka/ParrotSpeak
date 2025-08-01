@@ -27,15 +27,16 @@ ParrotSpeak is a comprehensive voice-to-voice translation platform built as a mo
 
 **Dual Architecture Restoration (August 1, 2025)**: Converting dual architecture (web+mobile) to mobile-only while preserving all functionality. Using existing 3 user accounts (Greg lifetime, Greg expired, incomplete profile). IAP implementation complete with Model A pricing: 1 Week ($4.99), 1 Month ($14.99), 3 Months ($39.99), 6 Months ($69.99), Monthly Recurring ($10/month), Annual Recurring ($99/year).
 
-**Authentication & Translation Testing Complete (August 1, 2025)**: Successfully verified all core functionality working end-to-end. Real API testing confirmed:
-- ✅ Registration/login with complex password validation working
-- ✅ Session management and user profiles working  
-- ✅ Languages API returning 12 supported languages
-- ✅ Translation system: EN→ES, EN→FR with 1.4-2.5s response times
-- ✅ Conversation creation/retrieval with encryption working
-- ✅ Subscription middleware protecting routes correctly
-- ✅ Database integration with user accounts and conversation history
-Test user (test@parrotspeak.com) has active subscription until 2025-12-31. Core platform ready for pricing/subscription restoration.
+**Comprehensive Language Support Restored (August 1, 2025)**: Successfully restored full dual-architecture language support with 52 languages:
+- ✅ **Total Languages**: 52 (up from 12) with proper speech synthesis flags
+- ✅ **Speech-Enabled**: 41 languages with voice-to-voice translation support
+- ✅ **Text-Only**: 11 languages with translation-only fallback support  
+- ✅ **Language Tiers**: Implemented 5-tier quality system (High/Medium/Basic translation quality)
+- ✅ **API Enhancement**: `/api/languages` endpoint with filtering (`?speechOnly=true`) and metadata
+- ✅ **Speech Fallback**: Intelligent fallback system for non-speech languages (en→es→fr→de→it)
+- ✅ **Mobile Integration**: Client API service updated to use comprehensive language list
+- ✅ **Error Handling**: Robust fallback to essential languages if configuration fails
+Language configuration file: `constants/languageConfiguration.ts` with helper functions for language management.
 
 **Mobile-Only Configuration (August 1, 2025)**: Completed mobile-only optimization by removing all web platform checks (`Platform.OS !== 'web'`) and web build configurations. Removed web section from app.json, simplified native module availability checks to use `!!Module` instead of platform checks. All components now assume mobile environment (iOS/Android only).
 
@@ -54,6 +55,26 @@ Dark mode preference: Should persist when selected.
 - **Production Readiness**: Comprehensive validation, health monitoring, and deployment recommendations
 - **Error Handling**: Multi-level validation with helpful error messages and recovery suggestions
 - **Performance Verified**: 83-606ms loading times across all scenarios with 100% compatibility success rate
+
+**Language Management System (August 1, 2025)**: Comprehensive language support with speech synthesis integration:
+
+**Language Configuration File**: `constants/languageConfiguration.ts`
+- **Core Interface**: `LanguageConfiguration` with speech support flags, quality indicators, popularity ranking
+- **52 Total Languages**: Organized in 5 tiers (Tier 1: High quality + speech, Tier 5: Text-only)
+- **Helper Functions**: `getLanguageByCode()`, `getSupportedLanguages()`, `getLanguagesWithSpeechSupport()`
+- **Speech Fallback**: `getSpeechFallbackLanguage()` with fallback order: ['en', 'es', 'fr', 'de', 'it']
+
+**API Endpoints**:
+- `/api/languages` - All languages, sorted by popularity
+- `/api/languages?speechOnly=true` - Speech-enabled languages only  
+- `/api/languages?includeAll=true` - Include all languages regardless of filters
+
+**To Modify Language List**:
+1. Edit `constants/languageConfiguration.ts`
+2. Add/modify entries in `LANGUAGE_CONFIGURATIONS` array
+3. Set appropriate flags: `speechSupported`, `speechToTextSupported`, `textToSpeechSupported`
+4. Assign `translationQuality` ('high'|'medium'|'basic') and `popularity` (1-10)
+5. Server restart automatically loads changes via ES module import
 
 **Route Verification Checklist**: For every API endpoint, verify ALL components exist:
 - [ ] Service function in `/server/services/`

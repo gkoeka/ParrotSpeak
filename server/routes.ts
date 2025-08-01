@@ -321,23 +321,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // IAP routes
   app.use('/api/iap', iapRoutes);
 
-  // Languages endpoint
-  app.get('/api/languages', (req: Request, res: Response) => {
-    const languages = [
-      { code: 'en', name: 'English', nativeName: 'English' },
-      { code: 'es', name: 'Spanish', nativeName: 'Español' },
-      { code: 'fr', name: 'French', nativeName: 'Français' },
-      { code: 'de', name: 'German', nativeName: 'Deutsch' },
-      { code: 'it', name: 'Italian', nativeName: 'Italiano' },
-      { code: 'pt', name: 'Portuguese', nativeName: 'Português' },
-      { code: 'ja', name: 'Japanese', nativeName: '日本語' },
-      { code: 'ko', name: 'Korean', nativeName: '한국어' },
-      { code: 'zh', name: 'Chinese', nativeName: '中文' },
-      { code: 'ru', name: 'Russian', nativeName: 'Русский' },
-      { code: 'ar', name: 'Arabic', nativeName: 'العربية' },
-      { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी' }
-    ];
-    res.json(languages);
+  // Languages endpoint with comprehensive support
+  app.get('/api/languages', async (req: Request, res: Response) => {
+    try {
+      // Import language configuration using ES modules
+      const { LANGUAGE_CONFIGURATIONS } = await import('../constants/languageConfiguration.js');
+      
+      const includeAll = req.query.includeAll === 'true';
+      const speechOnly = req.query.speechOnly === 'true';
+      
+      let languages = [...LANGUAGE_CONFIGURATIONS];
+      
+      // Filter by speech support if requested
+      if (speechOnly) {
+        languages = languages.filter((lang: any) => lang.speechSupported);
+      }
+      
+      // Sort by popularity (most popular first)
+      languages = languages.sort((a: any, b: any) => b.popularity - a.popularity);
+      
+      const withSpeechSupport = LANGUAGE_CONFIGURATIONS.filter((lang: any) => lang.speechSupported).length;
+      const withoutSpeechSupport = LANGUAGE_CONFIGURATIONS.filter((lang: any) => !lang.speechSupported).length;
+      
+      console.log(`✅ Languages API: ${languages.length} languages loaded (${withSpeechSupport} with speech, ${withoutSpeechSupport} without speech)`);
+      
+      res.json({
+        languages,
+        meta: {
+          total: LANGUAGE_CONFIGURATIONS.length,
+          withSpeechSupport,
+          withoutSpeechSupport,
+          filtered: languages.length,
+          fallback: false
+        }
+      });
+    } catch (error) {
+      console.error('Error loading language configurations:', error);
+      
+      // Fallback to basic language list if configuration fails
+      const basicLanguages = [
+        { code: 'en', name: 'English', nativeName: 'English', country: 'United States', flag: 'https://flagcdn.com/us.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 10 },
+        { code: 'es', name: 'Spanish', nativeName: 'Español', country: 'Spain', flag: 'https://flagcdn.com/es.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 9 },
+        { code: 'fr', name: 'French', nativeName: 'Français', country: 'France', flag: 'https://flagcdn.com/fr.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 8 },
+        { code: 'de', name: 'German', nativeName: 'Deutsch', country: 'Germany', flag: 'https://flagcdn.com/de.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 7 },
+        { code: 'it', name: 'Italian', nativeName: 'Italiano', country: 'Italy', flag: 'https://flagcdn.com/it.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 6 },
+        { code: 'pt', name: 'Portuguese', nativeName: 'Português', country: 'Brazil', flag: 'https://flagcdn.com/br.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 6 },
+        { code: 'ja', name: 'Japanese', nativeName: '日本語', country: 'Japan', flag: 'https://flagcdn.com/jp.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 8 },
+        { code: 'ko', name: 'Korean', nativeName: '한국어', country: 'South Korea', flag: 'https://flagcdn.com/kr.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 7 },
+        { code: 'zh', name: 'Chinese', nativeName: '中文', country: 'China', flag: 'https://flagcdn.com/cn.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 9 },
+        { code: 'ru', name: 'Russian', nativeName: 'Русский', country: 'Russia', flag: 'https://flagcdn.com/ru.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 7 },
+        { code: 'ar', name: 'Arabic', nativeName: 'العربية', country: 'Saudi Arabia', flag: 'https://flagcdn.com/sa.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 8 },
+        { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', country: 'India', flag: 'https://flagcdn.com/in.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 8 },
+        { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', country: 'Netherlands', flag: 'https://flagcdn.com/nl.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'medium', popularity: 5 },
+        { code: 'pl', name: 'Polish', nativeName: 'Polski', country: 'Poland', flag: 'https://flagcdn.com/pl.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'medium', popularity: 5 },
+        { code: 'tr', name: 'Turkish', nativeName: 'Türkçe', country: 'Turkey', flag: 'https://flagcdn.com/tr.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'medium', popularity: 5 }
+      ];
+      
+      res.json({
+        languages: basicLanguages,
+        meta: {
+          total: basicLanguages.length,
+          withSpeechSupport: basicLanguages.length,
+          withoutSpeechSupport: 0,
+          filtered: basicLanguages.length,
+          fallback: true
+        }
+      });
+    }
   });
 
   // Authentication routes
