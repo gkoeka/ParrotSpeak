@@ -1,11 +1,24 @@
 # ParrotSpeak 🦜
 
-A comprehensive voice-to-voice translation platform with subscription-based access control, featuring web and mobile applications. ParrotSpeak enables seamless cross-language communication with AI-powered translations, real-time streaming, and advanced analytics for travelers, businesses, and global communicators.
+A mobile-first AI-powered voice translation application using React Native and Expo. ParrotSpeak enables seamless cross-language communication through real-time speech recognition, translation, and synthesis for travelers, businesses, and global communicators.
 
+**Architecture**: Mobile-only application optimized for iOS and Android app store distribution, with development web interface for testing.
 
-## 🎉 Recent Updates (July 2025)
+## 🎉 Recent Updates
 
-Triggering auto-build test on July 15
+### Mobile-Only Optimization (August 1, 2025)
+- **✅ Mobile-Only Configuration Complete** - Removed all web platform checks (`Platform.OS !== 'web'`) and web build configurations
+- **✅ Native Module Optimization** - Simplified availability checks to use `!!Module` instead of platform conditions for better performance
+- **✅ App Configuration Cleanup** - Removed web section from app.json, focused entirely on mobile deployment
+- **✅ Codebase Streamlining** - Eliminated unnecessary Platform imports and web-specific code paths
+- **✅ Performance Enhancement** - All components now assume mobile environment (iOS/Android only) for optimal performance
+
+### Package Compatibility Analysis (August 1, 2025)
+- **🚨 Critical Finding** - Expo SDK 53 requires React Native 0.79.5 and React 19.0.0, incompatible with project's React Native 0.73.9 and React 18.2.0
+- **✅ Compatibility Fix Created** - Prepared migration script to downgrade to Expo SDK 50 for full compatibility
+- **✅ Package Audit Complete** - Identified 9 incompatible packages including expo modules, react-navigation, and react-native dependencies
+- **✅ Solution Prepared** - Created fix-compatibility.sh script to resolve all version mismatches
+
 ### Major System Improvements (July 15, 2025)
 - **✅ Username Removal Complete** - Simplified registration to email + firstName (required for marketing) + lastName (optional) + password with enhanced validation
 - **✅ Application Restoration Complete** - Full system restoration with working web app and mobile emulator, all core features verified
@@ -60,11 +73,11 @@ Triggering auto-build test on July 15
 - **Graceful Access Control** - User management features remain free (history, settings, profile) while protecting all translation functionality
 
 ### Platform Coverage
-- **Mobile-Only Deployment** - Focused iOS and Android app store distribution strategy
-- **Mobile App (React Native/Expo)** - Native iOS and Android app with complete feature parity and IAP integration
-- **Web Interface for Development** - Full-featured browser-based interface with admin capabilities for testing and development
-- **App Store Ready** - Mobile app configured for iOS and Android distribution with production certificates and legal documents
-- **Cross-Platform Development Sync** - Conversations and settings sync between development web interface and production mobile apps
+- **Mobile-Only Architecture** - Optimized exclusively for iOS and Android app store distribution
+- **React Native + Expo** - Native mobile app with complete feature parity and in-app purchase integration
+- **Development Web Interface** - Testing and admin interface available during development (not for production)
+- **App Store Ready** - Configured for iOS App Store and Google Play Store distribution
+- **Mobile-First Design** - All features optimized for mobile touch interface and one-handed operation
 
 ### User Experience
 - **Mobile-First Design** - Optimized for one-handed smartphone operation
@@ -91,21 +104,23 @@ Triggering auto-build test on July 15
 
 ### Tech Stack
 
-**Frontend (Web)**
-- React with TypeScript
+**Mobile App (Primary Platform)**
+- React Native 0.73.9 with Expo SDK 50 (compatible versions)
+- React 18.2.0 with TypeScript for type safety
+- React Navigation 6.x for screen navigation
+- Native speech recognition (expo-speech)
+- Audio recording and playback (expo-av)
+- WebSocket real-time communication
+- Complete subscription protection with IAP
+- Cross-platform (iOS & Android)
+- Metro 0.82.5 bundler with tunnel connectivity
+
+**Development Interface**
+- React with TypeScript (testing and admin only)
 - Wouter for routing
 - TanStack Query for state management
 - Tailwind CSS + shadcn/ui for styling
 - Vite for build tooling
-
-**Mobile App**
-- React Native with Expo
-- TypeScript for type safety
-- Native speech recognition and camera integration
-- WebSocket real-time communication
-- Complete subscription protection
-- Cross-platform (iOS & Android)
-- App store distribution ready
 
 **Backend**
 - Node.js with Express
@@ -117,9 +132,9 @@ Triggering auto-build test on July 15
 **AI & Services**
 - OpenAI Whisper API for speech recognition
 - OpenAI GPT models for translation
-- In-App Purchases (IAP) for mobile app store payment processing
+- In-App Purchases (IAP) for iOS App Store and Google Play Store
 - SendGrid for email notifications and feedback system
-- Mixpanel for user analytics and engagement tracking with privacy controls
+- Mixpanel for user analytics with privacy controls
 
 **Security & Infrastructure**
 - AES-256 encryption for all conversation data (including guest conversations)
@@ -147,35 +162,59 @@ usage_statistics       // User engagement and feature usage tracking
 conversation_patterns  // Conversation flow analysis and insights
 ```
 
-## 📝 Repository Status
-GitHub now uses SSH instead of HTTPS, synced July 14th.
+## 📝 Development Status & Deployment
 
-**Important:** Take 2 SSH key is required for future pushes to GitHub.
+### Current Status (August 1, 2025)
+- **✅ Mobile-Only Architecture**: Optimized for iOS and Android exclusively
+- **🚨 Package Compatibility**: Requires Expo SDK 50 downgrade for React Native 0.73.9 compatibility
+- **✅ Core Features**: Voice translation, subscription protection, and navigation complete
+- **⏳ MVP Launch**: Camera features disabled for initial release (code preserved)
 
-**SSH Setup Required:**
-1. Add your SSH private key to Replit Secrets as `SSH_PRIVATE_KEY`
-2. The SSH key should be in OpenSSH format (starts with `-----BEGIN OPENSSH PRIVATE KEY-----`)
-3. Auto-setup script will configure SSH on every workspace load
-
-**Expo Auto-Build:** Pushing code to GitHub automatically triggers Expo builds for iOS and Android app store deployment.
+### Repository & Deployment
+- **GitHub Integration**: SSH-based deployment configured
+- **Expo EAS Build**: Automated iOS and Android app store builds
+- **Mobile-First**: All development focused on app store distribution
 
 ### Auto-Build Workflow
 1. **Code Push**: Push changes from Replit to GitHub using SSH
-2. **GitHub Actions**: Automatically detects mobile app changes
-3. **Expo Build**: Initiates iOS and Android builds via EAS
-4. **App Store Submission**: Automatically submits builds to app stores (if configured)
-5. **Deployment Comment**: GitHub comment confirms build initiation
+2. **GitHub Actions**: Automatically detects mobile app changes  
+3. **Expo EAS**: Initiates iOS and Android builds
+4. **App Store Submission**: Automated deployment to app stores
+5. **Build Notifications**: GitHub comments confirm deployment status
+
+### Package Compatibility Status
+```bash
+# Current (Incompatible)
+React Native: 0.73.9  ❌ (Expo SDK 53 expects 0.79.5)
+React: 18.2.0         ❌ (Expo SDK 53 expects 19.0.0)
+Expo: 53.0.20         ❌ (Incompatible with RN 0.73.9)
+
+# Solution: Downgrade to Expo SDK 50
+Run: ./fix-compatibility.sh
+```
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ 
-- PostgreSQL database
+- Node.js 18+
+- PostgreSQL database  
 - OpenAI API key (for translation and speech recognition)
-- Apple Developer Account and Google Play Developer Account (for mobile app store distribution)
-- SendGrid account (for email notifications and feedback system)
-- Mixpanel account (for analytics tracking - optional)
+- Apple Developer Account and Google Play Developer Account (for app store distribution)
+- SendGrid account (for email notifications)
+- Mixpanel account (for analytics - optional)
+
+### 🚨 Package Compatibility Notice
+
+**Important**: This project requires specific package versions for compatibility:
+- React Native 0.73.9
+- React 18.2.0  
+- Expo SDK 50 (NOT SDK 53)
+
+If you encounter compatibility issues, run the fix script:
+```bash
+./fix-compatibility.sh
+```
 
 ### Environment Variables
 
@@ -235,58 +274,57 @@ ADMIN_EMAIL=your-admin-email@example.com
    - Web app: http://localhost:5000
    - Admin interface: http://localhost:5000/admin
 
-### Mobile App Setup
+### Mobile App Development
 
-1. **Install Expo CLI globally**
+**This is a mobile-only project** - all React Native code is in the root directory.
+
+1. **Fix package compatibility** (if needed)
    ```bash
-   npm install -g expo-cli
+   ./fix-compatibility.sh
    ```
 
-2. **Navigate to mobile directory**
+2. **Start the mobile app**
    ```bash
-   cd mobile-app
+   expo start --tunnel --port 19000
    ```
 
-3. **Install dependencies**
-   ```bash
-   npm install
-   ```
+3. **Connect your device**
+   - Install Expo Go app on iOS/Android
+   - Scan QR code to load the app
+   - Or use `expo start --tunnel` for device access
 
-4. **Update API configuration**
-   - Edit `mobile-app/constants/api.ts`
-   - Set `API_BASE_URL` to your server URL (e.g., 'http://localhost:5000')
-
-5. **Run on device/simulator**
+4. **Development builds**
    ```bash
-   expo start
-   # or for development builds
    npx expo run:ios     # iOS simulator
    npx expo run:android # Android emulator
    ```
 
-6. **For production builds**
+5. **Production builds** (requires Expo EAS)
    ```bash
-   expo build:ios       # iOS app store
-   expo build:android   # Android app store
+   eas build --platform ios       # iOS App Store
+   eas build --platform android   # Google Play Store
    ```
 
 ## 📱 Usage
 
-### For End Users (Web & Mobile)
+### For End Users (Mobile App)
 
 #### Getting Started
-1. **Create Account** - Sign up with email or use social login
-2. **Subscribe** - Choose a subscription plan to access translation features
-3. **Start Conversation** - Select source and target languages
-4. **Choose Translation Method**:
-   - **Voice**: Tap microphone and speak naturally
+1. **Download from App Store** - Install from iOS App Store or Google Play Store
+2. **Create Account** - Sign up with email or use Google sign-in
+3. **Subscribe** - Choose a subscription plan to access translation features
+4. **Start Conversation** - Select source and target languages
+5. **Choose Translation Method**:
+   - **Voice**: Tap microphone and speak naturally  
    - **Text**: Type directly for instant translation
-   - **Visual**: Use camera to translate text in images (signs, documents)
-5. **Real-time Communication** - Both parties can communicate seamlessly
+   - **Visual**: Use camera to translate text (disabled for MVP, preserved in code)
+6. **Real-time Communication** - Both parties can communicate seamlessly
 
-#### Platform-Specific Features
-- **Web**: Full admin interface, advanced analytics, desktop-optimized layout
-- **Mobile**: Native camera/microphone permissions, touch-optimized interface, app store distribution
+#### Mobile-Optimized Features
+- **Touch Interface** - Optimized for one-handed smartphone operation
+- **Native Permissions** - Camera and microphone access through iOS/Android
+- **App Store Distribution** - Official distribution through app stores
+- **In-App Purchases** - Native iOS and Android payment processing
 
 #### Subscription Management
 - Access subscription plans from user profile
@@ -306,18 +344,25 @@ ADMIN_EMAIL=your-admin-email@example.com
 
 ```bash
 # Development
-npm run dev          # Start development server
-npm run build        # Build for production
+npm run dev          # Start API server for mobile app
+expo start --tunnel  # Start mobile app with tunnel connectivity
 
-# Database
+# Database  
 npm run db:push      # Update database schema
 npm run db:seed      # Seed database with initial data
-npm run db:studio    # Open database admin interface
+
+# Mobile Development
+expo start           # Start Expo development server
+expo build:ios       # Build for iOS App Store
+expo build:android   # Build for Google Play Store
 
 # Utilities
 npm run type-check   # TypeScript type checking
-npm run lint         # Code linting
-npm run format       # Code formatting
+./fix-compatibility.sh  # Fix package version compatibility
+
+# Production Build
+npm run build        # Build API server for production
+npm run start        # Start production API server
 ```
 
 ## 🛡️ Enterprise Security Features
