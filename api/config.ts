@@ -1,7 +1,9 @@
 // API Configuration for mobile app using environment variables
 
-// Get API URL from environment variable with fallback to current Replit URL
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev";
+// Get API URL from environment variable with fallback
+// Note: React Native requires EXPO_PUBLIC_ prefix for client-side environment variables
+const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:5000";
+export const API_BASE_URL = API_URL;
 
 // Log current API configuration for debugging
 console.log('🔗 API Configuration:', {
