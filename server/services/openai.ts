@@ -27,7 +27,7 @@ export async function transcribeAudio(audioBuffer: Buffer, language?: string): P
       fs.mkdirSync(tempDir, { recursive: true });
     }
 
-    const tempFileName = `audio_${uuidv4()}.webm`;
+    const tempFileName = `audio_${uuidv4()}.m4a`;
     const tempFilePath = path.join(tempDir, tempFileName);
 
     try {
@@ -36,6 +36,7 @@ export async function transcribeAudio(audioBuffer: Buffer, language?: string): P
 
       // Create a readable stream from the file
       const audioStream = fs.createReadStream(tempFilePath);
+      console.log(`Audio file created: ${tempFilePath}, size: ${audioBuffer.length} bytes`);
 
       // Convert language code to ISO-639-1 format if needed
       const convertLanguageCode = (lang?: string): string | undefined => {
@@ -77,6 +78,8 @@ export async function transcribeAudio(audioBuffer: Buffer, language?: string): P
         language: convertLanguageCode(language), // Convert to proper format
         response_format: 'text',
       });
+      
+      console.log('OpenAI transcription successful:', transcription.substring(0, 50) + '...');
 
       // Clean up temporary file
       fs.unlinkSync(tempFilePath);
