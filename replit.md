@@ -16,6 +16,8 @@ ParrotSpeak is a comprehensive voice-to-voice translation platform built as a mo
 
 **Full Feature Parity Requirement (August 1, 2025)**: User has requested complete restoration of all dual architecture features in mobile-only implementation. Required features include: all settings/preferences, pricing models, user accounts and profiles, chat history, toolbar/navigation, ParrotSpeak logo, and all other dual architecture capabilities. Must work seamlessly on both iOS and Android platforms while maintaining mobile-only codebase architecture.
 
+**Route Pattern Prevention (August 1, 2025)**: Identified recurring issue where API routes are missing from server/routes.ts despite having service functions and frontend calls. Implemented systematic route verification checklist to prevent future occurrences. Fixed missing /api/translate endpoint that was causing 404 errors during voice translation workflow.
+
 **Mobile-Only Configuration (August 1, 2025)**: Completed mobile-only optimization by removing all web platform checks (`Platform.OS !== 'web'`) and web build configurations. Removed web section from app.json, simplified native module availability checks to use `!!Module` instead of platform checks. All components now assume mobile environment (iOS/Android only).
 
 ## User Preferences
@@ -24,6 +26,14 @@ Preferred communication style: Simple, everyday language.
 Preferred preview mode: Mobile app preview only (not web app preview).
 Dark mode preference: Should persist when selected.
 **Change Management**: Always check with user before making extensive changes, especially to core functionality. No rapid bulk changes without approval.
+
+**Route Verification Checklist**: For every API endpoint, verify ALL components exist:
+- [ ] Service function in `/server/services/`
+- [ ] HTTP route in `/server/routes.ts` with proper middleware (requireAuth, requireSubscription)
+- [ ] Frontend API call in `/api/`
+- [ ] Endpoint constant in `/api/config.ts`
+- [ ] Consistent error handling and response format
+- [ ] Authentication and authorization properly applied
 **Server Restart Protocol**: Always restart the server after making changes to expedite testing and ensure changes take effect immediately.
 **Business Terminology**: Use "Customer" for anyone who has ever paid (past subscribers, expired plans, one-time purchases). "Subscriber" implies ongoing subscription which may not apply to all payment models.
 **Subscription Modal Messaging**:

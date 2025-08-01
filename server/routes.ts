@@ -611,6 +611,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Text translation endpoint
+  app.post('/api/translate', requireAuth, requireSubscription, async (req: Request, res: Response) => {
+    try {
+      const { text, sourceLanguage, targetLanguage } = req.body;
+      
+      if (!text || !sourceLanguage || !targetLanguage) {
+        return res.status(400).json({ 
+          message: 'Text, source language, and target language are required' 
+        });
+      }
+      
+      // Import translation service
+      const { translateText } = await import('./services/translation');
+      
+      // Translate the text using OpenAI GPT-4
+      const translationResult = await translateText(text, sourceLanguage, targetLanguage);
+      
+      console.log('Translation successful:', translationResult.translation.substring(0, 50) + '...');
+      
+      // Return the translation in expected format
+      res.json({
+        translation: translationResult.translation,
+        originalText: translationResult.originalText
+      });
+      
+    } catch (error) {
+      console.error('Translation error:', error);
+      
+      // Format user-friendly error message
+      let errorMessage = 'Translation failed';
+      
+      if (error instanceof Error) {
+        // Check for quota errors
+        if (error.message.includes('quota exceeded') || error.message.includes('insufficient_quota')) {
+          errorMessage = 'OpenAI API quota exceeded. Please update your API key or check your usage limits.';
+        }
+        // Network errors
+        else if (error.message.includes('connect') || error.message.includes('network')) {
+          errorMessage = 'Cannot connect to the translation service. Please check your internet connection.';
+        }
+        // API key errors
+        else if (error.message.includes('API key') || error.message.includes('Unauthorized')) {
+          errorMessage = 'Invalid or missing OpenAI API key. Please check your API configuration.';
+        }
+      }
+      
+      res.status(500).json({ message: errorMessage });
+    }
+  });
+
   // BACKUP CODES ROUTE
   app.post('/api/backup-codes-generate', requireAuth, async (req: Request, res: Response) => {
     try {
