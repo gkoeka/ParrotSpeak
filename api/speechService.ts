@@ -6,6 +6,8 @@ import { recognizeSpeech } from './languageService';
 
 // Platform-safe speech service with fallbacks
 const isSpeechAvailable = Platform.OS !== 'web' && Speech;
+const isAudioAvailable = Platform.OS !== 'web' && Audio;
+const isFileSystemAvailable = Platform.OS !== 'web' && FileSystem;
 
 // Interface for voice profile
 export interface VoiceProfile {
@@ -119,6 +121,12 @@ export interface SpeechRecognitionResult {
 }
 
 export async function startRecording(): Promise<{ uri: string }> {
+  // Platform check for future Audio.Recording implementation
+  if (!isAudioAvailable) {
+    console.log('Audio recording not available on this platform');
+    return { uri: 'mock-recording-uri' };
+  }
+  
   // This is a mock implementation
   // In a real app, we would use Audio.Recording from expo-av
   console.log('Starting recording...');
@@ -136,6 +144,12 @@ export async function processRecording(
   recordingUri: string,
   languageCode: string
 ): Promise<string> {
+  // Platform check for future FileSystem usage
+  if (!isFileSystemAvailable) {
+    console.log('FileSystem not available on this platform');
+    return 'Mock transcription - FileSystem unavailable';
+  }
+  
   // In a real implementation, we would:
   // 1. Read the audio file as base64
   // 2. Send it to our server API for processing with Whisper
