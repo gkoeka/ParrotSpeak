@@ -20,6 +20,8 @@ ParrotSpeak is a comprehensive voice-to-voice translation platform built as a mo
 
 **Voice Translation Pipeline Complete (August 1, 2025)**: Successfully implemented and tested complete end-to-end voice translation functionality. M4A audio recording → OpenAI Whisper transcription → GPT-4o translation → text-to-speech playback. All endpoints returning HTTP 200, supporting English→Spanish and English→German translations with cultural context preservation.
 
+**Dual Architecture Restoration (August 1, 2025)**: Converting dual architecture (web+mobile) to mobile-only while preserving all functionality. Using existing 3 user accounts (Greg lifetime, Greg expired, incomplete profile). IAP implementation complete with Model A pricing: 1 Week ($4.99), 1 Month ($14.99), 3 Months ($39.99), 6 Months ($69.99), Monthly Recurring ($10/month), Annual Recurring ($99/year). Authentication foundation implementation in progress.
+
 **Mobile-Only Configuration (August 1, 2025)**: Completed mobile-only optimization by removing all web platform checks (`Platform.OS !== 'web'`) and web build configurations. Removed web section from app.json, simplified native module availability checks to use `!!Module` instead of platform checks. All components now assume mobile environment (iOS/Android only).
 
 ## User Preferences

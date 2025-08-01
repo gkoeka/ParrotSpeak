@@ -6,6 +6,8 @@ export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
   const { login, register } = useAuth();
 
@@ -15,12 +17,17 @@ export default function AuthScreen() {
       return;
     }
 
+    if (!isLogin && !firstName) {
+      Alert.alert('Error', 'Please enter your first name');
+      return;
+    }
+
     setLoading(true);
     try {
       if (isLogin) {
         await login(email, password);
       } else {
-        await register(email, password);
+        await register(email, password, firstName, lastName);
       }
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Authentication failed');
@@ -40,6 +47,25 @@ export default function AuthScreen() {
         </Text>
 
         <View style={styles.form}>
+          {!isLogin && (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="First Name"
+                value={firstName}
+                onChangeText={setFirstName}
+                autoCapitalize="words"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Last Name (optional)"
+                value={lastName}
+                onChangeText={setLastName}
+                autoCapitalize="words"
+              />
+            </>
+          )}
+          
           <TextInput
             style={styles.input}
             placeholder="Email"

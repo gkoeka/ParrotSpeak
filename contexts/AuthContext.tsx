@@ -13,7 +13,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, firstName: string, lastName?: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -34,19 +34,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const checkAuthStatus = async () => {
     try {
-      // For development, auto-login the demo user to establish server session
-      await login('demo@parrotspeak.com', 'demo-password');
+      // Import the real auth service
+      const { getCurrentUser } = await import('../api/authService');
+      
+      // Check if user is already logged in
+      const userData = await getCurrentUser();
+      if (userData) {
+        setUser({
+          id: userData.id,
+          email: userData.email,
+          name: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.email,
+          subscriptionStatus: userData.subscriptionStatus || 'free',
+          subscriptionTier: userData.subscriptionTier,
+          subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null
+        });
+      }
     } catch (error) {
       console.error('Auth check failed:', error);
-      // Fallback to local demo user if server login fails
-      setUser({
-        id: '1',
-        email: 'demo@parrotspeak.com',
-        name: 'Demo User',
-        subscriptionStatus: 'active',
-        subscriptionTier: 'premium',
-        subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-      });
+      // User not authenticated, leave user as null
     } finally {
       setIsLoading(false);
     }
@@ -54,65 +59,70 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = async (email: string, password: string) => {
     try {
-      // Make actual API call to establish server session
-      const response = await fetch('https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Important for session cookies
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (response.ok) {
-        const userData = await response.json();
+      // Import the real auth service
+      const { login: apiLogin } = await import('../api/authService');
+      
+      // Make actual API call using the auth service
+      const response = await apiLogin({ email, password });
+      
+      if (response && response.user) {
+        const userData = response.user;
         setUser({
-          id: userData.id || '1',
-          email: userData.email || email,
-          name: userData.name || 'Demo User',
-          subscriptionStatus: 'active',
-          subscriptionTier: 'premium',
-          subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+          id: userData.id,
+          email: userData.email,
+          name: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.email,
+          subscriptionStatus: userData.subscriptionStatus || 'free',
+          subscriptionTier: userData.subscriptionTier,
+          subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null
         });
       } else {
-        throw new Error('Login failed');
+        throw new Error('Invalid email or password');
       }
     } catch (error) {
-      // For demo purposes, fall back to local user
-      console.log('Server login failed, using local demo user');
-      setUser({
-        id: '1',
-        email,
-        name: 'Demo User',
-        subscriptionStatus: 'active',
-        subscriptionTier: 'premium',
-        subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-      });
+      console.error('Login failed:', error);
+      throw new Error('Login failed. Please check your email and password.');
     }
   };
 
-  const register = async (email: string, password: string) => {
+  const register = async (email: string, password: string, firstName: string, lastName?: string) => {
     try {
-      // TODO: Implement actual register API call
-      setUser({
-        id: '1',
-        email,
-        name: 'Demo User',
-        subscriptionStatus: 'active',
-        subscriptionTier: 'premium',
-        subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-      });
+      // Import the real auth service
+      const { register: apiRegister } = await import('../api/authService');
+      
+      // Make actual API call using the auth service
+      const response = await apiRegister({ email, password, firstName, lastName });
+      
+      if (response && response.user) {
+        const userData = response.user;
+        setUser({
+          id: userData.id,
+          email: userData.email,
+          name: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.email,
+          subscriptionStatus: userData.subscriptionStatus || 'free',
+          subscriptionTier: userData.subscriptionTier,
+          subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null
+        });
+      } else {
+        throw new Error('Registration failed');
+      }
     } catch (error) {
-      throw new Error('Registration failed');
+      console.error('Registration failed:', error);
+      throw new Error('Registration failed. Please try again.');
     }
   };
 
   const logout = async () => {
     try {
-      // TODO: Implement actual logout API call
+      // Import the real auth service
+      const { logout: apiLogout } = await import('../api/authService');
+      
+      // Make actual API call using the auth service
+      await apiLogout();
       setUser(null);
     } catch (error) {
       console.error('Logout failed:', error);
+      // Even if logout API fails, clear local user state
+      setUser(null);
     }
   };
 
