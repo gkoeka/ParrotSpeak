@@ -321,6 +321,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // IAP routes
   app.use('/api/iap', iapRoutes);
 
+  // Languages endpoint
+  app.get('/api/languages', (req: Request, res: Response) => {
+    const languages = [
+      { code: 'en', name: 'English', nativeName: 'English' },
+      { code: 'es', name: 'Spanish', nativeName: 'Español' },
+      { code: 'fr', name: 'French', nativeName: 'Français' },
+      { code: 'de', name: 'German', nativeName: 'Deutsch' },
+      { code: 'it', name: 'Italian', nativeName: 'Italiano' },
+      { code: 'pt', name: 'Portuguese', nativeName: 'Português' },
+      { code: 'ja', name: 'Japanese', nativeName: '日本語' },
+      { code: 'ko', name: 'Korean', nativeName: '한국어' },
+      { code: 'zh', name: 'Chinese', nativeName: '中文' },
+      { code: 'ru', name: 'Russian', nativeName: 'Русский' },
+      { code: 'ar', name: 'Arabic', nativeName: 'العربية' },
+      { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी' }
+    ];
+    res.json(languages);
+  });
+
   // Authentication routes
   app.post('/api/auth/login', (req: Request, res: Response, next: NextFunction) => {
     passport.authenticate('local', (err: any, user: any, info: any) => {
