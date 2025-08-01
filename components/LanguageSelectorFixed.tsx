@@ -91,114 +91,114 @@ export default function LanguageSelector({
             <Text style={[styles.modalTitle, isDark && styles.modalTitleDark]}>
               {title}
             </Text>
-          
-          {/* Search Input */}
-          <TextInput
-            style={[styles.searchInput, isDark && styles.searchInputDark]}
-            placeholder="Search languages..."
-            placeholderTextColor={isDark ? "#888" : "#999"}
-            value={searchTerm}
-            onChangeText={setSearchTerm}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          
-          {/* Debug Info */}
-          <Text style={{fontSize: 12, color: '#666', textAlign: 'center', marginBottom: 10}}>
-            Showing {filteredLanguages.length} languages
-          </Text>
-          
-          {/* Language List */}
-          <ScrollView 
-            style={styles.languageList}
-            showsVerticalScrollIndicator={true}
-            contentContainerStyle={{paddingVertical: 5}}
-          >
-            {filteredLanguages.map((language, index) => {
-              const isSelected = language.code === currentLanguage;
-              console.log(`🔍 Rendering language ${index + 1}:`, language.name, language.code);
-              
-              return (
-                <TouchableOpacity
-                  key={language.code}
-                  style={[
-                    styles.languageOption,
-                    isDark && styles.languageOptionDark,
-                    isSelected && styles.languageOptionSelected,
-                    isSelected && isDark && styles.languageOptionSelectedDark
-                  ]}
-                  onPress={() => {
-                    console.log('🔍 Language selected:', language.name, language.code);
-                    onSelect(language.code);
-                    setSearchTerm('');
-                    onClose();
-                  }}
-                >
-                  <View style={styles.languageInfo}>
-                    <Image 
-                      source={{ uri: language.flag }}
-                      style={styles.flagImage}
-                      resizeMode="contain"
-                      onError={(error) => console.log('🔍 Flag load error:', language.code, error)}
-                      onLoad={() => console.log('🔍 Flag loaded:', language.code)}
-                    />
-                    <View style={styles.languageTexts}>
-                      <Text style={[
-                        styles.languageName, 
-                        isDark && styles.languageNameDark,
-                        isSelected && styles.languageNameSelected
-                      ]}>
-                        {language.name}
-                      </Text>
-                      <Text style={[
-                        styles.languageNative, 
-                        isDark && styles.languageNativeDark,
-                        isSelected && styles.languageNativeSelected
-                      ]}>
-                        {language.nativeName}
-                      </Text>
-                    </View>
-                    <View style={styles.languageMeta}>
-                      <Text style={[
-                        styles.languageCode, 
-                        isDark && styles.languageCodeDark,
-                        isSelected && styles.languageCodeSelected
-                      ]}>
-                        {language.code.toUpperCase()}
-                      </Text>
-                      <Text style={styles.speechIndicator}>
-                        {language.speechSupported ? '🎤' : '📝'}
-                      </Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
             
-            {filteredLanguages.length === 0 && (
-              <View style={styles.noResults}>
-                <Text style={[styles.noResultsText, isDark && styles.noResultsTextDark]}>
-                  No languages found
-                </Text>
-                <Text style={[styles.noResultsSubtext, isDark && styles.noResultsSubtextDark]}>
-                  Try a different search term
-                </Text>
-              </View>
-            )}
-          </ScrollView>
-          
-          <TouchableOpacity 
-            style={[styles.cancelButton, isDark && styles.cancelButtonDark]} 
-            onPress={() => {
-              setSearchTerm('');
-              onClose();
-            }}
-          >
-            <Text style={[styles.cancelText, isDark && styles.cancelTextDark]}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    </Modal>
+            {/* Search Input */}
+            <TextInput
+              style={[styles.searchInput, isDark && styles.searchInputDark]}
+              placeholder="Search languages..."
+              placeholderTextColor={isDark ? "#888" : "#999"}
+              value={searchTerm}
+              onChangeText={setSearchTerm}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            
+            {/* Debug Info */}
+            <Text style={{fontSize: 12, color: '#666', textAlign: 'center', marginBottom: 10}}>
+              Showing {filteredLanguages.length} languages
+            </Text>
+            
+            {/* Language List */}
+            <ScrollView 
+              style={styles.languageList}
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={{paddingVertical: 5}}
+            >
+              {filteredLanguages.map((language, index) => {
+                const isSelected = language.code === currentLanguage;
+                console.log(`🔍 Rendering language ${index + 1}:`, language.name, language.code);
+                
+                return (
+                  <TouchableOpacity
+                    key={language.code}
+                    style={[
+                      styles.languageOption,
+                      isDark && styles.languageOptionDark,
+                      isSelected && styles.languageOptionSelected,
+                      isSelected && isDark && styles.languageOptionSelectedDark
+                    ]}
+                    onPress={() => {
+                      console.log('🔍 Language selected:', language.name, language.code);
+                      onSelect(language.code);
+                      setSearchTerm('');
+                      onClose();
+                    }}
+                  >
+                    <View style={styles.languageInfo}>
+                      <Image 
+                        source={{ uri: language.flag }}
+                        style={styles.flagImage}
+                        resizeMode="contain"
+                        onError={(error) => console.log('🔍 Flag load error:', language.code, error)}
+                        onLoad={() => console.log('🔍 Flag loaded:', language.code)}
+                      />
+                      <View style={styles.languageTexts}>
+                        <Text style={[
+                          styles.languageName, 
+                          isDark && styles.languageNameDark,
+                          isSelected && styles.languageNameSelected
+                        ]}>
+                          {language.name}
+                        </Text>
+                        <Text style={[
+                          styles.languageNative, 
+                          isDark && styles.languageNativeDark,
+                          isSelected && styles.languageNativeSelected
+                        ]}>
+                          {language.nativeName}
+                        </Text>
+                      </View>
+                      <View style={styles.languageMeta}>
+                        <Text style={[
+                          styles.languageCode, 
+                          isDark && styles.languageCodeDark,
+                          isSelected && styles.languageCodeSelected
+                        ]}>
+                          {language.code.toUpperCase()}
+                        </Text>
+                        <Text style={styles.speechIndicator}>
+                          {language.speechSupported ? '🎤' : '📝'}
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+              
+              {filteredLanguages.length === 0 && (
+                <View style={styles.noResults}>
+                  <Text style={[styles.noResultsText, isDark && styles.noResultsTextDark]}>
+                    No languages found
+                  </Text>
+                  <Text style={[styles.noResultsSubtext, isDark && styles.noResultsSubtextDark]}>
+                    Try a different search term
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
+            
+            <TouchableOpacity 
+              style={[styles.cancelButton, isDark && styles.cancelButtonDark]} 
+              onPress={() => {
+                setSearchTerm('');
+                onClose();
+              }}
+            >
+              <Text style={[styles.cancelText, isDark && styles.cancelTextDark]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
     );
   };
 
@@ -238,7 +238,7 @@ export default function LanguageSelector({
         showSourceModal,
         () => setShowSourceModal(false),
         onSourceLanguageChange,
-        "Select Source Language",
+        'Select Source Language',
         sourceLanguage
       )}
 
@@ -246,7 +246,7 @@ export default function LanguageSelector({
         showTargetModal,
         () => setShowTargetModal(false),
         onTargetLanguageChange,
-        "Select Target Language",
+        'Select Target Language',
         targetLanguage
       )}
     </View>
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   languageButton: {
     flex: 1,
     alignItems: 'center',
-    padding: 10,
+    padding: 12,
     backgroundColor: '#fff',
     borderRadius: 8,
     shadowColor: '#000',
@@ -371,9 +371,6 @@ const styles = StyleSheet.create({
     maxHeight: 400,
     backgroundColor: 'transparent',
   },
-  languageListDark: {
-    backgroundColor: 'transparent',
-  },
   languageOption: {
     paddingVertical: 16,
     paddingHorizontal: 12,
@@ -470,13 +467,14 @@ const styles = StyleSheet.create({
     color: '#999',
   },
   noResultsSubtextDark: {
-    color: '#777',
+    color: '#666',
   },
   cancelButton: {
-    marginTop: 20,
-    padding: 15,
     backgroundColor: '#f8f9fa',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     borderRadius: 8,
+    marginTop: 15,
     alignItems: 'center',
   },
   cancelButtonDark: {
@@ -484,8 +482,8 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontSize: 16,
-    color: '#666',
     fontWeight: '500',
+    color: '#666',
   },
   cancelTextDark: {
     color: '#999',
