@@ -1,15 +1,8 @@
-// API Configuration for mobile app using environment variables
+// Import API configuration from centralized config
+import { API_BASE_URL, API_CONFIG } from './envConfig';
 
-// Get API URL from environment variable with fallback
-// Note: React Native requires EXPO_PUBLIC_ prefix for client-side environment variables
-const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:5000";
-export const API_BASE_URL = API_URL;
-
-// Log current API configuration for debugging
-console.log('🔗 API Configuration:', {
-  url: API_BASE_URL,
-  source: process.env.EXPO_PUBLIC_API_URL ? 'environment' : 'fallback'
-});
+// Re-export for compatibility
+export { API_BASE_URL, API_CONFIG };
 
 // API Endpoints
 export const ENDPOINTS = {

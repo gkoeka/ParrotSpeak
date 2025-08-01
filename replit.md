@@ -33,12 +33,14 @@ Preferred preview mode: Mobile app preview only (not web app preview).
 Dark mode preference: Should persist when selected.
 **Change Management**: Always check with user before making extensive changes, especially to core functionality. No rapid bulk changes without approval.
 
-**API Configuration (August 1, 2025)**: Implemented environment variable-based API URL configuration:
-- **Development**: Set `EXPO_PUBLIC_API_URL=http://localhost:5000` in `.env.local` for local server testing
-- **Mobile Testing**: Set `EXPO_PUBLIC_API_URL=https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev` for Expo Go testing
-- **Production**: Configure `EXPO_PUBLIC_API_URL` in app store build environments
-- **Fallback**: Uses current Replit URL if environment variable not set
-- **Consolidated**: All API services import from `api/config.ts` (removed duplicate `constants/api.ts`)
+**API Configuration System (August 1, 2025)**: Implemented robust environment variable-based API configuration:
+- **Environment Variables**: Uses `EXPO_PUBLIC_API_URL` with intelligent fallbacks and validation
+- **Configuration Files**: Centralized in `api/envConfig.ts` with comprehensive error handling
+- **Smart Fallbacks**: Development mode defaults to localhost, production uses Replit URL
+- **Initialization System**: `utils/appInitializer.ts` validates environment and tests connectivity on startup
+- **Error Prevention**: Eliminated TypeScript module loading issues and hardcoded URLs
+- **Debugging Tools**: Built-in environment validation and connectivity testing utilities
+- **Scalable Architecture**: No hardcoding - all URLs configurable via environment variables
 
 **Route Verification Checklist**: For every API endpoint, verify ALL components exist:
 - [ ] Service function in `/server/services/`
