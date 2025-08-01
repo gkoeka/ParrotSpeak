@@ -1,0 +1,33 @@
+{
+  "name": "ParrotSpeak SDK 53 Upgrade Option",
+  "required_changes": {
+    "core_versions": {
+      "expo": "~53.0.20",
+      "react": "19.0.0", 
+      "react-native": "0.79.5"
+    },
+    "expo_modules_current": {
+      "expo-av": "15.1.7",
+      "expo-speech": "13.1.7",
+      "expo-file-system": "18.1.11"
+    },
+    "react_native_packages": {
+      "react-native-reanimated": "~3.17.4",
+      "react-native-gesture-handler": "~2.24.0", 
+      "react-native-safe-area-context": "5.4.0",
+      "react-native-screens": "~4.11.1"
+    },
+    "navigation": {
+      "@react-navigation/native": "^7.1.16",
+      "@react-navigation/stack": "^7.4.4"
+    },
+    "types": {
+      "@types/react": "~19.0.10"
+    },
+    "warnings": [
+      "React 19 is newer and may have breaking changes",
+      "React Native 0.79.5 has New Architecture enabled by default",
+      "Requires more testing for app compatibility"
+    ]
+  }
+}
