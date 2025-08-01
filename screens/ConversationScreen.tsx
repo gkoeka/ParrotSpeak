@@ -4,7 +4,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import Header from '../components/Header';
 import VoiceInputControls from '../components/VoiceInputControls';
 
-import LanguageSelector from '../components/LanguageSelectorFixed2';
+import LanguageSelector from '../components/LanguageSelectorMobile';
 
 export default function ConversationScreen() {
   const [messages, setMessages] = useState<Array<{
