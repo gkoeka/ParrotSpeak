@@ -107,8 +107,7 @@ export async function findOrCreateGoogleUser(
     .values({
       email: googleProfile.email || null,
       googleId,
-
-      firstName: googleProfile.name?.givenName || null,
+      firstName: googleProfile.name?.givenName || '',
       lastName: googleProfile.name?.familyName || null,
       profileImageUrl: googleProfile.photos?.[0]?.value || null,
       emailVerified: true,
