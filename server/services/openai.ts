@@ -42,8 +42,15 @@ export async function transcribeAudio(audioBuffer: Buffer, language?: string): P
       const header = audioBuffer.subarray(0, 12).toString('hex');
       console.log('Audio file header (hex):', header);
 
-      // Create a readable stream from the file
-      const audioStream = fs.createReadStream(tempFilePath);
+      // Try using FormData for better format handling
+      const FormData = require('form-data');
+      const form = new FormData();
+      form.append('file', fs.createReadStream(tempFilePath), {
+        filename: 'audio.mp4',
+        contentType: 'audio/mp4',
+      });
+      form.append('model', 'whisper-1');
+      form.append('response_format', 'text');
 
       // Convert language code to ISO-639-1 format if needed
       const convertLanguageCode = (lang?: string): string | undefined => {
@@ -78,13 +85,27 @@ export async function transcribeAudio(audioBuffer: Buffer, language?: string): P
         return languageMap[lang.toLowerCase()] || lang.split('-')[0];
       };
 
-      // Transcribe using OpenAI Whisper
-      const transcription = await openai.audio.transcriptions.create({
-        file: audioStream,
-        model: 'whisper-1',
-        language: convertLanguageCode(language), // Convert to proper format
-        response_format: 'text',
+      // Add language if provided
+      if (convertLanguageCode(language)) {
+        form.append('language', convertLanguageCode(language));
+      }
+
+      // Make direct HTTP request with FormData
+      const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          ...form.getHeaders(),
+        },
+        body: form,
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`OpenAI API error: ${response.status} - ${JSON.stringify(errorData)}`);
+      }
+
+      const transcription = await response.text();
       
       console.log('OpenAI transcription successful:', transcription.substring(0, 50) + '...');
 
