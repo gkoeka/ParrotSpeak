@@ -421,6 +421,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // OAuth mobile endpoints
+  app.post("/api/auth/google/mobile", async (req: Request, res: Response) => {
+    try {
+      const { idToken, user } = req.body;
+      
+      if (!idToken || !user) {
+        return res.status(400).json({ error: 'Missing required OAuth data' });
+      }
+
+      // TODO: Verify Google ID token with Google's servers
+      // For now, create/update user with Google data
+      const userData = {
+        id: user.id,
+        email: user.email,
+        firstName: user.givenName || user.name?.split(' ')[0] || '',
+        lastName: user.familyName || user.name?.split(' ').slice(1).join(' ') || '',
+        subscriptionStatus: 'free', // Default for new users
+        oauthProvider: 'google',
+        oauthId: user.id
+      };
+
+      // For demo purposes, return success with user data
+      res.json({ 
+        success: true, 
+        user: userData,
+        message: 'Google authentication successful' 
+      });
+    } catch (error) {
+      console.error('Google OAuth error:', error);
+      res.status(500).json({ error: 'Google authentication failed' });
+    }
+  });
+
+  app.post("/api/auth/apple/mobile", async (req: Request, res: Response) => {
+    try {
+      const { identityToken, user, email, fullName } = req.body;
+      
+      if (!identityToken) {
+        return res.status(400).json({ error: 'Missing Apple identity token' });
+      }
+
+      // TODO: Verify Apple identity token with Apple's servers
+      // For now, create/update user with Apple data
+      const userData = {
+        id: user || `apple_${Date.now()}`, // Apple doesn't always provide user ID
+        email: email || 'private@privaterelay.appleid.com',
+        firstName: fullName?.givenName || '',
+        lastName: fullName?.familyName || '',
+        subscriptionStatus: 'free', // Default for new users
+        oauthProvider: 'apple',
+        oauthId: user || identityToken
+      };
+
+      // For demo purposes, return success with user data
+      res.json({ 
+        success: true, 
+        user: userData,
+        message: 'Apple authentication successful' 
+      });
+    } catch (error) {
+      console.error('Apple OAuth error:', error);
+      res.status(500).json({ error: 'Apple authentication failed' });
+    }
+  });
+
+  // Password reset endpoints
+  app.post("/api/auth/request-reset", async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: 'Email is required' });
+      }
+
+      // TODO: Send actual password reset email via SendGrid
+      // For demo purposes, just return success
+      console.log(`Password reset requested for: ${email}`);
+      
+      res.json({ 
+        success: true, 
+        message: 'Password reset email sent if account exists' 
+      });
+    } catch (error) {
+      console.error('Password reset request error:', error);
+      res.status(500).json({ error: 'Failed to process password reset request' });
+    }
+  });
+
+  app.post("/api/auth/reset-password", async (req: Request, res: Response) => {
+    try {
+      const { token, newPassword } = req.body;
+      
+      if (!token || !newPassword) {
+        return res.status(400).json({ error: 'Token and new password are required' });
+      }
+
+      // TODO: Verify reset token and update password in database
+      // For demo purposes, just return success
+      console.log(`Password reset completed with token: ${token}`);
+      
+      res.json({ 
+        success: true, 
+        message: 'Password reset successful' 
+      });
+    } catch (error) {
+      console.error('Password reset error:', error);
+      res.status(500).json({ error: 'Failed to reset password' });
+    }
+  });
+
   app.get('/api/auth/user', (req: Request, res: Response) => {
     if (req.user) {
       res.json({ 

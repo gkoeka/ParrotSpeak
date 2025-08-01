@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { SecureStorage } from '../utils/secureStorage';
 
 interface User {
   id: string;
@@ -6,7 +7,7 @@ interface User {
   name?: string;
   subscriptionStatus?: string;
   subscriptionTier?: string;
-  subscriptionExpiresAt?: Date;
+  subscriptionExpiresAt?: Date | null;
 }
 
 interface AuthContextType {
@@ -14,6 +15,9 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, firstName: string, lastName?: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  loginWithApple: () => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<boolean>;
   logout: () => Promise<void>;
 }
 
@@ -34,24 +38,41 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const checkAuthStatus = async () => {
     try {
-      // Import the real auth service
+      // Check for stored user data first for faster UI response
+      const storedUserData = await SecureStorage.getUserData();
+      if (storedUserData) {
+        setUser(storedUserData);
+        setIsLoading(false);
+      }
+
+      // Then validate with server
       const { getCurrentUser } = await import('../api/authService');
-      
-      // Check if user is already logged in
       const userData = await getCurrentUser();
+      
       if (userData) {
-        setUser({
+        const userInfo = {
           id: userData.id,
           email: userData.email,
           name: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.email,
           subscriptionStatus: userData.subscriptionStatus || 'free',
           subscriptionTier: userData.subscriptionTier,
           subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null
-        });
+        };
+        setUser(userInfo);
+        // Update stored user data
+        await SecureStorage.setUserData(userInfo);
+      } else {
+        // Server says no user, clear stored data
+        await SecureStorage.clearAuthData();
+        setUser(null);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      // User not authenticated, leave user as null
+      // On network error, keep stored user if available
+      const storedUserData = await SecureStorage.getUserData();
+      if (!storedUserData) {
+        setUser(null);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -111,17 +132,85 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const loginWithGoogle = async () => {
+    try {
+      const { OAuthService } = await import('../services/oauthService');
+      const response = await OAuthService.signInWithGoogle();
+      
+      if (response && response.user) {
+        const userData = response.user;
+        const userInfo = {
+          id: userData.id,
+          email: userData.email,
+          name: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.email,
+          subscriptionStatus: userData.subscriptionStatus || 'free',
+          subscriptionTier: userData.subscriptionTier,
+          subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null
+        };
+        setUser(userInfo);
+        await SecureStorage.setUserData(userInfo);
+      }
+    } catch (error) {
+      console.error('Google login failed:', error);
+      throw new Error('Google login failed. Please try again.');
+    }
+  };
+
+  const loginWithApple = async () => {
+    try {
+      const { OAuthService } = await import('../services/oauthService');
+      const response = await OAuthService.signInWithApple();
+      
+      if (response && response.user) {
+        const userData = response.user;
+        const userInfo = {
+          id: userData.id,
+          email: userData.email,
+          name: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.email,
+          subscriptionStatus: userData.subscriptionStatus || 'free',
+          subscriptionTier: userData.subscriptionTier,
+          subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null
+        };
+        setUser(userInfo);
+        await SecureStorage.setUserData(userInfo);
+      }
+    } catch (error) {
+      console.error('Apple login failed:', error);
+      throw new Error('Apple login failed. Please try again.');
+    }
+  };
+
+  const requestPasswordReset = async (email: string): Promise<boolean> => {
+    try {
+      const { requestPasswordReset: apiRequestReset } = await import('../api/authService');
+      return await apiRequestReset(email);
+    } catch (error) {
+      console.error('Password reset request failed:', error);
+      return false;
+    }
+  };
+
   const logout = async () => {
     try {
       // Import the real auth service
       const { logout: apiLogout } = await import('../api/authService');
+      const { OAuthService } = await import('../services/oauthService');
       
       // Make actual API call using the auth service
       await apiLogout();
+      
+      // Sign out from OAuth providers
+      await OAuthService.signOutGoogle();
+      await OAuthService.signOutApple();
+      
+      // Clear stored data
+      await SecureStorage.clearAuthData();
+      
       setUser(null);
     } catch (error) {
       console.error('Logout failed:', error);
       // Even if logout API fails, clear local user state
+      await SecureStorage.clearAuthData();
       setUser(null);
     }
   };
@@ -131,6 +220,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isLoading,
     login,
     register,
+    loginWithGoogle,
+    loginWithApple,
+    requestPasswordReset,
     logout,
   };
 

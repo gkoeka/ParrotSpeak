@@ -124,18 +124,57 @@ export async function register(credentials: {
 }
 
 export async function loginWithGoogle(): Promise<any | null> {
-  // ...Google OAuth flow here
-  return null;
+  try {
+    const response = await safeFetch(`${API_BASE_URL}/api/auth/google/mobile`, {
+      method: "POST",
+      headers: requestHeaders,
+    });
+    if (!response) return null;
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (e) {
+    console.error("Error with Google login:", e);
+    return null;
+  }
 }
 
 export async function loginWithApple(): Promise<any | null> {
-  // ...Apple OAuth flow here
-  return null;
+  try {
+    const response = await safeFetch(`${API_BASE_URL}/api/auth/apple/mobile`, {
+      method: "POST", 
+      headers: requestHeaders,
+    });
+    if (!response) return null;
+    if (!response.ok) return null;
+    return await response.json();
+  } catch (e) {
+    console.error("Error with Apple login:", e);
+    return null;
+  }
 }
 
 export async function validateSession(): Promise<any | null> {
-  // ...Validate session logic here
-  return null;
+  return await getCurrentUser();
+}
+
+export async function requestPasswordReset(email: string): Promise<boolean> {
+  const response = await safeFetch(`${API_BASE_URL}/api/auth/request-reset`, {
+    method: "POST",
+    headers: requestHeaders,
+    body: JSON.stringify({ email }),
+  });
+  if (!response) return false;
+  return response.ok;
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<boolean> {
+  const response = await safeFetch(`${API_BASE_URL}/api/auth/reset-password`, {
+    method: "POST",
+    headers: requestHeaders,
+    body: JSON.stringify({ token, newPassword }),
+  });
+  if (!response) return false;
+  return response.ok;
 }
 
 export function checkSubscriptionAccess(user: any): boolean {

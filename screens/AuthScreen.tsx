@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function AuthScreen() {
@@ -9,7 +11,19 @@ export default function AuthScreen() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, register } = useAuth();
+  const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
+  const { login, register, loginWithGoogle, loginWithApple } = useAuth();
+
+  useEffect(() => {
+    checkAppleAuthAvailability();
+  }, []);
+
+  const checkAppleAuthAvailability = async () => {
+    if (Platform.OS === 'ios') {
+      const isAvailable = await AppleAuthentication.isAvailableAsync();
+      setIsAppleAuthAvailable(isAvailable);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!email || !password) {
@@ -31,6 +45,28 @@ export default function AuthScreen() {
       }
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Authentication failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    try {
+      await loginWithGoogle();
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Google sign in failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    setLoading(true);
+    try {
+      await loginWithApple();
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Apple sign in failed');
     } finally {
       setLoading(false);
     }
@@ -93,6 +129,37 @@ export default function AuthScreen() {
             </Text>
           </TouchableOpacity>
 
+          {/* OAuth Options */}
+          <View style={styles.dividerContainer}>
+            <View style={styles.divider} />
+            <Text style={styles.dividerText}>or continue with</Text>
+            <View style={styles.divider} />
+          </View>
+
+          <View style={styles.oauthContainer}>
+            {/* Google Sign In */}
+            <TouchableOpacity 
+              style={styles.oauthButton} 
+              onPress={handleGoogleSignIn}
+              disabled={loading}
+            >
+              <Ionicons name="logo-google" size={20} color="#DB4437" />
+              <Text style={styles.oauthButtonText}>Google</Text>
+            </TouchableOpacity>
+
+            {/* Apple Sign In - only show on iOS */}
+            {isAppleAuthAvailable && (
+              <TouchableOpacity 
+                style={[styles.oauthButton, styles.appleButton]} 
+                onPress={handleAppleSignIn}
+                disabled={loading}
+              >
+                <Ionicons name="logo-apple" size={20} color="#000" />
+                <Text style={[styles.oauthButtonText, styles.appleButtonText]}>Apple</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
           <TouchableOpacity 
             style={styles.switchButton}
             onPress={() => setIsLogin(!isLogin)}
@@ -101,6 +168,19 @@ export default function AuthScreen() {
               {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
             </Text>
           </TouchableOpacity>
+
+          {/* Forgot Password Link */}
+          {isLogin && (
+            <TouchableOpacity 
+              style={styles.forgotPasswordButton}
+              onPress={() => {
+                // Navigate to password reset screen
+                Alert.alert('Password Reset', 'Password reset feature will be available soon.');
+              }}
+            >
+              <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </View>
@@ -164,5 +244,61 @@ const styles = StyleSheet.create({
     color: '#3366FF',
     fontSize: 16,
     textAlign: 'center',
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#ddd',
+  },
+  dividerText: {
+    marginHorizontal: 15,
+    color: '#666',
+    fontSize: 14,
+  },
+  oauthContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  oauthButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginHorizontal: 5,
+    backgroundColor: '#fff',
+  },
+  appleButton: {
+    backgroundColor: '#000',
+    borderColor: '#000',
+  },
+  oauthButtonText: {
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+  },
+  appleButtonText: {
+    color: '#fff',
+  },
+  forgotPasswordButton: {
+    alignItems: 'center',
+    paddingVertical: 10,
+    marginTop: 10,
+  },
+  forgotPasswordText: {
+    color: '#3366FF',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
