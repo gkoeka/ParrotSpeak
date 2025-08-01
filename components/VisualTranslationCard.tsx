@@ -1,3 +1,16 @@
+/* 
+ * MVP LAUNCH: Camera functionality disabled for initial release
+ * 
+ * This component provides visual translation capabilities using camera and image picker.
+ * It has been commented out for the MVP launch to focus on core voice translation features.
+ * 
+ * TODO: Re-enable this component in future version when ready to implement camera features
+ * Required dependencies: expo-camera, expo-image-picker, camera permissions
+ * 
+ * Last modified: August 1, 2025 - Disabled for MVP launch
+ */
+
+/*
 import React, { useState } from 'react';
 import {
   View,
@@ -200,3 +213,9 @@ const styles = StyleSheet.create({
     color: '#4F46E5',
   },
 });
+*/
+
+// MVP LAUNCH: Placeholder component for future camera implementation
+export default function VisualTranslationCard() {
+  return null; // Component disabled for MVP launch
+}

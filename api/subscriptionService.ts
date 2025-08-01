@@ -169,6 +169,10 @@ export async function transcribeSpeech(data: {
   );
 }
 
+/* MVP LAUNCH: Visual translation API commented out for initial release
+ * TODO: Re-enable when camera functionality is implemented
+ * Last modified: August 1, 2025 - Disabled for MVP launch
+ *
 /**
  * Translate visual content with subscription check
  */
@@ -189,6 +193,7 @@ export async function translateVisual(data: {
     'visual'
   );
 }
+*/
 
 /**
  * Get subscription status for display

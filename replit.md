@@ -6,6 +6,8 @@ ParrotSpeak is a comprehensive voice-to-voice translation platform built as a mo
 
 **Architecture Decision (January 2025)**: Transitioned from dual web/mobile architecture to streamlined mobile-only approach for better aesthetic consistency, simplified maintenance, and unified development experience.
 
+**MVP Launch Decision (August 1, 2025)**: Camera and visual translation functionality temporarily disabled for initial release. All camera-related code has been preserved in comments for future implementation. This decision focuses the MVP on core voice translation features while maintaining the codebase for future visual translation capabilities.
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
@@ -32,7 +34,8 @@ ParrotSpeak is built as a mobile-first TypeScript application with a clean API b
 - **Subscription Protection**: Critical translation features are protected by middleware, ensuring active subscriptions are required. Unsubscribed users see personalized prompts and restricted access to conversation history.
 - **Data Flow**: Audio input is captured, sent to the server, processed by OpenAI Whisper for speech recognition, translated, and the translated text is returned via WebSocket. All conversation data is encrypted at rest using AES-256 with individual user keys, and all API communication uses HTTPS.
 - **UI/UX Decisions**: Focus on a mobile-first design with responsive breakpoints. Consistent use of a unified Header component and standard ParrotSpeak logo across all platforms. Subscription modals are designed for clear messaging and seamless navigation. Dark mode preference is persistent.
-- **Key Feature Protection**: Voice-to-voice, text, and visual translation, real-time conversation streaming, new conversation creation, and message sending are all subscription-protected. Free features include account management, settings, conversation history viewing (for active subscribers), and profile management.
+- **Key Feature Protection**: Voice-to-voice and text translation, real-time conversation streaming, new conversation creation, and message sending are all subscription-protected. Free features include account management, settings, conversation history viewing (for active subscribers), and profile management.
+- **MVP Scope**: Visual translation features (camera-based text translation) have been temporarily disabled for the initial launch. All related code is preserved in comments for future implementation.
 
 ### Technical Implementations
 - **Speech Services**: Integration with OpenAI Whisper API for transcription.

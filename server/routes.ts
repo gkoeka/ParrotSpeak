@@ -741,6 +741,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  /* MVP LAUNCH: Visual translation endpoint commented out for initial release
+   * TODO: Re-enable when camera functionality is implemented
+   * Last modified: August 1, 2025 - Disabled for MVP launch
+   * 
   // Visual translation endpoint for camera/image translation
   app.post('/api/visual-translate', requireAuth, requireSubscription, async (req: Request, res: Response) => {
     try {
@@ -767,7 +771,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: error instanceof Error ? error.message : 'Visual translation failed' 
       });
     }
-  });
+  }
+  */
 
   // Feedback submission endpoint
   app.post('/api/feedback', requireAuth, async (req: Request, res: Response) => {

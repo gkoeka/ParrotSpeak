@@ -1,3 +1,16 @@
+/* 
+ * MVP LAUNCH: Visual translation service disabled for initial release
+ * 
+ * This service provides image text extraction and translation capabilities using OpenAI's Vision API.
+ * It has been commented out for the MVP launch to focus on core voice translation features.
+ * 
+ * TODO: Re-enable this service in future version when ready to implement camera features
+ * Required dependencies: OpenAI GPT-4 Vision API, image processing libraries
+ * 
+ * Last modified: August 1, 2025 - Disabled for MVP launch
+ */
+
+/*
 import OpenAI from "openai";
 import { pool } from "@db";
 import { usageStatistics } from "@shared/schema";
@@ -99,3 +112,4 @@ export async function analyzeImageAndTranslate(
     throw new Error(`Failed to analyze image: ${error.message || 'Unknown error'}`);
   }
 }
+*/

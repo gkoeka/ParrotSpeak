@@ -19,9 +19,7 @@
       "bundleIdentifier": "com.parrotspeak.app",
       "buildNumber": "1",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "ParrotSpeak needs access to your microphone to translate your speech.",
-        "NSCameraUsageDescription": "ParrotSpeak needs access to your camera to translate text in images.",
-        "NSPhotoLibraryUsageDescription": "ParrotSpeak needs access to your photo library to translate text in images."
+        "NSMicrophoneUsageDescription": "ParrotSpeak needs access to your microphone to translate your speech."
       }
     },
     "android": {
@@ -32,10 +30,7 @@
       "package": "com.parrotspeak.app",
       "versionCode": 1,
       "permissions": [
-        "RECORD_AUDIO",
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
+        "RECORD_AUDIO"
       ]
     },
     "web": {
@@ -43,9 +38,7 @@
     },
     "plugins": [
       "expo-av",
-      "expo-file-system",
-      "expo-camera",
-      "expo-image-picker"
+      "expo-file-system"
     ],
     "extra": {
       "eas": {
