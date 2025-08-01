@@ -1,24 +1,25 @@
-import React, { useEffect, useState } from 'react';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
-import { ActivityIndicator, View } from 'react-native';
+import { StatusBar } from "react-native";
+import React, { useEffect, useState } from "react";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+import { ActivityIndicator, View } from "react-native";
 
 // Auth Provider
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 // Screens
-import HomeScreen from './screens/HomeScreen';
-import ConversationScreen from './screens/ConversationScreen';
-import ConversationsListScreen from './screens/ConversationsListScreen';
-import AnalyticsScreen from './screens/AnalyticsScreen';
-import SettingsScreen from './screens/SettingsScreen';
-import AuthScreen from './screens/AuthScreen';
-import ProfileScreen from './screens/ProfileScreen';
-import SubscriptionPlansScreen from './screens/SubscriptionPlansScreen';
-import PasswordResetScreen from './screens/PasswordResetScreen';
-import FeedbackScreen from './screens/FeedbackScreen';
-import CheckoutScreen from './screens/CheckoutScreen';
+import HomeScreen from "./screens/HomeScreen";
+import ConversationScreen from "./screens/ConversationScreen";
+import ConversationsListScreen from "./screens/ConversationsListScreen";
+import AnalyticsScreen from "./screens/AnalyticsScreen";
+import SettingsScreen from "./screens/SettingsScreen";
+import AuthScreen from "./screens/AuthScreen";
+import ProfileScreen from "./screens/ProfileScreen";
+import SubscriptionPlansScreen from "./screens/SubscriptionPlansScreen";
+import PasswordResetScreen from "./screens/PasswordResetScreen";
+import FeedbackScreen from "./screens/FeedbackScreen";
+import CheckoutScreen from "./screens/CheckoutScreen";
 
 // Define the stack navigator params
 export type RootStackParamList = {
@@ -41,21 +42,21 @@ const Stack = createStackNavigator<RootStackParamList>();
 // Auth Navigator component
 function AuthNavigator() {
   const { user, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <ActivityIndicator size="large" color="#3366FF" />
       </View>
     );
   }
-  
+
   return (
-    <Stack.Navigator 
+    <Stack.Navigator
       initialRouteName={user ? "Home" : "Auth"}
       screenOptions={{
         headerShown: false,
-        cardStyle: { backgroundColor: '#fff' }
+        cardStyle: { backgroundColor: "#fff" },
       }}
     >
       {user ? (
@@ -63,11 +64,17 @@ function AuthNavigator() {
         <>
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="Conversation" component={ConversationScreen} />
-          <Stack.Screen name="ConversationsList" component={ConversationsListScreen} />
+          <Stack.Screen
+            name="ConversationsList"
+            component={ConversationsListScreen}
+          />
           <Stack.Screen name="Analytics" component={AnalyticsScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="Profile" component={ProfileScreen} />
-          <Stack.Screen name="SubscriptionPlans" component={SubscriptionPlansScreen} />
+          <Stack.Screen
+            name="SubscriptionPlans"
+            component={SubscriptionPlansScreen}
+          />
           <Stack.Screen name="Checkout" component={CheckoutScreen} />
           <Stack.Screen name="Feedback" component={FeedbackScreen} />
         </>
@@ -85,12 +92,12 @@ function AuthNavigator() {
 export default function App() {
   return (
     <SafeAreaProvider>
+      <StatusBar barStyle="dark-content" />
       <AuthProvider>
         <NavigationContainer>
           <AuthNavigator />
         </NavigationContainer>
       </AuthProvider>
-      <StatusBar style="dark" />
     </SafeAreaProvider>
   );
 }
