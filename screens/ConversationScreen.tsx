@@ -40,8 +40,15 @@ export default function ConversationScreen() {
         ) : (
           messages.map((message) => (
             <View key={message.id} style={styles.messageCard}>
-              <Text style={styles.originalText}>{message.text}</Text>
-              <Text style={styles.translatedText}>{message.translation}</Text>
+              <View style={styles.originalSection}>
+                <Text style={styles.languageLabel}>Original</Text>
+                <Text style={styles.originalText}>{message.text}</Text>
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.translationSection}>
+                <Text style={styles.languageLabel}>Translation</Text>
+                <Text style={styles.translatedText}>{message.translation}</Text>
+              </View>
               <Text style={styles.languagePair}>
                 {message.fromLanguage} → {message.toLanguage}
               </Text>
@@ -90,21 +97,41 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e9ecef',
   },
+  originalSection: {
+    marginBottom: 12,
+  },
+  translationSection: {
+    marginBottom: 12,
+  },
+  languageLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
   originalText: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 8,
     color: '#1a1a1a',
+    lineHeight: 22,
   },
   translatedText: {
     fontSize: 16,
-    color: '#666',
-    marginBottom: 8,
+    color: '#3366FF',
+    lineHeight: 22,
+    fontWeight: '500',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#f0f0f0',
+    marginVertical: 8,
   },
   languagePair: {
     fontSize: 12,
-    color: '#3366FF',
+    color: '#666',
     fontWeight: '500',
+    textAlign: 'right',
   },
   controlsContainer: {
     padding: 16,

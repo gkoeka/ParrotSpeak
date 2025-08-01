@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 
-import { startRecording, stopRecording, processRecording } from '../api/speechService';
+import { startRecording, stopRecording, processRecording, speakText } from '../api/speechService';
 import { translateText } from '../api/languageService';
 
 interface VoiceInputControlsProps {
@@ -77,7 +77,10 @@ export default function VoiceInputControls({
       );
       console.log('Translation:', translationResult);
       
-      // Step 3: Add to conversation
+      // Step 3: Speak the translation
+      await speakTranslation(translationResult.translation, targetLanguage);
+      
+      // Step 4: Add to conversation
       const message = {
         id: Date.now().toString(),
         text: transcription,
@@ -94,6 +97,15 @@ export default function VoiceInputControls({
       console.error('Error processing audio:', error);
       setIsProcessing(false);
       Alert.alert('Error', 'Failed to process your voice. Please try again.');
+    }
+  };
+
+  const speakTranslation = async (text: string, languageCode: string) => {
+    try {
+      await speakText(text, languageCode);
+    } catch (error) {
+      console.error('Error speaking translation:', error);
+      // Don't show error to user for speech synthesis failures
     }
   };
 
