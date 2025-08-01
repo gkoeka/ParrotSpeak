@@ -1,6 +1,6 @@
 // Network utilities for mobile development and debugging
 
-import { API_BASE_URL } from '../constants/api';
+import { API_BASE_URL } from '../api/config';
 
 declare const __DEV__: boolean;
 

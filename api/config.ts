@@ -1,15 +1,13 @@
-// API Configuration for mobile app
+// API Configuration for mobile app using environment variables
 
-// Base URL for API requests
-// For local development: Use "http://10.0.2.2:5000" for Android emulator or "http://localhost:5000" for iOS simulator
-// For production: Use your deployed API URL
+// Get API URL from environment variable with fallback to current Replit URL
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev";
 
-// Dynamic API URL for development vs production
-declare const __DEV__: boolean;
-
-export const API_BASE_URL = __DEV__ 
-  ? "http://localhost:5000"  // Local development server
-  : "https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev"; // Production URL
+// Log current API configuration for debugging
+console.log('🔗 API Configuration:', {
+  url: API_BASE_URL,
+  source: process.env.EXPO_PUBLIC_API_URL ? 'environment' : 'fallback'
+});
 
 // API Endpoints
 export const ENDPOINTS = {

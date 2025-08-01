@@ -1,5 +1,5 @@
 import { Language } from '../types';
-import { API_BASE_URL } from '../constants/api';
+import { API_BASE_URL } from '../api/config';
 import { mobileFetch } from '../utils/networkUtils';
 
 // Headers for mobile API requests

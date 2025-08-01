@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../constants/api';
+import { API_BASE_URL } from '../api/config';
 import { VoiceProfile } from './speechService';
 
 // Fetch all voice profiles

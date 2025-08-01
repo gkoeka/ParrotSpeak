@@ -34,3 +34,23 @@ export interface NetworkTestResult {
   error?: string;
   responseTime?: number;
 }
+
+export interface Conversation {
+  id: string;
+  title: string;
+  createdAt: Date;
+  updatedAt: Date;
+  userId: string;
+  messages?: Message[];
+}
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  content: string;
+  isOriginal: boolean;
+  sourceLanguage?: string;
+  targetLanguage?: string;
+  createdAt: Date;
+  userId: string;
+}
