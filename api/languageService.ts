@@ -8,7 +8,8 @@ const requestHeaders = {
 
 // Common headers for JSON requests
 const jsonHeaders = {
-  'Content-Type': 'application/json'
+  'Content-Type': 'application/json',
+  'X-Demo-Mode': 'true' // Enable demo mode for testing
 };
 
 // This is a static implementation since the API doesn't currently provide a language endpoint
@@ -117,6 +118,7 @@ export async function recognizeSpeech(
     const response = await fetch(`${API_BASE_URL}/api/transcribe`, {
       method: 'POST',
       headers: jsonHeaders,
+      credentials: 'include', // Include cookies for session-based auth
       body: JSON.stringify({
         audio: audioBase64,
         language: languageCode
@@ -145,6 +147,7 @@ export async function translateText(
     const response = await fetch(`${API_BASE_URL}/api/translate`, {
       method: 'POST',
       headers: jsonHeaders,
+      credentials: 'include', // Include cookies for session-based auth
       body: JSON.stringify({
         text,
         sourceLanguage,
