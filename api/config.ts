@@ -1,5 +1,29 @@
-// Import API configuration from centralized config
-import { API_BASE_URL, API_CONFIG } from './envConfig';
+// Import API configuration from centralized config - try JS version first for compatibility
+let API_BASE_URL, API_CONFIG;
+
+try {
+  // Try JavaScript version first (most compatible)
+  const config = require('./envConfig.js');
+  API_BASE_URL = config.API_BASE_URL;
+  API_CONFIG = config.API_CONFIG;
+} catch (error) {
+  // Fallback to TypeScript version
+  try {
+    const config = require('./envConfig');
+    API_BASE_URL = config.API_BASE_URL;
+    API_CONFIG = config.API_CONFIG;
+  } catch (fallbackError) {
+    // Ultimate fallback
+    console.warn('Could not load environment config, using defaults');
+    API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev";
+    API_CONFIG = {
+      baseURL: API_BASE_URL,
+      source: 'fallback',
+      environment: 'unknown',
+      timestamp: new Date().toISOString()
+    };
+  }
+}
 
 // Re-export for compatibility
 export { API_BASE_URL, API_CONFIG };

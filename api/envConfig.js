@@ -1,4 +1,5 @@
 // Environment configuration with proper error handling and validation
+// JavaScript version for maximum compatibility
 
 /**
  * Get API base URL with comprehensive fallback logic
@@ -46,5 +47,7 @@ const API_CONFIG = {
 // Log configuration on import (helpful for debugging)
 console.log('🔗 API Configuration loaded:', API_CONFIG);
 
-// ES module exports for TypeScript compatibility
-export { API_BASE_URL, API_CONFIG };
+// Export for both CommonJS and ES modules compatibility
+module.exports = { API_BASE_URL, API_CONFIG };
+module.exports.API_BASE_URL = API_BASE_URL;
+module.exports.API_CONFIG = API_CONFIG;

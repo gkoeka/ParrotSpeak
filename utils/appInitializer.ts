@@ -1,7 +1,8 @@
 // App initialization with environment validation and error handling
 
 import { validateEnvironment, testConnection } from './envValidator';
-import { API_BASE_URL, API_CONFIG } from '../api/envConfig';
+// Import from JavaScript version for better compatibility
+const { API_BASE_URL, API_CONFIG } = require('../api/envConfig.js');
 
 /**
  * Initialize the app with proper environment validation

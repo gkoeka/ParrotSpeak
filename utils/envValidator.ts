@@ -8,7 +8,7 @@ export function validateEnvironment() {
     hasExpoPublicApiUrl: !!process.env.EXPO_PUBLIC_API_URL,
     expoPublicApiUrlValue: process.env.EXPO_PUBLIC_API_URL || 'undefined',
     nodeEnv: process.env.NODE_ENV || 'undefined',
-    isDevMode: __DEV__ || false,
+    isDevMode: process.env.NODE_ENV === 'development',
     timestamp: new Date().toISOString()
   };
   
@@ -20,11 +20,7 @@ export function validateEnvironment() {
 /**
  * Test network connectivity to a given URL
  */
-export async function testConnection(url: string): Promise<{
-  success: boolean;
-  error?: string;
-  responseTime: number;
-}> {
+export async function testConnection(url: string) {
   const startTime = Date.now();
   
   try {
