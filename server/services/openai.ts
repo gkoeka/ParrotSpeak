@@ -27,7 +27,7 @@ export async function transcribeAudio(audioBuffer: Buffer, language?: string): P
       fs.mkdirSync(tempDir, { recursive: true });
     }
 
-    const tempFileName = `audio_${uuidv4()}.webm`;
+    const tempFileName = `audio_${uuidv4()}.m4a`;
     const tempFilePath = path.join(tempDir, tempFileName);
 
     try {
@@ -46,8 +46,8 @@ export async function transcribeAudio(audioBuffer: Buffer, language?: string): P
       const FormData = require('form-data');
       const form = new FormData();
       form.append('file', fs.createReadStream(tempFilePath), {
-        filename: 'audio.webm',
-        contentType: 'audio/webm',
+        filename: 'audio.m4a',
+        contentType: 'audio/m4a',
       });
       form.append('model', 'whisper-1');
       form.append('response_format', 'text');

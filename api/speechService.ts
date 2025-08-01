@@ -146,30 +146,9 @@ export async function startRecording(): Promise<{ uri: string }> {
     // Create and start recording
     recording = new Audio.Recording();
     
-    const recordingOptions = {
-      android: {
-        extension: '.webm',
-        outputFormat: Audio.RECORDING_FORMAT_WEBM,
-        audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_OPUS,
-        sampleRate: 48000,
-        numberOfChannels: 1,
-        bitRate: 128000,
-      },
-      ios: {
-        extension: '.caf',
-        outputFormat: Audio.RECORDING_FORMAT_CAF,
-        audioEncoder: Audio.RECORDING_OPTION_IOS_AUDIO_ENCODER_LINEAR_PCM,
-        sampleRate: 44100,
-        numberOfChannels: 1,
-        bitRate: 128000,
-      },
-      web: {
-        mimeType: 'audio/webm;codecs=opus',
-        bitsPerSecond: 128000,
-      },
-    };
-    
-    await recording.prepareToRecordAsync(recordingOptions);
+    // Use Expo's HIGH_QUALITY preset for production compatibility
+    // This creates M4A files on both iOS and Android
+    await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
     await recording.startAsync();
     
     console.log('Recording started successfully');
