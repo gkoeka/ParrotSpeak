@@ -81,7 +81,7 @@ export default function LanguageSelector({
     const language = allLanguages.find(lang => lang.code === code);
     if (!language) return code;
     
-    // Format: Flag + "Language Name"
+    // Format: Flag + "Language Name • Native Name"
     const flag = getFlagEmoji(language);
     return `${flag} ${language.name}`;
   };
@@ -224,10 +224,7 @@ export default function LanguageSelector({
     <View style={[styles.container, isDark && styles.containerDark]}>
       <TouchableOpacity 
         style={[styles.languageButton, isDark && styles.languageButtonDark]}
-        onPress={() => {
-          console.log('🔍 Opening source modal with', allLanguages.length, 'languages');
-          setShowSourceModal(true);
-        }}
+        onPress={() => setShowSourceModal(true)}
       >
         <Text style={[styles.languageLabel, isDark && styles.languageLabelDark]}>From</Text>
         <Text style={[styles.languageValue, isDark && styles.languageValueDark]} numberOfLines={2}>
@@ -241,10 +238,7 @@ export default function LanguageSelector({
 
       <TouchableOpacity 
         style={[styles.languageButton, isDark && styles.languageButtonDark]}
-        onPress={() => {
-          console.log('🔍 Opening target modal with', allLanguages.length, 'languages');
-          setShowTargetModal(true);
-        }}
+        onPress={() => setShowTargetModal(true)}
       >
         <Text style={[styles.languageLabel, isDark && styles.languageLabelDark]}>To</Text>
         <Text style={[styles.languageValue, isDark && styles.languageValueDark]} numberOfLines={2}>
@@ -489,13 +483,14 @@ const styles = StyleSheet.create({
     color: '#999',
   },
   noResultsSubtextDark: {
-    color: '#777',
+    color: '#666',
   },
   cancelButton: {
-    marginTop: 20,
-    padding: 15,
     backgroundColor: '#f8f9fa',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     borderRadius: 8,
+    marginTop: 15,
     alignItems: 'center',
   },
   cancelButtonDark: {
@@ -503,8 +498,8 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontSize: 16,
-    color: '#666',
     fontWeight: '500',
+    color: '#666',
   },
   cancelTextDark: {
     color: '#999',
