@@ -119,23 +119,113 @@ export interface SpeechRecognitionResult {
   confidence: number;
 }
 
+export let recording: Audio.Recording | null = null;
+
 export async function startRecording(): Promise<{ uri: string }> {
-  // Check if Audio module is available for recording
-  if (!isAudioAvailable) {
-    console.log('Audio module not available for recording');
-    return { uri: 'mock-recording-uri' };
+  try {
+    // Check if Audio module is available for recording
+    if (!isAudioAvailable) {
+      console.log('Audio module not available for recording');
+      throw new Error('Audio recording not available');
+    }
+    
+    // Request permissions
+    const permission = await Audio.requestPermissionsAsync();
+    if (!permission.granted) {
+      throw new Error('Audio recording permission not granted');
+    }
+    
+    // Configure audio mode for recording
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: true,
+      playsInSilentModeIOS: true,
+      playThroughEarpieceAndroid: false,
+      staysActiveInBackground: false,
+    });
+    
+    // Create and start recording
+    recording = new Audio.Recording();
+    
+    const recordingOptions = {
+      android: {
+        extension: '.m4a',
+        outputFormat: Audio.RECORDING_FORMAT_MPEG_4,
+        audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
+        sampleRate: 44100,
+        numberOfChannels: 2,
+        bitRate: 128000,
+      },
+      ios: {
+        extension: '.m4a',
+        outputFormat: Audio.RECORDING_FORMAT_MPEG_4,
+        audioEncoder: Audio.RECORDING_OPTION_IOS_AUDIO_ENCODER_AAC,
+        sampleRate: 44100,
+        numberOfChannels: 2,
+        bitRate: 128000,
+      },
+      web: {
+        mimeType: 'audio/webm;codecs=opus',
+        bitsPerSecond: 128000,
+      },
+    };
+    
+    await recording.prepareToRecordAsync(recordingOptions);
+    await recording.startAsync();
+    
+    console.log('Recording started successfully');
+    return { uri: recording.getURI() || '' };
+    
+  } catch (error) {
+    console.error('Error starting recording:', error);
+    throw error;
   }
-  
-  // This is a mock implementation
-  // In a real app, we would use Audio.Recording from expo-av
-  console.log('Starting recording...');
-  return { uri: 'mock-recording-uri' };
 }
 
-export async function stopRecording(): Promise<{ uri: string }> {
-  // This is a mock implementation
-  console.log('Stopping recording...');
-  return { uri: 'mock-recording-uri' };
+export async function stopRecording(): Promise<{ uri: string; duration?: number }> {
+  try {
+    if (!recording) {
+      throw new Error('No recording in progress');
+    }
+    
+    await recording.stopAndUnloadAsync();
+    const uri = recording.getURI();
+    const status = await recording.getStatusAsync();
+    
+    // Reset recording instance
+    recording = null;
+    
+    // Reset audio mode
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: true,
+      playThroughEarpieceAndroid: false,
+      staysActiveInBackground: false,
+    });
+    
+    console.log('Recording stopped successfully:', uri);
+    return { 
+      uri: uri || '', 
+      duration: status.isLoaded ? status.durationMillis : undefined 
+    };
+    
+  } catch (error) {
+    console.error('Error stopping recording:', error);
+    recording = null;
+    throw error;
+  }
+}
+
+// Convert audio file to Base64 for API transmission
+async function convertAudioToBase64(uri: string): Promise<string> {
+  try {
+    const base64 = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    return base64;
+  } catch (error) {
+    console.error('Error converting audio to base64:', error);
+    throw new Error('Failed to process audio file');
+  }
 }
 
 // Process the recorded audio with our server-side Whisper API
@@ -143,18 +233,20 @@ export async function processRecording(
   recordingUri: string,
   languageCode: string
 ): Promise<string> {
-  // Check if FileSystem module is available
-  if (!isFileSystemAvailable) {
-    console.log('FileSystem module not available');
-    return 'Mock transcription - FileSystem unavailable';
+  try {
+    console.log('Processing recording:', recordingUri, 'Language:', languageCode);
+    
+    // Convert audio file to Base64
+    const audioBase64 = await convertAudioToBase64(recordingUri);
+    
+    // Send to transcription API
+    const transcription = await recognizeSpeech(audioBase64, languageCode);
+    
+    console.log('Transcription successful:', transcription);
+    return transcription;
+  } catch (error) {
+    console.error('Error processing recording:', error);
+    throw error;
   }
-  
-  // In a real implementation, we would:
-  // 1. Read the audio file as base64
-  // 2. Send it to our server API for processing with Whisper
-  // 3. Return the transcribed text
-  
-  // Mock implementation for now
-  console.log('Processing recording with language:', languageCode);
-  return 'This is a mock transcription result';
 }
+

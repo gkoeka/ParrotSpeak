@@ -15,12 +15,20 @@ export default function ConversationScreen() {
     toLanguage: string;
     timestamp: Date;
   }>>([]);
+  
+  const [sourceLanguage, setSourceLanguage] = useState('en-US');
+  const [targetLanguage, setTargetLanguage] = useState('es-ES');
 
   return (
     <View style={styles.container}>
       <Header />
       
-      <LanguageSelector />
+      <LanguageSelector 
+        sourceLanguage={sourceLanguage}
+        targetLanguage={targetLanguage}
+        onSourceLanguageChange={setSourceLanguage}
+        onTargetLanguageChange={setTargetLanguage}
+      />
       
       <ScrollView style={styles.messagesContainer}>
         {messages.length === 0 ? (
@@ -43,7 +51,11 @@ export default function ConversationScreen() {
       </ScrollView>
       
       <View style={styles.controlsContainer}>
-        <VoiceInputControls onMessage={(message) => setMessages(prev => [...prev, message])} />
+        <VoiceInputControls 
+          onMessage={(message) => setMessages(prev => [...prev, message])}
+          sourceLanguage={sourceLanguage}
+          targetLanguage={targetLanguage}
+        />
         <PlaybackControls />
       </View>
     </View>

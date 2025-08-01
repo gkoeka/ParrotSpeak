@@ -4,6 +4,9 @@ interface User {
   id: string;
   email: string;
   name?: string;
+  subscriptionStatus?: string;
+  subscriptionTier?: string;
+  subscriptionExpiresAt?: Date;
 }
 
 interface AuthContextType {
@@ -32,11 +35,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const checkAuthStatus = async () => {
     try {
       // TODO: Implement actual auth check with API
-      // For now, simulate a logged-in user for development
+      // For now, simulate a logged-in user with active subscription for development
       setUser({
         id: '1',
         email: 'demo@parrotspeak.com',
-        name: 'Demo User'
+        name: 'Demo User',
+        subscriptionStatus: 'active',
+        subscriptionTier: 'premium',
+        subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
       });
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -51,7 +57,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser({
         id: '1',
         email,
-        name: 'Demo User'
+        name: 'Demo User',
+        subscriptionStatus: 'active',
+        subscriptionTier: 'premium',
+        subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
       });
     } catch (error) {
       throw new Error('Login failed');
@@ -64,7 +73,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser({
         id: '1',
         email,
-        name: 'Demo User'
+        name: 'Demo User',
+        subscriptionStatus: 'active',
+        subscriptionTier: 'premium',
+        subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
       });
     } catch (error) {
       throw new Error('Registration failed');

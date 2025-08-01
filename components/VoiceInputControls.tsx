@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 
+import { startRecording, stopRecording, processRecording } from '../api/speechService';
+import { translateText } from '../api/languageService';
+
 interface VoiceInputControlsProps {
   onMessage: (message: {
     id: string;
@@ -10,48 +13,88 @@ interface VoiceInputControlsProps {
     toLanguage: string;
     timestamp: Date;
   }) => void;
+  sourceLanguage?: string;
+  targetLanguage?: string;
 }
 
-export default function VoiceInputControls({ onMessage }: VoiceInputControlsProps) {
+export default function VoiceInputControls({ 
+  onMessage, 
+  sourceLanguage = 'en-US',
+  targetLanguage = 'es-ES'
+}: VoiceInputControlsProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [recordingUri, setRecordingUri] = useState<string | null>(null);
 
   const handleStartRecording = async () => {
     try {
       setIsRecording(true);
-      // TODO: Implement actual voice recording
-      setTimeout(() => {
-        setIsRecording(false);
-        setIsProcessing(true);
-        
-        // Simulate processing and translation
-        setTimeout(() => {
-          setIsProcessing(false);
-          onMessage({
-            id: Date.now().toString(),
-            text: "Hello, how are you?",
-            translation: "Hola, ¿cómo estás?",
-            fromLanguage: "English",
-            toLanguage: "Spanish",
-            timestamp: new Date()
-          });
-        }, 2000);
-      }, 3000);
+      console.log('Starting recording...');
+      
+      const result = await startRecording();
+      setRecordingUri(result.uri);
+      console.log('Recording started:', result.uri);
+      
     } catch (error) {
+      console.error('Error starting recording:', error);
       setIsRecording(false);
-      setIsProcessing(false);
-      Alert.alert('Error', 'Failed to start recording');
+      Alert.alert('Error', 'Failed to start recording. Please check microphone permissions.');
     }
   };
 
-  const handleStopRecording = () => {
-    setIsRecording(false);
-    setIsProcessing(true);
-    
-    // Simulate processing
-    setTimeout(() => {
+  const handleStopRecording = async () => {
+    try {
+      setIsRecording(false);
+      setIsProcessing(true);
+      console.log('Stopping recording...');
+      
+      const result = await stopRecording();
+      console.log('Recording stopped:', result.uri);
+      
+      // Process the recording
+      await processAudio(result.uri);
+      
+    } catch (error) {
+      console.error('Error stopping recording:', error);
       setIsProcessing(false);
-    }, 2000);
+      Alert.alert('Error', 'Failed to process recording');
+    }
+  };
+
+  const processAudio = async (uri: string) => {
+    try {
+      console.log('Processing audio...', uri);
+      
+      // Step 1: Transcribe audio to text
+      const transcription = await processRecording(uri, sourceLanguage);
+      console.log('Transcription:', transcription);
+      
+      // Step 2: Translate the text
+      const translationResult = await translateText(
+        transcription,
+        sourceLanguage,
+        targetLanguage
+      );
+      console.log('Translation:', translationResult);
+      
+      // Step 3: Add to conversation
+      const message = {
+        id: Date.now().toString(),
+        text: transcription,
+        translation: translationResult.translation,
+        fromLanguage: sourceLanguage,
+        toLanguage: targetLanguage,
+        timestamp: new Date()
+      };
+      
+      onMessage(message);
+      setIsProcessing(false);
+      
+    } catch (error) {
+      console.error('Error processing audio:', error);
+      setIsProcessing(false);
+      Alert.alert('Error', 'Failed to process your voice. Please try again.');
+    }
   };
 
   return (

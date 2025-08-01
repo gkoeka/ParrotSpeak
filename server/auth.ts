@@ -153,6 +153,13 @@ export async function requireSubscription(req: Request, res: any, next: any) {
   
   const user = req.user;
   
+  // Allow demo user for development/testing
+  if (user.email === 'demo@parrotspeak.com') {
+    console.log('[Auth] Demo user access granted for testing');
+    next();
+    return;
+  }
+  
   // Get fresh subscription data from database to avoid session cache issues
   try {
     const { db } = await import("@db");
