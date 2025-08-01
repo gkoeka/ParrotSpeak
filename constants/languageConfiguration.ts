@@ -39,11 +39,24 @@ export const LANGUAGE_CONFIGURATIONS: LanguageConfiguration[] = [
     popularity: 10
   },
   {
-    code: "es",
-    name: "Spanish",
-    nativeName: "Español",
+    code: "es-ES",
+    name: "Spanish (Spain)",
+    nativeName: "Español (España)",
     country: "Spain",
     flag: "https://flagcdn.com/es.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'high',
+    popularity: 9
+  },
+  {
+    code: "es-419",
+    name: "Spanish (Latin America)",
+    nativeName: "Español (Latinoamérica)",
+    country: "Latin America",
+    flag: "https://flagcdn.com/mx.svg",
     speechSupported: true,
     speechToTextSupported: true,
     textToSpeechSupported: true,
@@ -722,7 +735,7 @@ export function getLanguagesWithoutSpeechSupport(): LanguageConfiguration[] {
 }
 
 // Speech fallback configuration
-export const SPEECH_FALLBACK_ORDER = ['en', 'es', 'fr', 'de', 'it'];
+export const SPEECH_FALLBACK_ORDER = ['en', 'es-419', 'es-ES', 'fr', 'de', 'it'];
 
 export function getSpeechFallbackLanguage(requestedLanguage: string): string {
   const language = getLanguageByCode(requestedLanguage);
