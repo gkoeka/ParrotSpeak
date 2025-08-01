@@ -10,7 +10,14 @@
  * Last modified: August 1, 2025 - Disabled for MVP launch
  */
 
+// Placeholder export to maintain module structure
+export function analyzeImageAndTranslate() {
+  throw new Error('Visual translation is disabled for MVP launch');
+}
+
 /*
+ * COMMENTED OUT FOR MVP LAUNCH - Original implementation preserved below:
+ * 
 import OpenAI from "openai";
 import { pool } from "@db";
 import { usageStatistics } from "@shared/schema";
@@ -19,13 +26,6 @@ import { db } from "@db";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-/**
- * Analyze an image with OpenAI's Vision model and extract text for translation
- * @param imageBuffer The image buffer to analyze
- * @param sourceLanguage Source language code
- * @param targetLanguage Target language code
- * @returns The extracted text and its translation
- */
 export async function analyzeImageAndTranslate(
   imageBase64: string,
   sourceLanguage: string,
@@ -34,7 +34,7 @@ export async function analyzeImageAndTranslate(
   try {
     // First, we use Vision to extract the text from the image
     const visionResponse = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
@@ -54,8 +54,8 @@ export async function analyzeImageAndTranslate(
                 url: `data:image/jpeg;base64,${imageBase64}`
               }
             }
-          ],
-        },
+          ]
+        }
       ],
       max_tokens: 500,
     });
@@ -68,7 +68,7 @@ export async function analyzeImageAndTranslate(
 
     // Then, we translate the extracted text
     const translationResponse = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
@@ -100,7 +100,7 @@ export async function analyzeImageAndTranslate(
       languagePair: `${sourceLanguageCode}-${targetLanguageCode}`,
       characterCount,
       messageCount: 1,
-      averageResponseTime: "0", // Not tracking response time for image translation currently
+      averageResponseTime: "0",
     });
 
     return {

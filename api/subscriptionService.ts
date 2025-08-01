@@ -1,5 +1,68 @@
 import { API_BASE_URL, ENDPOINTS, getHeaders } from './config';
-import { checkSubscriptionAccess, isFeatureProtected, getCurrentUser, type SubscriptionInfo } from './authService';
+import { getCurrentUser } from './authService';
+
+// Define SubscriptionInfo interface locally for client-side use
+export interface SubscriptionInfo {
+  hasAccess: boolean;
+  isExpired: boolean;
+  tier: string | null;
+  expiresAt: Date | null;
+  daysRemaining: number | null;
+}
+
+// Define which features are protected by subscription
+const PROTECTED_FEATURES = new Set(['translation', 'speech', 'visual', 'new_conversation']);
+
+function isFeatureProtected(feature: string): boolean {
+  return PROTECTED_FEATURES.has(feature);
+}
+
+// Client-side subscription access checker
+function checkSubscriptionAccess(user: any): SubscriptionInfo {
+  const now = new Date();
+  
+  if (!user || !user.subscriptionStatus || user.subscriptionStatus === 'free' || user.subscriptionStatus === 'cancelled') {
+    return {
+      hasAccess: false,
+      isExpired: false,
+      tier: 'free',
+      expiresAt: null,
+      daysRemaining: null
+    };
+  }
+  
+  if (user.subscriptionStatus === 'active' && !user.subscriptionExpiresAt) {
+    return {
+      hasAccess: true,
+      isExpired: false,
+      tier: user.subscriptionTier || 'premium',
+      expiresAt: null,
+      daysRemaining: null
+    };
+  }
+  
+  if (user.subscriptionExpiresAt) {
+    const expiresAt = new Date(user.subscriptionExpiresAt);
+    const isExpired = now > expiresAt;
+    const daysRemaining = isExpired ? 0 : Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return {
+      hasAccess: !isExpired && user.subscriptionStatus === 'active',
+      isExpired,
+      tier: user.subscriptionTier || 'premium',
+      expiresAt,
+      daysRemaining: isExpired ? 0 : daysRemaining
+    };
+  }
+  
+  return {
+    hasAccess: false,
+    isExpired: true,
+    tier: user.subscriptionTier || 'free',
+    expiresAt: null,
+    daysRemaining: 0
+  };
+}
 
 export interface SubscriptionError {
   error: string;
@@ -173,27 +236,26 @@ export async function transcribeSpeech(data: {
  * TODO: Re-enable when camera functionality is implemented
  * Last modified: August 1, 2025 - Disabled for MVP launch
  *
-/**
- * Translate visual content with subscription check
+ * Original implementation preserved below:
+ * 
+ * export async function translateVisual(data: {
+ *   imageBase64: string;
+ *   sourceLanguage: string;
+ *   targetLanguage: string;
+ * }): Promise<any> {
+ *   return makeProtectedRequest(
+ *     ENDPOINTS.TRANSLATION.VISUAL,
+ *     {
+ *       method: 'POST',
+ *       headers: {
+ *         'Content-Type': 'application/json',
+ *       },
+ *       body: JSON.stringify(data),
+ *     },
+ *     'visual'
+ *   );
+ * }
  */
-export async function translateVisual(data: {
-  imageBase64: string;
-  sourceLanguage: string;
-  targetLanguage: string;
-}): Promise<any> {
-  return makeProtectedRequest(
-    ENDPOINTS.TRANSLATION.VISUAL,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    },
-    'visual'
-  );
-}
-*/
 
 /**
  * Get subscription status for display
