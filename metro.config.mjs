@@ -14,4 +14,7 @@ config.resolver.sourceExts.push('cjs');
 // Enable symlinks for better development experience
 config.resolver.unstable_enableSymlinks = true;
 
+// Disable New Architecture for Expo compatibility
+config.transformer.unstable_allowRequireContext = true;
+
 export default config;
