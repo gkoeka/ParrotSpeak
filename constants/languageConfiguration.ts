@@ -710,6 +710,30 @@ export const LANGUAGE_CONFIGURATIONS: LanguageConfiguration[] = [
     textToSpeechSupported: false,
     translationQuality: 'basic',
     popularity: 2
+  },
+  {
+    code: "sher",
+    name: "Sherpa",
+    nativeName: "ཤར་པ་ཁ",
+    country: "Nepal",
+    flag: "https://flagcdn.com/np.svg",
+    speechSupported: false,
+    speechToTextSupported: false,
+    textToSpeechSupported: false,
+    translationQuality: 'basic',
+    popularity: 1
+  },
+  {
+    code: "dz",
+    name: "Bhutanese (Dzongkha)",
+    nativeName: "རྫོང་ཁ",
+    country: "Bhutan",
+    flag: "https://flagcdn.com/bt.svg",
+    speechSupported: false,
+    speechToTextSupported: false,
+    textToSpeechSupported: false,
+    translationQuality: 'basic',
+    popularity: 1
   }
 ];
 
