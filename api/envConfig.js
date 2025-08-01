@@ -48,6 +48,11 @@ const API_CONFIG = {
 console.log('🔗 API Configuration loaded:', API_CONFIG);
 
 // Export for both CommonJS and ES modules compatibility
-module.exports = { API_BASE_URL, API_CONFIG };
+const exports_object = { API_BASE_URL, API_CONFIG };
+module.exports = exports_object;
 module.exports.API_BASE_URL = API_BASE_URL;
 module.exports.API_CONFIG = API_CONFIG;
+
+// Export individual properties for direct access
+exports_object.API_BASE_URL = API_BASE_URL;
+exports_object.API_CONFIG = API_CONFIG;
