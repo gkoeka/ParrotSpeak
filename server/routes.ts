@@ -382,8 +382,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updatedAt: new Date()
       }).returning();
       
-      // Log the user in
-      req.logIn(newUser, (err) => {
+      // Log the user in (remove password for security)
+      const { password: _, ...sessionUser } = newUser;
+      req.logIn(sessionUser as Express.User, (err) => {
         if (err) {
           return res.status(500).json({ message: 'Registration successful but login failed' });
         }

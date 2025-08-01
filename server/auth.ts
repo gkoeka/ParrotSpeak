@@ -10,29 +10,17 @@ import connectPgSimple from "connect-pg-simple";
 import { pool } from "../db";
 import { eq } from "drizzle-orm";
 
-// Extend Express types to include user session
+// Import the standardized User type
+import { User as UserType } from "@shared/schema";
+
+// Extend Express types to use consistent camelCase schema
 declare global {
   namespace Express {
-    // Match the database schema exactly
-    interface User {
-      id: number;
-      email: string | null;
-      username: string | null;
-      password?: string | null;
-      firstName: string | null;
-      lastName: string | null;
-      profileImageUrl: string | null;
-      googleId: string | null;
-      appleId: string | null;
-      resetToken: string | null;
-      resetTokenExpiry: Date | null;
-      emailVerified: boolean | null;
-
-      subscription_status: string | null;
-      subscription_tier: string | null;
-      subscription_expires_at: Date | null;
-      createdAt: Date;
-      updatedAt: Date;
+    // Use the standardized User type from schema
+    // All properties use camelCase naming convention
+    interface User extends UserType {
+      // Express sessions don't need password field for security
+      password?: never;
     }
   }
 }
@@ -90,7 +78,7 @@ export function setupAuth(app: Express) {
 
         // Password is valid, return user without password
         const { password: _, ...userWithoutPassword } = user;
-        return done(null, userWithoutPassword);
+        return done(null, userWithoutPassword as Express.User);
       } catch (error) {
         return done(error);
       }
@@ -106,8 +94,10 @@ export function setupAuth(app: Express) {
       scope: ['profile', 'email']
     }, async (accessToken, refreshToken, profile, done) => {
       try {
-        const user = await findOrCreateGoogleUser(profile);
-        return done(null, user);
+        const user = await findOrCreateGoogleUser(profile.id, profile);
+        // Remove password for security before creating session user
+        const { password: _, ...sessionUser } = user;
+        return done(null, sessionUser as Express.User);
       } catch (error) {
         return done(error);
       }
@@ -122,7 +112,9 @@ export function setupAuth(app: Express) {
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await getUserById(id);
-      done(null, user);
+      // Remove password for security before creating session user
+      const { password: _, ...sessionUser } = user || {};
+      done(null, sessionUser as Express.User);
     } catch (error) {
       done(error);
     }
@@ -148,8 +140,11 @@ export function requireAuth(req: Request, res: any, next: any) {
     req.user = {
       id: 1,
       email: 'demo@parrotspeak.com',
-      name: 'Demo User'
-    };
+      firstName: 'Demo',
+      lastName: 'User',
+      subscriptionStatus: 'active',
+      subscriptionTier: 'premium'
+    } as Express.User;
     next();
     return;
   }

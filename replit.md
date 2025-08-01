@@ -40,6 +40,16 @@ Dark mode preference: Should persist when selected.
 - [ ] Endpoint constant in `/api/config.ts`
 - [ ] Consistent error handling and response format
 - [ ] Authentication and authorization properly applied
+
+**Schema Consistency Standards (August 1, 2025)**: Implemented comprehensive schema standardization:
+- Database uses `snake_case` columns (PostgreSQL standard)
+- Application layer uses `camelCase` properties exclusively
+- Drizzle ORM handles automatic mapping between conventions
+- TypeScript interfaces standardized to camelCase
+- API responses always return camelCase properties
+- Created `server/utils/schemaMapping.ts` for type-safe property access
+- All user properties: `firstName`, `subscriptionStatus`, `profileImageUrl`, etc.
+- **Rule**: Never access properties with snake_case in application code
 **Server Restart Protocol**: Always restart the server after making changes to expedite testing and ensure changes take effect immediately.
 **Business Terminology**: Use "Customer" for anyone who has ever paid (past subscribers, expired plans, one-time purchases). "Subscriber" implies ongoing subscription which may not apply to all payment models.
 **Subscription Modal Messaging**:
