@@ -265,6 +265,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
     textAlign: 'center',
+    flexWrap: 'wrap',
+    lineHeight: 18,
   },
   languageValueDark: {
     color: '#e0e0e0',
@@ -334,17 +336,19 @@ const styles = StyleSheet.create({
   languageList: {
     flex: 1,
     maxHeight: 400,
+    paddingHorizontal: 4,
   },
   languageListDark: {
     backgroundColor: 'transparent',
   },
   languageOption: {
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
     borderRadius: 8,
     marginVertical: 1,
+    minHeight: 64,
   },
   languageOptionDark: {
     borderBottomColor: '#404040',
@@ -364,10 +368,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   flagImage: {
-    width: 28,
-    height: 20,
-    marginRight: 12,
-    borderRadius: 3,
+    width: 32,
+    height: 24,
+    marginRight: 15,
+    borderRadius: 4,
     backgroundColor: '#f0f0f0',
   },
   languageTexts: {
