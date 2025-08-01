@@ -27,16 +27,23 @@ export async function transcribeAudio(audioBuffer: Buffer, language?: string): P
       fs.mkdirSync(tempDir, { recursive: true });
     }
 
-    const tempFileName = `audio_${uuidv4()}.m4a`;
+    const tempFileName = `audio_${uuidv4()}.mp4`;
     const tempFilePath = path.join(tempDir, tempFileName);
 
     try {
       // Write audio buffer to temporary file
       fs.writeFileSync(tempFilePath, audioBuffer);
 
+      // Check the actual file type
+      console.log(`Audio file created: ${tempFilePath}, size: ${audioBuffer.length} bytes`);
+      console.log('First 20 bytes of audio buffer:', audioBuffer.subarray(0, 20));
+      
+      // For debugging: try to identify the actual format
+      const header = audioBuffer.subarray(0, 12).toString('hex');
+      console.log('Audio file header (hex):', header);
+
       // Create a readable stream from the file
       const audioStream = fs.createReadStream(tempFilePath);
-      console.log(`Audio file created: ${tempFilePath}, size: ${audioBuffer.length} bytes`);
 
       // Convert language code to ISO-639-1 format if needed
       const convertLanguageCode = (lang?: string): string | undefined => {

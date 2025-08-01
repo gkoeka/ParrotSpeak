@@ -148,23 +148,23 @@ export async function startRecording(): Promise<{ uri: string }> {
     
     const recordingOptions = {
       android: {
-        extension: '.m4a',
+        extension: '.mp4',
         outputFormat: Audio.RECORDING_FORMAT_MPEG_4,
         audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
-        sampleRate: 16000,
-        numberOfChannels: 1,
+        sampleRate: 44100,
+        numberOfChannels: 2,
         bitRate: 128000,
       },
       ios: {
-        extension: '.m4a',
+        extension: '.mp4',
         outputFormat: Audio.RECORDING_FORMAT_MPEG_4,
         audioEncoder: Audio.RECORDING_OPTION_IOS_AUDIO_ENCODER_AAC,
-        sampleRate: 16000,
-        numberOfChannels: 1,
+        sampleRate: 44100,
+        numberOfChannels: 2,
         bitRate: 128000,
       },
       web: {
-        mimeType: 'audio/mpeg',
+        mimeType: 'audio/mp4',
         bitsPerSecond: 128000,
       },
     };
