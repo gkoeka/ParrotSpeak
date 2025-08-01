@@ -112,35 +112,41 @@ export default function LanguageSelector({
         onRequestClose={onClose}
       >
         <View style={styles.modalOverlay}>
-          <SafeAreaView style={styles.safeAreaContainer}>
+          <TouchableOpacity 
+            style={styles.modalBackdrop} 
+            activeOpacity={1} 
+            onPress={onClose}
+          >
             <View style={[styles.modalContent, isDark && styles.modalContentDark]}>
-              
-              {/* Header */}
-              <View style={styles.headerContainer}>
-                <Text style={[styles.modalTitle, isDark && styles.modalTitleDark]}>
-                  Select Language
-                </Text>
-              </View>
-              
-              {/* Search Input */}
-              <TextInput
-                style={[styles.searchInput, isDark && styles.searchInputDark]}
-                placeholder="Search languages..."
-                placeholderTextColor={isDark ? "#888" : "#999"}
-                value={searchTerm}
-                onChangeText={setSearchTerm}
-                autoCapitalize="none"
-                autoCorrect={false}
-                clearButtonMode="while-editing"
-              />
-              
-              {/* Language List */}
-              <View style={styles.listWrapper}>
+              <TouchableOpacity activeOpacity={1}>
+                {/* Header with Title */}
+                <View style={styles.modalHeader}>
+                  <Text style={[styles.modalTitle, isDark && styles.modalTitleDark]}>
+                    Select Language
+                  </Text>
+                </View>
+                
+                {/* Search Input */}
+                <View style={styles.searchContainer}>
+                  <TextInput
+                    style={[styles.searchInput, isDark && styles.searchInputDark]}
+                    placeholder="Search languages..."
+                    placeholderTextColor={isDark ? "#888" : "#999"}
+                    value={searchTerm}
+                    onChangeText={setSearchTerm}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    clearButtonMode="while-editing"
+                  />
+                </View>
+                
+                {/* Language List */}
                 <ScrollView 
                   style={styles.languageScrollView}
                   contentContainerStyle={styles.scrollViewContent}
                   showsVerticalScrollIndicator={true}
                   keyboardShouldPersistTaps="handled"
+                  keyboardDismissMode="on-drag"
                   bounces={true}
                 >
                   {filteredLanguages.length > 0 ? (
@@ -168,17 +174,15 @@ export default function LanguageSelector({
                           activeOpacity={0.7}
                         >
                           {/* Flag */}
-                          <View style={styles.flagColumn}>
-                            <Text style={styles.flagEmoji}>{flag}</Text>
-                          </View>
+                          <Text style={styles.flagEmoji}>{flag}</Text>
                           
-                          {/* Language Names (Stacked Vertically) */}
+                          {/* Language Names */}
                           <View style={styles.namesColumn}>
                             <Text 
                               style={[
-                                styles.englishName, 
-                                isDark && styles.englishNameDark,
-                                isSelected && styles.englishNameSelected
+                                styles.languageName, 
+                                isDark && styles.languageNameDark,
+                                isSelected && styles.languageNameSelected
                               ]}
                               numberOfLines={1}
                               ellipsizeMode="tail"
@@ -198,22 +202,22 @@ export default function LanguageSelector({
                             </Text>
                           </View>
                           
-                          {/* Right Side: ISO Code and Mic Icon */}
-                          <View style={styles.rightColumn}>
-                            <Text style={[
-                              styles.isoCode, 
-                              isDark && styles.isoCodeDark,
-                              isSelected && styles.isoCodeSelected
-                            ]}>
-                              {language.code ? language.code.toUpperCase() : ''}
-                            </Text>
-                            <Text style={[
-                              styles.micIcon,
-                              !language.speechSupported && styles.micIconDisabled
-                            ]}>
-                              {language.speechSupported ? '🎤' : '📝'}
-                            </Text>
-                          </View>
+                          {/* ISO Code */}
+                          <Text style={[
+                            styles.isoCode, 
+                            isDark && styles.isoCodeDark,
+                            isSelected && styles.isoCodeSelected
+                          ]}>
+                            {language.code ? language.code.toUpperCase() : ''}
+                          </Text>
+                          
+                          {/* Speech Icon */}
+                          <Text style={[
+                            styles.micIcon,
+                            !language.speechSupported && styles.micIconDisabled
+                          ]}>
+                            🎤
+                          </Text>
                         </TouchableOpacity>
                       );
                     })
@@ -228,22 +232,22 @@ export default function LanguageSelector({
                     </View>
                   )}
                 </ScrollView>
-              </View>
-              
-              {/* Cancel Button */}
-              <TouchableOpacity 
-                style={[styles.cancelButton, isDark && styles.cancelButtonDark]} 
-                onPress={() => {
-                  setSearchTerm('');
-                  onClose();
-                }}
-              >
-                <Text style={[styles.cancelText, isDark && styles.cancelTextDark]}>
-                  Cancel
-                </Text>
+                
+                {/* Cancel Button */}
+                <TouchableOpacity 
+                  style={[styles.cancelButton, isDark && styles.cancelButtonDark]} 
+                  onPress={() => {
+                    setSearchTerm('');
+                    onClose();
+                  }}
+                >
+                  <Text style={[styles.cancelText, isDark && styles.cancelTextDark]}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
               </TouchableOpacity>
             </View>
-          </SafeAreaView>
+          </TouchableOpacity>
         </View>
       </Modal>
     );
@@ -365,23 +369,18 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  safeAreaContainer: {
+  modalBackdrop: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 60,
   },
   modalContent: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 16,
-    width: Math.min(screenWidth * 0.6, 400),
-    maxHeight: screenHeight * 0.75,
-    alignSelf: 'center',
+    width: Math.min(screenWidth * 0.9, 400),
+    maxHeight: screenHeight * 0.8,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -399,12 +398,15 @@ const styles = StyleSheet.create({
   },
   
   // Header
-  headerContainer: {
-    alignItems: 'center',
-    marginBottom: 12,
+  modalHeader: {
+    paddingTop: 20,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     color: '#333',
     textAlign: 'center',
@@ -413,14 +415,18 @@ const styles = StyleSheet.create({
     color: '#e0e0e0',
   },
   
-  // Search Input
+  // Search Container
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
   searchInput: {
     backgroundColor: '#f8f9fa',
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#e9ecef',
     color: '#333',
@@ -432,77 +438,65 @@ const styles = StyleSheet.create({
   },
   
   // Language List
-  listWrapper: {
-    flex: 1,
+  languageScrollView: {
     maxHeight: screenHeight * 0.5,
   },
-  languageScrollView: {
-    flex: 1,
-  },
   scrollViewContent: {
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingHorizontal: 16,
   },
   
   // Language Row
   languageRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
     borderRadius: 8,
-    marginVertical: 3,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: '#f0f0f0',
+    marginVertical: 4,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     minHeight: 64,
   },
   languageRowDark: {
     backgroundColor: '#3a3a3a',
-    borderColor: '#4a4a4a',
   },
   languageRowSelected: {
     backgroundColor: '#e7f3ff',
+    borderWidth: 1,
     borderColor: '#6366f1',
-    borderWidth: 2,
   },
   languageRowSelectedDark: {
     backgroundColor: '#1a2332',
     borderColor: '#6366f1',
   },
   
-  // Flag Column
-  flagColumn: {
-    width: 28,
-    alignItems: 'center',
-    marginRight: 10,
-  },
+  // Flag
   flagEmoji: {
-    fontSize: 20,
+    fontSize: 24,
+    marginRight: 12,
   },
   
-  // Names Column (Stacked Vertically)
+  // Names Column
   namesColumn: {
     flex: 1,
     justifyContent: 'center',
   },
-  englishName: {
-    fontSize: 14,
+  languageName: {
+    fontSize: 16,
     fontWeight: '600',
     color: '#333',
     marginBottom: 2,
   },
-  englishNameDark: {
+  languageNameDark: {
     color: '#e0e0e0',
   },
-  englishNameSelected: {
+  languageNameSelected: {
     color: '#6366f1',
-    fontWeight: '700',
   },
   nativeName: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#666',
-    fontStyle: 'italic',
   },
   nativeNameDark: {
     color: '#999',
@@ -511,17 +505,12 @@ const styles = StyleSheet.create({
     color: '#8b7fd1',
   },
   
-  // Right Column
-  rightColumn: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    minWidth: 40,
-  },
+  // ISO Code
   isoCode: {
-    fontSize: 10,
+    fontSize: 12,
     color: '#999',
-    fontWeight: '700',
-    marginBottom: 3,
+    fontWeight: '600',
+    marginRight: 12,
   },
   isoCodeDark: {
     color: '#888',
@@ -529,11 +518,14 @@ const styles = StyleSheet.create({
   isoCodeSelected: {
     color: '#6366f1',
   },
+  
+  // Mic Icon
   micIcon: {
-    fontSize: 14,
+    fontSize: 18,
+    color: '#666',
   },
   micIconDisabled: {
-    opacity: 0.4,
+    opacity: 0.3,
   },
   
   // Empty State
@@ -561,10 +553,11 @@ const styles = StyleSheet.create({
   // Cancel Button
   cancelButton: {
     backgroundColor: '#f8f9fa',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 16,
     borderRadius: 8,
-    marginTop: 12,
     alignItems: 'center',
   },
   cancelButtonDark: {
