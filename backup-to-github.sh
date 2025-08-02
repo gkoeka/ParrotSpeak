@@ -21,7 +21,8 @@ git commit -m "feat: Extended language support to 65 languages with RTL layout a
 - Fixed speech synthesis with locale-specific mapping and async fallback mechanisms
 - Created comprehensive Jest testing framework with 16 snapshot tests for LanguageSelectorMobile
 - Fixed Google Sign-In compatibility for Expo Go development environment
-- Updated README with latest project status and features"
+- Updated README to prominently feature mobile-only architecture
+- Added version compatibility note in replit.md for React/React Native sync"
 
 # Push to GitHub
 echo "Pushing to GitHub..."

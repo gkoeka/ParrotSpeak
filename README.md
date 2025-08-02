@@ -1,8 +1,16 @@
 # ParrotSpeak 🦜
 
-A mobile-first AI-powered voice translation application using React Native and Expo. ParrotSpeak enables seamless cross-language communication through real-time speech recognition, translation, and synthesis for travelers, businesses, and global communicators.
+## 📱 Mobile-Only Architecture
 
-**Architecture**: Mobile-only application optimized for iOS and Android app store distribution, with development web interface for testing.
+ParrotSpeak is a **100% mobile-only application** built exclusively with React Native and Expo for iOS and Android deployment. The entire codebase has been optimized for mobile performance with all web-specific code removed.
+
+**Key Architecture Points:**
+- **Pure React Native**: No web platform dependencies or conditional checks
+- **Expo SDK 53**: Latest Expo framework for streamlined mobile development
+- **Mobile-First Design**: All UI components optimized for touch interfaces
+- **App Store Ready**: Built for distribution via Apple App Store and Google Play Store
+
+ParrotSpeak enables seamless cross-language communication through real-time speech recognition, translation, and synthesis for travelers, businesses, and global communicators.
 
 ## 🎉 Recent Updates
 

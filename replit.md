@@ -42,6 +42,7 @@ ParrotSpeak is built as a mobile-first TypeScript application with a clean API b
 - **File Handling**: Multer is used for secure file uploads with validation.
 - **Enhanced Voice Selection**: Logic for improved cross-language support, including timeout detection for speech synthesis failures and graceful fallbacks for unsupported languages.
 - **Security**: Comprehensive security headers, API rate limiting, server-side input validation, and secure session configuration.
+- **Version Compatibility**: React and React Native versions must be kept in sync. Currently using React 19.0.0 to match React Native 0.79.5 requirements for Expo SDK 53. Always update both packages together to maintain compatibility.
 
 ## External Dependencies
 
