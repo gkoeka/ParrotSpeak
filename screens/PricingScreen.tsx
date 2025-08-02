@@ -43,16 +43,25 @@ export default function PricingScreen() {
   const [selectedBilling, setSelectedBilling] = useState<'monthly' | 'yearly'>('yearly');
   const [selectedTab, setSelectedTab] = useState<'subscription' | 'traveler'>('subscription');
   const slideAnim = useRef(new Animated.Value(0)).current;
+  const priceOpacity = useRef(new Animated.Value(1)).current;
+
+  const monthlyPrice = 9.99;
+  const yearlyPrice = 99;
+  const yearlyMonthlyEquivalent = monthlyPrice * 12; // $119.88
+  const yearlySavings = yearlyMonthlyEquivalent - yearlyPrice; // $20.88
+  const yearlySavingsPercentage = Math.round((yearlySavings / yearlyMonthlyEquivalent) * 100); // 17%
 
   const subscriptionPlan: Plan = {
     id: 'premium',
     name: 'Premium Access',
-    price: selectedBilling === 'monthly' ? 9.99 : 99,
-    originalPrice: selectedBilling === 'monthly' ? undefined : 119.88,
+    price: selectedBilling === 'monthly' ? monthlyPrice : yearlyPrice,
+    originalPrice: selectedBilling === 'monthly' ? undefined : yearlyMonthlyEquivalent,
     interval: selectedBilling === 'monthly' ? 'month' : 'year',
-    description: selectedBilling === 'monthly' ? '12 month minimum commitment' : 'Best value - save $20.88',
+    description: selectedBilling === 'monthly' 
+      ? '12 month minimum commitment' 
+      : `Best value - save $${yearlySavings.toFixed(2)} (${yearlySavingsPercentage}% off)`,
     popular: true,
-    savings: selectedBilling === 'yearly' ? 'Save $20.88' : undefined,
+    savings: selectedBilling === 'yearly' ? `Save $${yearlySavings.toFixed(2)}` : undefined,
     type: 'subscription',
     features: [
       'Unlimited voice-to-voice translations',
@@ -242,7 +251,7 @@ export default function PricingScreen() {
               </Text>
             </View>
 
-            <View style={styles.priceSection}>
+            <Animated.View style={[styles.priceSection, { opacity: plan.type === 'subscription' ? priceOpacity : 1 }]}>
               <View style={styles.priceContainer}>
                 <Text style={[styles.currency, isDarkMode && styles.currencyDark]}>$</Text>
                 <Text style={[styles.price, isDarkMode && styles.priceDark]}>
@@ -267,21 +276,67 @@ export default function PricingScreen() {
                   <Text style={styles.savingsTagText}>{plan.savings}</Text>
                 </View>
               )}
-            </View>
+            </Animated.View>
 
             {/* Billing Toggle for Subscription Plan */}
             {plan.type === 'subscription' && (
-              <View style={styles.billingToggleRow}>
-                <Text style={[styles.billingToggleLabel, isDarkMode && styles.billingToggleLabelDark]}>
-                  Bill yearly
-                </Text>
-                <Switch
-                  value={selectedBilling === 'yearly'}
-                  onValueChange={(value) => setSelectedBilling(value ? 'yearly' : 'monthly')}
-                  trackColor={{ false: '#e0e0e0', true: '#3366FF' }}
-                  thumbColor={selectedBilling === 'yearly' ? '#fff' : '#f4f3f4'}
-                  ios_backgroundColor="#e0e0e0"
-                />
+              <View style={[styles.billingToggleContainer, isDarkMode && styles.billingToggleContainerDark]}>
+                <View style={styles.billingToggleRow}>
+                  <View style={styles.billingToggleLabels}>
+                    <Text style={[
+                      styles.billingToggleLabel, 
+                      selectedBilling === 'monthly' && styles.billingToggleLabelActive,
+                      isDarkMode && styles.billingToggleLabelDark
+                    ]}>
+                      Monthly
+                    </Text>
+                    <Switch
+                      value={selectedBilling === 'yearly'}
+                      onValueChange={(value) => {
+                        // Animate price change
+                        Animated.sequence([
+                          Animated.timing(priceOpacity, {
+                            toValue: 0,
+                            duration: 150,
+                            useNativeDriver: true,
+                          }),
+                          Animated.timing(priceOpacity, {
+                            toValue: 1,
+                            duration: 150,
+                            useNativeDriver: true,
+                          }),
+                        ]).start();
+                        
+                        try {
+                          setSelectedBilling(value ? 'yearly' : 'monthly');
+                        } catch (error) {
+                          // Fallback to yearly if toggle fails
+                          console.error('Billing toggle error:', error);
+                          setSelectedBilling('yearly');
+                        }
+                      }}
+                      trackColor={{ 
+                        false: isDarkMode ? '#4a4a4a' : '#e0e0e0', 
+                        true: '#3366FF' 
+                      }}
+                      thumbColor={Platform.OS === 'ios' ? '#fff' : selectedBilling === 'yearly' ? '#fff' : '#f4f3f4'}
+                      ios_backgroundColor={isDarkMode ? '#4a4a4a' : '#e0e0e0'}
+                      style={styles.billingToggleSwitch}
+                    />
+                    <Text style={[
+                      styles.billingToggleLabel, 
+                      selectedBilling === 'yearly' && styles.billingToggleLabelActive,
+                      isDarkMode && styles.billingToggleLabelDark
+                    ]}>
+                      Annually
+                    </Text>
+                  </View>
+                  {selectedBilling === 'yearly' && (
+                    <View style={styles.savingsIndicator}>
+                      <Text style={styles.savingsIndicatorText}>Save 17%</Text>
+                    </View>
+                  )}
+                </View>
               </View>
             )}
 
@@ -595,23 +650,54 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  billingToggleContainer: {
+    backgroundColor: '#f8f9ff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#e8ecff',
+  },
+  billingToggleContainerDark: {
+    backgroundColor: '#2a2a2a',
+    borderColor: '#404040',
+  },
   billingToggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#f8f9ff',
-    borderRadius: 8,
-    marginBottom: 16,
+  },
+  billingToggleLabels: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   billingToggleLabel: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#1a1a1a',
+    color: '#666',
   },
   billingToggleLabelDark: {
+    color: '#999',
+  },
+  billingToggleLabelActive: {
+    color: '#3366FF',
+    fontWeight: '600',
+  },
+  billingToggleSwitch: {
+    marginHorizontal: 12,
+  },
+  savingsIndicator: {
+    backgroundColor: '#22c55e',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginLeft: 12,
+  },
+  savingsIndicatorText: {
     color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   featuresContainer: {
     marginBottom: 24,
