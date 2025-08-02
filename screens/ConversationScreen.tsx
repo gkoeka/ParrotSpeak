@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, I18nManager } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Header from '../components/Header';
 import VoiceInputControls from '../components/VoiceInputControls';
+import { isRTLLanguage, rtlStyle, getWritingDirection } from '../utils/rtlSupport';
 
 import LanguageSelector from '../components/LanguageSelectorMobile';
 
@@ -38,22 +39,39 @@ export default function ConversationScreen() {
             </Text>
           </View>
         ) : (
-          messages.map((message) => (
-            <View key={message.id} style={styles.messageCard}>
-              <View style={styles.originalSection}>
-                <Text style={styles.languageLabel}>Original</Text>
-                <Text style={styles.originalText}>{message.text}</Text>
+          messages.map((message) => {
+            const isSourceRTL = isRTLLanguage(message.fromLanguage);
+            const isTargetRTL = isRTLLanguage(message.toLanguage);
+            
+            return (
+              <View key={message.id} style={styles.messageCard}>
+                <View style={[
+                  styles.originalSection,
+                  isSourceRTL && styles.rtlSection
+                ]}>
+                  <Text style={styles.languageLabel}>Original</Text>
+                  <Text style={[
+                    styles.originalText,
+                    isSourceRTL && styles.rtlText
+                  ]}>{message.text}</Text>
+                </View>
+                <View style={styles.divider} />
+                <View style={[
+                  styles.translationSection,
+                  isTargetRTL && styles.rtlSection
+                ]}>
+                  <Text style={styles.languageLabel}>Translation</Text>
+                  <Text style={[
+                    styles.translatedText,
+                    isTargetRTL && styles.rtlText
+                  ]}>{message.translation}</Text>
+                </View>
+                <Text style={styles.languagePair}>
+                  {message.fromLanguage} → {message.toLanguage}
+                </Text>
               </View>
-              <View style={styles.divider} />
-              <View style={styles.translationSection}>
-                <Text style={styles.languageLabel}>Translation</Text>
-                <Text style={styles.translatedText}>{message.translation}</Text>
-              </View>
-              <Text style={styles.languagePair}>
-                {message.fromLanguage} → {message.toLanguage}
-              </Text>
-            </View>
-          ))
+            );
+          })
         )}
       </ScrollView>
       
@@ -136,5 +154,12 @@ const styles = StyleSheet.create({
     padding: 16,
     borderTopWidth: 1,
     borderTopColor: '#e9ecef',
+  },
+  rtlSection: {
+    alignItems: 'flex-end',
+  },
+  rtlText: {
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
 });

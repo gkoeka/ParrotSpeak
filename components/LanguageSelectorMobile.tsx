@@ -10,9 +10,11 @@ import {
   useColorScheme,
   Platform,
   SafeAreaView,
-  Dimensions
+  Dimensions,
+  I18nManager
 } from 'react-native';
 import { getSupportedLanguages } from '../constants/languageConfiguration';
+import { isRTLLanguage, rtlStyle, getWritingDirection } from '../utils/rtlSupport';
 
 interface LanguageSelectorProps {
   sourceLanguage: string;
@@ -177,12 +179,16 @@ export default function LanguageSelector({
                           <Text style={styles.flagEmoji}>{flag}</Text>
                           
                           {/* Language Names */}
-                          <View style={styles.namesColumn}>
+                          <View style={[
+                            styles.namesColumn,
+                            isRTLLanguage(language.code) && styles.namesColumnRTL
+                          ]}>
                             <Text 
                               style={[
                                 styles.languageName, 
                                 isDark && styles.languageNameDark,
-                                isSelected && styles.languageNameSelected
+                                isSelected && styles.languageNameSelected,
+                                isRTLLanguage(language.code) && styles.languageNameRTL
                               ]}
                               numberOfLines={1}
                               ellipsizeMode="tail"
@@ -194,7 +200,8 @@ export default function LanguageSelector({
                               style={[
                                 styles.nativeName, 
                                 isDark && styles.nativeNameDark,
-                                isSelected && styles.nativeNameSelected
+                                isSelected && styles.nativeNameSelected,
+                                isRTLLanguage(language.code) && styles.nativeNameRTL
                               ]}
                               numberOfLines={1}
                               ellipsizeMode="tail"
@@ -585,5 +592,19 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     color: '#666',
+  },
+  
+  // RTL Styles
+  namesColumnRTL: {
+    alignItems: 'flex-end',
+  },
+  languageNameRTL: {
+    textAlign: 'right',
+  },
+  nativeNameRTL: {
+    textAlign: 'right',
+  },
+  languageContentRTL: {
+    flexDirection: 'row-reverse',
   },
 });
