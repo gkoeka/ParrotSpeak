@@ -17,7 +17,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 
 export default function PerformanceTestScreen() {
-  const { theme } = useTheme();
+  const { isDarkMode } = useTheme();
   const { user } = useAuth();
   const navigation = useNavigation();
   const [isRunning, setIsRunning] = useState(false);
@@ -115,7 +115,7 @@ export default function PerformanceTestScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.background
+      backgroundColor: isDarkMode ? '#1a1a1a' : '#f8f9fa'
     },
     content: {
       flex: 1,
@@ -124,23 +124,23 @@ export default function PerformanceTestScreen() {
     title: {
       fontSize: 24,
       fontWeight: 'bold',
-      color: theme.text,
+      color: isDarkMode ? '#fff' : '#000',
       marginBottom: 16
     },
     subtitle: {
       fontSize: 16,
-      color: theme.textSecondary,
+      color: isDarkMode ? '#999' : '#666',
       marginBottom: 24
     },
     button: {
-      backgroundColor: theme.primary,
+      backgroundColor: '#3366FF',
       padding: 16,
       borderRadius: 8,
       alignItems: 'center',
       marginBottom: 12
     },
     buttonDisabled: {
-      backgroundColor: theme.border,
+      backgroundColor: isDarkMode ? '#444' : '#ccc',
       opacity: 0.6
     },
     buttonText: {
@@ -149,7 +149,7 @@ export default function PerformanceTestScreen() {
       fontWeight: '600'
     },
     clearButton: {
-      backgroundColor: theme.error,
+      backgroundColor: '#FF3B30',
       padding: 12,
       borderRadius: 8,
       alignItems: 'center',
@@ -162,47 +162,47 @@ export default function PerformanceTestScreen() {
     },
     runningText: {
       fontSize: 16,
-      color: theme.text,
+      color: isDarkMode ? '#fff' : '#000',
       marginTop: 16,
       textAlign: 'center'
     },
     reportContainer: {
-      backgroundColor: theme.surface,
+      backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
       borderRadius: 8,
       padding: 16,
       borderWidth: 1,
-      borderColor: theme.border
+      borderColor: isDarkMode ? '#444' : '#e0e0e0'
     },
     reportText: {
       fontSize: 14,
       fontFamily: 'monospace',
-      color: theme.text,
+      color: isDarkMode ? '#fff' : '#000',
       lineHeight: 20
     },
     infoBox: {
-      backgroundColor: theme.surface,
+      backgroundColor: isDarkMode ? '#2a2a2a' : '#fff',
       borderRadius: 8,
       padding: 16,
       marginBottom: 16,
       borderWidth: 1,
-      borderColor: theme.border
+      borderColor: isDarkMode ? '#444' : '#e0e0e0'
     },
     infoTitle: {
       fontSize: 16,
       fontWeight: '600',
-      color: theme.text,
+      color: isDarkMode ? '#fff' : '#000',
       marginBottom: 8
     },
     infoText: {
       fontSize: 14,
-      color: theme.textSecondary,
+      color: isDarkMode ? '#999' : '#666',
       lineHeight: 20
     }
   });
   
   return (
     <View style={styles.container}>
-      <Header title="Performance Testing" showBack />
+      <Header />
       
       <ScrollView style={styles.content}>
         <Text style={styles.title}>Translation Performance Tests</Text>
@@ -241,7 +241,7 @@ export default function PerformanceTestScreen() {
         
         {isRunning && (
           <View style={styles.runningContainer}>
-            <ActivityIndicator size="large" color={theme.primary} />
+            <ActivityIndicator size="large" color="#3366FF" />
             <Text style={styles.runningText}>{currentTest}</Text>
           </View>
         )}
