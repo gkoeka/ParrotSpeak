@@ -22,6 +22,9 @@ import PasswordResetScreen from "./screens/PasswordResetScreen";
 import FeedbackScreen from "./screens/FeedbackScreen";
 import CheckoutScreen from "./screens/CheckoutScreen";
 import PricingScreen from "./screens/PricingScreen";
+import HelpCenterScreen from "./screens/HelpCenterScreen";
+import PrivacyPolicyScreen from "./screens/PrivacyPolicyScreen";
+import TermsConditionsScreen from "./screens/TermsConditionsScreen";
 
 // Define the stack navigator params
 export type RootStackParamList = {
@@ -39,7 +42,7 @@ export type RootStackParamList = {
   Feedback: undefined;
   HelpCenter: undefined;
   PrivacyPolicy: undefined;
-  CompareFeatures: undefined;
+  TermsConditions: undefined;
 };
 
 // Create stack navigator
@@ -83,6 +86,9 @@ function AuthNavigator() {
           <Stack.Screen name="Pricing" component={PricingScreen} />
           <Stack.Screen name="Checkout" component={CheckoutScreen} />
           <Stack.Screen name="Feedback" component={FeedbackScreen} />
+          <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
+          <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+          <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} />
         </>
       ) : (
         // Auth screens

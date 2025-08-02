@@ -79,12 +79,7 @@ export default function SettingsScreen() {
       icon: 'chatbubble-outline',
       subtitle: 'Share your thoughts'
     },
-    { 
-      title: 'Privacy Policy', 
-      screen: 'PrivacyPolicy' as keyof RootStackParamList,
-      icon: 'shield-checkmark-outline',
-      subtitle: 'View our privacy policy'
-    },
+
   ];
 
   return (

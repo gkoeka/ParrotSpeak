@@ -67,10 +67,7 @@ export default function PricingScreen() {
       'Unlimited voice-to-voice translations',
       'All 65 supported languages',
       'Real-time conversation mode',
-      'Conversation history & export',
-      'Offline mode for saved phrases',
-      'Priority customer support',
-      'No ads or interruptions'
+      'Conversation history'
     ]
   };
 
@@ -84,10 +81,8 @@ export default function PricingScreen() {
       description: 'Perfect for short trips',
       type: 'traveler',
       features: [
-        '7 days of unlimited access',
-        'All premium features',
-        'Offline phrase book',
-        'Emergency phrases included'
+        '7 days of full access',
+        'All 65 supported languages'
       ]
     },
     {
@@ -100,10 +95,8 @@ export default function PricingScreen() {
       popular: true,
       type: 'traveler',
       features: [
-        '30 days of unlimited access',
-        'All premium features',
-        'Cultural tips & phrases',
-        'Travel-specific vocabulary'
+        '30 days of full access',
+        'All 65 supported languages'
       ]
     },
     {
@@ -116,10 +109,8 @@ export default function PricingScreen() {
       savings: 'Save $4.98',
       type: 'traveler',
       features: [
-        '90 days of unlimited access',
-        'All premium features',
-        'Business conversation support',
-        'Multi-country phrase packs'
+        '90 days of full access',
+        'All 65 supported languages'
       ]
     },
     {
@@ -132,10 +123,8 @@ export default function PricingScreen() {
       savings: 'Save $19.95',
       type: 'traveler',
       features: [
-        '180 days of unlimited access',
-        'All premium features',
-        'Professional terminology',
-        'Priority email support'
+        '180 days of full access',
+        'All 65 supported languages'
       ]
     }
   ];
@@ -390,14 +379,7 @@ export default function PricingScreen() {
         )}
 
         {/* Features Comparison */}
-        <TouchableOpacity 
-          style={[styles.compareButton, isDarkMode && styles.compareButtonDark]}
-          onPress={() => navigation.navigate('CompareFeatures')}
-        >
-          <Ionicons name="analytics-outline" size={24} color="#3366FF" />
-          <Text style={styles.compareButtonText}>Compare all features</Text>
-          <Ionicons name="chevron-forward" size={20} color="#3366FF" />
-        </TouchableOpacity>
+
       </ScrollView>
     </View>
   );
