@@ -46,12 +46,12 @@ export default function PricingScreen() {
   const subscriptionPlan: Plan = {
     id: 'premium',
     name: 'Premium Access',
-    price: selectedBilling === 'monthly' ? 19.99 : 191.88,
-    originalPrice: selectedBilling === 'monthly' ? undefined : 239.88,
+    price: selectedBilling === 'monthly' ? 9.99 : 99,
+    originalPrice: selectedBilling === 'monthly' ? undefined : 119.88,
     interval: selectedBilling === 'monthly' ? 'month' : 'year',
-    description: 'Full access to all features',
+    description: selectedBilling === 'monthly' ? '12 month minimum commitment' : 'Best value - save $20.88',
     popular: true,
-    savings: selectedBilling === 'yearly' ? 'Save 20%' : undefined,
+    savings: selectedBilling === 'yearly' ? 'Save $20.88' : undefined,
     type: 'subscription',
     features: [
       'Unlimited voice-to-voice translations',
@@ -68,7 +68,7 @@ export default function PricingScreen() {
     {
       id: 'week',
       name: '1 Week Pass',
-      price: 9.99,
+      price: 4.99,
       interval: 'one-time',
       duration: '7 days',
       description: 'Perfect for short trips',
@@ -83,7 +83,7 @@ export default function PricingScreen() {
     {
       id: 'month',
       name: '1 Month Pass',
-      price: 24.99,
+      price: 14.99,
       interval: 'one-time',
       duration: '30 days',
       description: 'Ideal for extended travel',
@@ -99,11 +99,11 @@ export default function PricingScreen() {
     {
       id: 'three-months',
       name: '3 Month Pass',
-      price: 59.99,
+      price: 39.99,
       interval: 'one-time',
       duration: '90 days',
       description: 'For digital nomads',
-      savings: 'Save 20%',
+      savings: 'Save $4.98',
       type: 'traveler',
       features: [
         '90 days of unlimited access',
@@ -115,11 +115,11 @@ export default function PricingScreen() {
     {
       id: 'six-months',
       name: '6 Month Pass',
-      price: 99.99,
+      price: 69.99,
       interval: 'one-time',
       duration: '180 days',
       description: 'Extended stays abroad',
-      savings: 'Save 33%',
+      savings: 'Save $19.95',
       type: 'traveler',
       features: [
         '180 days of unlimited access',
