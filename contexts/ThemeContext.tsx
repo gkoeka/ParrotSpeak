@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 interface ThemeContextType {
   isDarkMode: boolean;
@@ -18,7 +18,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
   const loadThemePreference = async () => {
     try {
-      const savedTheme = await AsyncStorage.getItem('theme');
+      const savedTheme = await SecureStore.getItemAsync('theme');
       if (savedTheme === 'dark') {
         setIsDarkMode(true);
       }
@@ -32,7 +32,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     setIsDarkMode(newMode);
     
     try {
-      await AsyncStorage.setItem('theme', newMode ? 'dark' : 'light');
+      await SecureStore.setItemAsync('theme', newMode ? 'dark' : 'light');
     } catch (error) {
       console.error('Error saving theme preference:', error);
     }
