@@ -45,12 +45,7 @@ export default function HelpCenterScreen() {
       subtitle: 'Get in touch with our team',
       onPress: () => Linking.openURL('mailto:support@parrotspeak.com')
     },
-    {
-      title: 'User Guide',
-      icon: 'book-outline',
-      subtitle: 'Learn how to use ParrotSpeak',
-      onPress: () => Alert.alert('Coming Soon', 'User guide will be available soon')
-    }
+
   ];
 
   return (
