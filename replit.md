@@ -45,6 +45,7 @@ ParrotSpeak is built as a mobile-first TypeScript application with a clean API b
 - **Enhanced Voice Selection**: Logic for improved cross-language support, including timeout detection for speech synthesis failures and graceful fallbacks for unsupported languages.
 - **Security**: Comprehensive security headers, API rate limiting, server-side input validation, and secure session configuration.
 - **Version Compatibility**: React and React Native versions must be kept in sync. Currently using React 19.0.0 to match React Native 0.79.5 requirements for Expo SDK 53. Always update both packages together to maintain compatibility.
+- **Profile Management**: Restored Sign Out, Delete Account, and GDPR Export functionality with proper API integration, confirmation dialogs, and loading states. Uses API_BASE_URL configuration for all backend communication.
 
 ## External Dependencies
 
