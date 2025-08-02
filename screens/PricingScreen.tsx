@@ -26,11 +26,13 @@ interface Plan {
   name: string;
   price: number;
   originalPrice?: number;
-  interval: 'month' | 'year' | 'lifetime';
+  interval: 'month' | 'year' | 'week' | 'one-time';
   features: string[];
   popular?: boolean;
   savings?: string;
   description: string;
+  duration?: string;
+  type: 'subscription' | 'traveler';
 }
 
 export default function PricingScreen() {
@@ -38,62 +40,97 @@ export default function PricingScreen() {
   const { isDarkMode } = useTheme();
   const { user } = useAuth();
   const [selectedBilling, setSelectedBilling] = useState<'monthly' | 'yearly'>('yearly');
+  const [selectedTab, setSelectedTab] = useState<'subscription' | 'traveler'>('subscription');
   const slideAnim = useRef(new Animated.Value(0)).current;
 
-  const plans: Plan[] = [
+  const subscriptionPlan: Plan = {
+    id: 'premium',
+    name: 'Premium Access',
+    price: selectedBilling === 'monthly' ? 19.99 : 191.88,
+    originalPrice: selectedBilling === 'monthly' ? undefined : 239.88,
+    interval: selectedBilling === 'monthly' ? 'month' : 'year',
+    description: 'Full access to all features',
+    popular: true,
+    savings: selectedBilling === 'yearly' ? 'Save 20%' : undefined,
+    type: 'subscription',
+    features: [
+      'Unlimited voice-to-voice translations',
+      'All 65 supported languages',
+      'Real-time conversation mode',
+      'Conversation history & export',
+      'Offline mode for saved phrases',
+      'Priority customer support',
+      'No ads or interruptions'
+    ]
+  };
+
+  const travelerPackages: Plan[] = [
     {
-      id: 'starter',
-      name: 'Starter',
-      price: selectedBilling === 'monthly' ? 9.99 : 95.88,
-      originalPrice: selectedBilling === 'monthly' ? undefined : 119.88,
-      interval: selectedBilling === 'monthly' ? 'month' : 'year',
-      description: 'Perfect for casual users',
-      savings: selectedBilling === 'yearly' ? 'Save 20%' : undefined,
+      id: 'week',
+      name: '1 Week Pass',
+      price: 9.99,
+      interval: 'one-time',
+      duration: '7 days',
+      description: 'Perfect for short trips',
+      type: 'traveler',
       features: [
-        '100 translations per month',
-        'Text translation only',
-        'Basic language pairs',
-        'Email support',
-        'Translation history (7 days)'
+        '7 days of unlimited access',
+        'All premium features',
+        'Offline phrase book',
+        'Emergency phrases included'
       ]
     },
     {
-      id: 'pro',
-      name: 'Pro',
-      price: selectedBilling === 'monthly' ? 19.99 : 191.88,
-      originalPrice: selectedBilling === 'monthly' ? undefined : 239.88,
-      interval: selectedBilling === 'monthly' ? 'month' : 'year',
-      description: 'Best for regular users',
+      id: 'month',
+      name: '1 Month Pass',
+      price: 24.99,
+      interval: 'one-time',
+      duration: '30 days',
+      description: 'Ideal for extended travel',
       popular: true,
-      savings: selectedBilling === 'yearly' ? 'Save 20%' : undefined,
+      type: 'traveler',
       features: [
-        'Unlimited translations',
-        'Voice-to-voice translation',
-        'All 65 language pairs',
-        'Priority support',
-        'Conversation history (30 days)',
-        'Offline mode',
-        'No ads'
+        '30 days of unlimited access',
+        'All premium features',
+        'Cultural tips & phrases',
+        'Travel-specific vocabulary'
       ]
     },
     {
-      id: 'lifetime',
-      name: 'Lifetime',
-      price: 299.99,
-      interval: 'lifetime',
-      description: 'One-time purchase',
-      savings: 'Best value',
+      id: 'three-months',
+      name: '3 Month Pass',
+      price: 59.99,
+      interval: 'one-time',
+      duration: '90 days',
+      description: 'For digital nomads',
+      savings: 'Save 20%',
+      type: 'traveler',
       features: [
-        'Everything in Pro',
-        'Lifetime updates',
-        'Priority processing',
-        'Extended history (1 year)',
-        'Early access to features',
-        'Custom voice options',
-        'API access'
+        '90 days of unlimited access',
+        'All premium features',
+        'Business conversation support',
+        'Multi-country phrase packs'
+      ]
+    },
+    {
+      id: 'six-months',
+      name: '6 Month Pass',
+      price: 99.99,
+      interval: 'one-time',
+      duration: '180 days',
+      description: 'Extended stays abroad',
+      savings: 'Save 33%',
+      type: 'traveler',
+      features: [
+        '180 days of unlimited access',
+        'All premium features',
+        'Professional terminology',
+        'Priority email support'
       ]
     }
   ];
+
+  const plans = selectedTab === 'subscription' ? [subscriptionPlan] : travelerPackages;
 
   const handleSelectPlan = (plan: Plan) => {
     navigation.navigate('Checkout', {
@@ -130,8 +167,52 @@ export default function PricingScreen() {
           </Text>
         </View>
 
-        {/* Billing Toggle */}
-        <View style={styles.billingToggleContainer}>
+        {/* Plan Type Tabs */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity 
+            style={[
+              styles.tab,
+              selectedTab === 'subscription' && styles.activeTab,
+              isDarkMode && styles.tabDark
+            ]}
+            onPress={() => setSelectedTab('subscription')}
+          >
+            <Ionicons 
+              name="sync-circle" 
+              size={20} 
+              color={selectedTab === 'subscription' ? '#3366FF' : isDarkMode ? '#999' : '#666'} 
+            />
+            <Text style={[
+              styles.tabText,
+              selectedTab === 'subscription' && styles.activeTabText,
+              isDarkMode && styles.tabTextDark
+            ]}>Subscription</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[
+              styles.tab,
+              selectedTab === 'traveler' && styles.activeTab,
+              isDarkMode && styles.tabDark
+            ]}
+            onPress={() => setSelectedTab('traveler')}
+          >
+            <Ionicons 
+              name="airplane" 
+              size={20} 
+              color={selectedTab === 'traveler' ? '#3366FF' : isDarkMode ? '#999' : '#666'} 
+            />
+            <Text style={[
+              styles.tabText,
+              selectedTab === 'traveler' && styles.activeTabText,
+              isDarkMode && styles.tabTextDark
+            ]}>Traveler Passes</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Billing Toggle - Only show for subscription */}
+        {selectedTab === 'subscription' && (
+          <View style={styles.billingToggleContainer}>
           <View style={[styles.billingToggle, isDarkMode && styles.billingToggleDark]}>
             <Animated.View
               style={[
@@ -177,6 +258,7 @@ export default function PricingScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        )}
 
         {/* Plans */}
         {plans.map((plan, index) => (
@@ -225,7 +307,9 @@ export default function PricingScreen() {
                 </Text>
               )}
               <Text style={[styles.interval, isDarkMode && styles.intervalDark]}>
-                {plan.interval === 'lifetime' ? 'one-time' : `per ${plan.interval}`}
+                {plan.type === 'subscription' 
+                  ? `per ${plan.interval}` 
+                  : plan.duration || 'one-time'}
               </Text>
               {plan.savings && (
                 <View style={[styles.savingsTag, plan.id === 'lifetime' && styles.savingsTagLifetime]}>
@@ -332,6 +416,41 @@ const styles = StyleSheet.create({
   },
   subtitleDark: {
     color: '#999',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    gap: 12,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#f1f3f5',
+    borderRadius: 12,
+    gap: 8,
+  },
+  tabDark: {
+    backgroundColor: '#2a2a2a',
+  },
+  activeTab: {
+    backgroundColor: '#e8f0ff',
+  },
+  tabText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#666',
+  },
+  tabTextDark: {
+    color: '#999',
+  },
+  activeTabText: {
+    color: '#3366FF',
+    fontWeight: '600',
   },
   billingToggleContainer: {
     paddingHorizontal: 20,

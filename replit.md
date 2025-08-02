@@ -17,6 +17,7 @@ Subscription Modal Messaging:
 - Returning Customers: "Keep the Conversation Going" / "Choose a plan again to keep connecting..." / "Choose a plan again"
 Modal Navigation: Subscription prompts route to '/checkout' page for plan selection, with proper close functionality via X button or "Maybe later"
 App Store Setup: User will need DUNS number before setting up developer accounts. Must remember all app store setup information, credentials, and certificate processes for future reference when DUNS number is obtained.
+Pricing Model: One subscription option with monthly ($19.99) or yearly ($191.88 with 20% savings) billing, plus four one-time traveler passes: 1 Week ($9.99), 1 Month ($24.99), 3 Months ($59.99 - Save 20%), 6 Months ($99.99 - Save 33%). This replaces the previous three-tier subscription model.
 
 ## System Architecture
 
