@@ -188,6 +188,7 @@ export default function LanguageSelector({
                               ellipsizeMode="tail"
                             >
                               {language.name || 'Unknown'}
+                              {!language.speechSupported && ' (Text Only)'}
                             </Text>
                             <Text 
                               style={[
@@ -212,12 +213,13 @@ export default function LanguageSelector({
                           </Text>
                           
                           {/* Speech Icon */}
-                          <Text style={[
-                            styles.micIcon,
-                            !language.speechSupported && styles.micIconDisabled
-                          ]}>
-                            🎤
-                          </Text>
+                          {language.speechSupported ? (
+                            <Text style={styles.micIcon}>🎤</Text>
+                          ) : (
+                            <View style={styles.textOnlyBadge}>
+                              <Text style={styles.textOnlyText}>TEXT</Text>
+                            </View>
+                          )}
                         </TouchableOpacity>
                       );
                     })
@@ -570,5 +572,18 @@ const styles = StyleSheet.create({
   },
   cancelTextDark: {
     color: '#999',
+  },
+  
+  // Text Only Badge
+  textOnlyBadge: {
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  textOnlyText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#666',
   },
 });

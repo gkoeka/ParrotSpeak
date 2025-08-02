@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput } from 'react-native';
 
 import { startRecording, stopRecording, processRecording, speakText } from '../api/speechService';
 import { translateText } from '../api/languageService';
+import { getLanguageByCode } from '../constants/languageConfiguration';
 
 interface VoiceInputControlsProps {
   onMessage: (message: {
@@ -25,6 +26,14 @@ export default function VoiceInputControls({
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [recordingUri, setRecordingUri] = useState<string | null>(null);
+  const [textInput, setTextInput] = useState('');
+  const [showTextInput, setShowTextInput] = useState(false);
+  
+  // Check if source or target language supports speech
+  const sourceLanguageConfig = getLanguageByCode(sourceLanguage);
+  const targetLanguageConfig = getLanguageByCode(targetLanguage);
+  const isSourceSpeechSupported = sourceLanguageConfig?.speechSupported ?? true;
+  const isTargetSpeechSupported = targetLanguageConfig?.speechSupported ?? true;
 
   const handleStartRecording = async () => {
     try {
@@ -102,37 +111,121 @@ export default function VoiceInputControls({
 
   const speakTranslation = async (text: string, languageCode: string) => {
     try {
-      await speakText(text, languageCode);
+      // Only speak if target language supports speech
+      if (isTargetSpeechSupported) {
+        await speakText(text, languageCode);
+      }
     } catch (error) {
       console.error('Error speaking translation:', error);
       // Don't show error to user for speech synthesis failures
     }
   };
+  
+  const handleTextSubmit = async () => {
+    if (!textInput.trim()) return;
+    
+    setIsProcessing(true);
+    try {
+      // Translate the text
+      const translationResult = await translateText(
+        textInput,
+        sourceLanguage,
+        targetLanguage
+      );
+      
+      // Speak if supported
+      await speakTranslation(translationResult.translation, targetLanguage);
+      
+      // Add to conversation
+      const message = {
+        id: Date.now().toString(),
+        text: textInput,
+        translation: translationResult.translation,
+        fromLanguage: sourceLanguage,
+        toLanguage: targetLanguage,
+        timestamp: new Date()
+      };
+      
+      onMessage(message);
+      setTextInput('');
+      setShowTextInput(false);
+    } catch (error) {
+      console.error('Error translating text:', error);
+      Alert.alert('Error', 'Failed to translate text. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
+      {/* Text-only warning if either language doesn't support speech */}
+      {(!isSourceSpeechSupported || !isTargetSpeechSupported) && (
+        <View style={styles.textOnlyWarning}>
+          <Text style={styles.textOnlyWarningText}>
+            Text-only support: You can type but not {!isSourceSpeechSupported ? 'speak' : 'hear'} this language in the app.
+          </Text>
+        </View>
+      )}
+      
+      {/* Voice controls - disabled if source doesn't support speech */}
       <TouchableOpacity
         style={[
           styles.recordButton,
           isRecording && styles.recordButtonActive,
-          isProcessing && styles.recordButtonProcessing
+          isProcessing && styles.recordButtonProcessing,
+          !isSourceSpeechSupported && styles.recordButtonDisabled
         ]}
         onPress={isRecording ? handleStopRecording : handleStartRecording}
-        disabled={isProcessing}
+        disabled={isProcessing || !isSourceSpeechSupported}
       >
         <Text style={styles.recordIcon}>
-          {isProcessing ? '⏳' : isRecording ? '⏹️' : '🎤'}
+          {!isSourceSpeechSupported ? '🚫' : isProcessing ? '⏳' : isRecording ? '⏹️' : '🎤'}
         </Text>
       </TouchableOpacity>
       
       <Text style={styles.instructionText}>
-        {isProcessing 
+        {!isSourceSpeechSupported
+          ? 'Voice input not available for this language'
+          : isProcessing 
           ? 'Processing...' 
           : isRecording 
             ? 'Tap to stop recording' 
             : 'Tap to start speaking'
         }
       </Text>
+      
+      {/* Text input option for text-only languages */}
+      {!isSourceSpeechSupported && (
+        <>
+          <TouchableOpacity
+            style={styles.textInputButton}
+            onPress={() => setShowTextInput(!showTextInput)}
+          >
+            <Text style={styles.textInputButtonText}>Type instead ⌨️</Text>
+          </TouchableOpacity>
+          
+          {showTextInput && (
+            <View style={styles.textInputContainer}>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Type your message here..."
+                value={textInput}
+                onChangeText={setTextInput}
+                multiline
+                onSubmitEditing={handleTextSubmit}
+              />
+              <TouchableOpacity
+                style={[styles.sendButton, isProcessing && styles.sendButtonDisabled]}
+                onPress={handleTextSubmit}
+                disabled={isProcessing || !textInput.trim()}
+              >
+                <Text style={styles.sendButtonText}>Send →</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </>
+      )}
     </View>
   );
 }
@@ -173,5 +266,72 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     textAlign: 'center',
+  },
+  recordButtonDisabled: {
+    backgroundColor: '#ccc',
+    opacity: 0.6,
+  },
+  textOnlyWarning: {
+    backgroundColor: '#fff3cd',
+    borderColor: '#ffeaa7',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+    marginHorizontal: 20,
+  },
+  textOnlyWarningText: {
+    color: '#856404',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  textInputButton: {
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#dee2e6',
+  },
+  textInputButtonText: {
+    fontSize: 14,
+    color: '#495057',
+    fontWeight: '600',
+  },
+  textInputContainer: {
+    marginTop: 16,
+    paddingHorizontal: 20,
+    width: '100%',
+  },
+  textInput: {
+    backgroundColor: '#f8f9fa',
+    borderWidth: 1,
+    borderColor: '#dee2e6',
+    borderRadius: 8,
+    padding: 12,
+    minHeight: 80,
+    fontSize: 16,
+    color: '#333',
+    textAlignVertical: 'top',
+  },
+  sendButton: {
+    backgroundColor: '#3366FF',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    alignSelf: 'flex-end',
+    marginTop: 8,
+  },
+  sendButtonDisabled: {
+    backgroundColor: '#ccc',
+    opacity: 0.6,
+  },
+  sendButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

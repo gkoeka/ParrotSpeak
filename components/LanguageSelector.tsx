@@ -81,9 +81,10 @@ export default function LanguageSelector({
     const language = allLanguages.find(lang => lang.code === code);
     if (!language) return code;
     
-    // Format: Flag + "Language Name"
+    // Format: Flag + "Language Name" + "(Text Only)" if applicable
     const flag = getFlagEmoji(language);
-    return `${flag} ${language.name}`;
+    const textOnlyLabel = !language.speechSupported ? ' (Text Only)' : '';
+    return `${flag} ${language.name}${textOnlyLabel}`;
   };
 
   const handleSwapLanguages = () => {
@@ -164,6 +165,7 @@ export default function LanguageSelector({
                             isSelected && styles.languageNameSelected
                           ]}>
                             {language.name}
+                            {!language.speechSupported && ' (Text Only)'}
                           </Text>
                           <Text style={[
                             styles.languageNative, 
