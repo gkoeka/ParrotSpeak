@@ -4,10 +4,12 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import Header from '../components/Header';
 import VoiceInputControls from '../components/VoiceInputControls';
 import { isRTLLanguage, rtlStyle, getWritingDirection } from '../utils/rtlSupport';
+import { useTheme } from '../contexts/ThemeContext';
 
 import LanguageSelector from '../components/LanguageSelectorMobile';
 
 export default function ConversationScreen() {
+  const { isDarkMode } = useTheme();
   const [messages, setMessages] = useState<Array<{
     id: string;
     text: string;
@@ -21,7 +23,7 @@ export default function ConversationScreen() {
   const [targetLanguage, setTargetLanguage] = useState('es');
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isDarkMode && styles.containerDark]}>
       <Header />
       
       <LanguageSelector 
@@ -90,6 +92,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  containerDark: {
+    backgroundColor: '#1a1a1a',
   },
   messagesContainer: {
     flex: 1,

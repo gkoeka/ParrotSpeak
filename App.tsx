@@ -62,7 +62,6 @@ function AuthNavigator() {
       initialRouteName={user ? "Home" : "Auth"}
       screenOptions={{
         headerShown: false,
-        cardStyle: { backgroundColor: "#fff" },
       }}
     >
       {user ? (

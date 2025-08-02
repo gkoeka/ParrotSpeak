@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Platform } 
 import { Ionicons } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
@@ -13,6 +14,7 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
   const { login, register, loginWithGoogle, loginWithApple } = useAuth();
+  const { isDarkMode } = useTheme();
 
   useEffect(() => {
     checkAppleAuthAvailability();
@@ -73,12 +75,12 @@ export default function AuthScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isDarkMode && styles.containerDark]}>
       <View style={styles.content}>
-        <Text style={styles.title}>
+        <Text style={[styles.title, isDarkMode && styles.titleDark]}>
           {isLogin ? 'Welcome Back' : 'Create Account'}
         </Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.subtitle, isDarkMode && styles.subtitleDark]}>
           {isLogin ? 'Sign in to continue' : 'Join ParrotSpeak today'}
         </Text>
 
@@ -86,15 +88,17 @@ export default function AuthScreen() {
           {!isLogin && (
             <>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isDarkMode && styles.inputDark]}
                 placeholder="First Name"
+                placeholderTextColor={isDarkMode ? '#999' : '#666'}
                 value={firstName}
                 onChangeText={setFirstName}
                 autoCapitalize="words"
               />
               <TextInput
-                style={styles.input}
+                style={[styles.input, isDarkMode && styles.inputDark]}
                 placeholder="Last Name (optional)"
+                placeholderTextColor={isDarkMode ? '#999' : '#666'}
                 value={lastName}
                 onChangeText={setLastName}
                 autoCapitalize="words"
@@ -103,8 +107,9 @@ export default function AuthScreen() {
           )}
           
           <TextInput
-            style={styles.input}
+            style={[styles.input, isDarkMode && styles.inputDark]}
             placeholder="Email"
+            placeholderTextColor={isDarkMode ? '#999' : '#666'}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -112,8 +117,9 @@ export default function AuthScreen() {
           />
           
           <TextInput
-            style={styles.input}
+            style={[styles.input, isDarkMode && styles.inputDark]}
             placeholder="Password"
+            placeholderTextColor={isDarkMode ? '#999' : '#666'}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -192,6 +198,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  containerDark: {
+    backgroundColor: '#1a1a1a',
+  },
   content: {
     flex: 1,
     padding: 20,
@@ -204,11 +213,17 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: '#1a1a1a',
   },
+  titleDark: {
+    color: '#fff',
+  },
   subtitle: {
     fontSize: 16,
     textAlign: 'center',
     color: '#666',
     marginBottom: 40,
+  },
+  subtitleDark: {
+    color: '#999',
   },
   form: {
     gap: 16,
@@ -221,6 +236,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     backgroundColor: '#f8f9fa',
+    color: '#1a1a1a',
+  },
+  inputDark: {
+    backgroundColor: '#2a2a2a',
+    borderColor: '#333',
+    color: '#fff',
   },
   submitButton: {
     backgroundColor: '#3366FF',

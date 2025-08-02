@@ -4,12 +4,14 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../App';
 import Header from '../components/Header';
+import { useTheme } from '../contexts/ThemeContext';
 
 type CheckoutRouteProp = RouteProp<RootStackParamList, 'Checkout'>;
 
 export default function CheckoutScreen() {
   const route = useRoute<CheckoutRouteProp>();
   const navigation = useNavigation();
+  const { isDarkMode } = useTheme();
   const [loading, setLoading] = useState(false);
   
   const { plan, amount, interval } = route.params;
@@ -36,11 +38,11 @@ export default function CheckoutScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isDarkMode && styles.containerDark]}>
       <Header />
       
       <View style={styles.content}>
-        <Text style={styles.title}>Complete Purchase</Text>
+        <Text style={[styles.title, isDarkMode && styles.titleDark]}>Complete Purchase</Text>
         
         <View style={styles.orderSummary}>
           <Text style={styles.summaryTitle}>Order Summary</Text>
@@ -101,6 +103,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  containerDark: {
+    backgroundColor: '#1a1a1a',
+  },
   content: {
     flex: 1,
     padding: 20,
@@ -110,6 +115,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 24,
     color: '#1a1a1a',
+  },
+  titleDark: {
+    color: '#fff',
   },
   orderSummary: {
     backgroundColor: '#f8f9fa',
