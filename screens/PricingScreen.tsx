@@ -7,7 +7,8 @@ import {
   TouchableOpacity, 
   Dimensions,
   Animated,
-  Platform
+  Platform,
+  Switch
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -210,56 +211,6 @@ export default function PricingScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Billing Toggle - Only show for subscription */}
-        {selectedTab === 'subscription' && (
-          <View style={styles.billingToggleContainer}>
-          <View style={[styles.billingToggle, isDarkMode && styles.billingToggleDark]}>
-            <Animated.View
-              style={[
-                styles.billingToggleSlider,
-                {
-                  transform: [{
-                    translateX: slideAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0, width * 0.42],
-                    })
-                  }]
-                }
-              ]}
-            />
-            <TouchableOpacity
-              style={styles.billingOption}
-              onPress={() => toggleBilling('monthly')}
-            >
-              <Text style={[
-                styles.billingOptionText,
-                selectedBilling === 'monthly' && styles.billingOptionTextActive,
-                isDarkMode && styles.billingOptionTextDark
-              ]}>
-                Monthly
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.billingOption}
-              onPress={() => toggleBilling('yearly')}
-            >
-              <Text style={[
-                styles.billingOptionText,
-                selectedBilling === 'yearly' && styles.billingOptionTextActive,
-                isDarkMode && styles.billingOptionTextDark
-              ]}>
-                Yearly
-              </Text>
-              {selectedBilling === 'yearly' && (
-                <View style={styles.savingsBadge}>
-                  <Text style={styles.savingsBadgeText}>-20%</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-        )}
-
         {/* Plans */}
         {plans.map((plan, index) => (
           <Animated.View
@@ -317,6 +268,22 @@ export default function PricingScreen() {
                 </View>
               )}
             </View>
+
+            {/* Billing Toggle for Subscription Plan */}
+            {plan.type === 'subscription' && (
+              <View style={styles.billingToggleRow}>
+                <Text style={[styles.billingToggleLabel, isDarkMode && styles.billingToggleLabelDark]}>
+                  Bill yearly
+                </Text>
+                <Switch
+                  value={selectedBilling === 'yearly'}
+                  onValueChange={(value) => setSelectedBilling(value ? 'yearly' : 'monthly')}
+                  trackColor={{ false: '#e0e0e0', true: '#3366FF' }}
+                  thumbColor={selectedBilling === 'yearly' ? '#fff' : '#f4f3f4'}
+                  ios_backgroundColor="#e0e0e0"
+                />
+              </View>
+            )}
 
             <View style={styles.featuresContainer}>
               {plan.features.map((feature, featureIndex) => (
@@ -627,6 +594,24 @@ const styles = StyleSheet.create({
     color: '#4CAF50',
     fontSize: 14,
     fontWeight: '600',
+  },
+  billingToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#f8f9ff',
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  billingToggleLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1a1a1a',
+  },
+  billingToggleLabelDark: {
+    color: '#fff',
   },
   featuresContainer: {
     marginBottom: 24,
