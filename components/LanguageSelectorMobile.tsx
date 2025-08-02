@@ -118,8 +118,12 @@ export default function LanguageSelector({
             style={styles.modalBackdrop} 
             activeOpacity={1} 
             onPress={onClose}
+            testID="modal-backdrop"
           >
-            <View style={[styles.modalContent, isDark && styles.modalContentDark]}>
+            <View 
+              style={[styles.modalContent, isDark && styles.modalContentDark]}
+              testID="language-modal"
+            >
               <TouchableOpacity activeOpacity={1}>
                 {/* Header with Title */}
                 <View style={styles.modalHeader}>
@@ -139,6 +143,7 @@ export default function LanguageSelector({
                     autoCapitalize="none"
                     autoCorrect={false}
                     clearButtonMode="while-editing"
+                    testID="language-search-input"
                   />
                 </View>
                 
@@ -267,6 +272,7 @@ export default function LanguageSelector({
       <TouchableOpacity 
         style={[styles.languageButton, isDark && styles.languageButtonDark]}
         onPress={() => setShowSourceModal(true)}
+        testID="source-language-button"
       >
         <Text style={[styles.languageLabel, isDark && styles.languageLabelDark]}>From</Text>
         <Text style={[styles.languageValue, isDark && styles.languageValueDark]} numberOfLines={2}>
@@ -274,13 +280,18 @@ export default function LanguageSelector({
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.swapButton} onPress={handleSwapLanguages}>
+      <TouchableOpacity 
+        style={styles.swapButton} 
+        onPress={handleSwapLanguages}
+        testID="swap-languages-button"
+      >
         <Text style={styles.swapIcon}>⇄</Text>
       </TouchableOpacity>
 
       <TouchableOpacity 
         style={[styles.languageButton, isDark && styles.languageButtonDark]}
         onPress={() => setShowTargetModal(true)}
+        testID="target-language-button"
       >
         <Text style={[styles.languageLabel, isDark && styles.languageLabelDark]}>To</Text>
         <Text style={[styles.languageValue, isDark && styles.languageValueDark]} numberOfLines={2}>
