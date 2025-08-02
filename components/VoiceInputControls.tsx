@@ -30,8 +30,22 @@ export default function VoiceInputControls({
   const [showTextInput, setShowTextInput] = useState(false);
   
   // Check if source or target language supports speech
-  const sourceLanguageConfig = getLanguageByCode(sourceLanguage);
-  const targetLanguageConfig = getLanguageByCode(targetLanguage);
+  // Handle language codes that might be passed with regional variants
+  const normalizeLanguageCode = (code: string) => {
+    // For language codes like 'en-US', 'es-ES', use the base code for lookup
+    if (code.includes('-') && code.length > 3) {
+      const baseCode = code.split('-')[0];
+      // Check if we have a specific regional variant first
+      const specificLang = getLanguageByCode(code);
+      if (specificLang) return specificLang;
+      // Otherwise try the base code
+      return getLanguageByCode(baseCode);
+    }
+    return getLanguageByCode(code);
+  };
+  
+  const sourceLanguageConfig = normalizeLanguageCode(sourceLanguage);
+  const targetLanguageConfig = normalizeLanguageCode(targetLanguage);
   const isSourceSpeechSupported = sourceLanguageConfig?.speechSupported ?? true;
   const isTargetSpeechSupported = targetLanguageConfig?.speechSupported ?? true;
 
@@ -157,13 +171,30 @@ export default function VoiceInputControls({
     }
   };
 
+  // Generate dynamic message based on which language is text-only
+  const getTextOnlyMessage = () => {
+    if (!sourceLanguageConfig || !targetLanguageConfig) return '';
+    
+    if (!isSourceSpeechSupported && !isTargetSpeechSupported) {
+      // Both are text-only
+      return `Text-only support: Both ${sourceLanguageConfig.name} and ${targetLanguageConfig.name} are only available as text in this app.`;
+    } else if (!isSourceSpeechSupported) {
+      // Only source is text-only
+      return `Text-only support: You can speak and hear in ${targetLanguageConfig.name}, but ${sourceLanguageConfig.name} is only available as text in this app.`;
+    } else if (!isTargetSpeechSupported) {
+      // Only target is text-only
+      return `Text-only support: You can speak and hear in ${sourceLanguageConfig.name}, but ${targetLanguageConfig.name} is only available as text in this app.`;
+    }
+    return '';
+  };
+
   return (
     <View style={styles.container}>
       {/* Text-only warning if either language doesn't support speech */}
       {(!isSourceSpeechSupported || !isTargetSpeechSupported) && (
         <View style={styles.textOnlyWarning}>
           <Text style={styles.textOnlyWarningText}>
-            Text-only support: You can type but not {!isSourceSpeechSupported ? 'speak' : 'hear'} this language in the app.
+            {getTextOnlyMessage()}
           </Text>
         </View>
       )}
