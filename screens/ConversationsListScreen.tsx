@@ -5,12 +5,18 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
 import Header from '../components/Header';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
 
 type ConversationsListNavigationProp = StackNavigationProp<RootStackParamList, 'ConversationsList'>;
 
 export default function ConversationsListScreen() {
   const navigation = useNavigation<ConversationsListNavigationProp>();
   const { isDarkMode } = useTheme();
+  const { user } = useAuth();
+  
+  // Check subscription status
+  const hasActiveSubscription = user?.subscriptionStatus === 'active' || user?.subscriptionTier === 'lifetime';
 
   // Mock data for now
   const conversations = [
@@ -43,6 +49,45 @@ export default function ConversationsListScreen() {
       <Text style={[styles.messageCount, isDarkMode && styles.messageCountDark]}>{item.messageCount} messages</Text>
     </TouchableOpacity>
   );
+
+  // Show subscription required screen for non-subscribers
+  if (!hasActiveSubscription) {
+    return (
+      <View style={[styles.container, isDarkMode && styles.containerDark]}>
+        <Header />
+        
+        <View style={styles.subscriptionRequiredContainer}>
+          <Ionicons 
+            name="folder-open" 
+            size={64} 
+            color={isDarkMode ? '#5c8cff' : '#3366FF'} 
+          />
+          <Text style={[styles.subscriptionTitle, isDarkMode && styles.subscriptionTitleDark]}>
+            Subscription Required
+          </Text>
+          <Text style={[styles.subscriptionMessage, isDarkMode && styles.subscriptionMessageDark]}>
+            Access to conversation history is available to active subscribers only.
+          </Text>
+          <TouchableOpacity 
+            style={[styles.subscribeButton, isDarkMode && styles.subscribeButtonDark]}
+            onPress={() => navigation.navigate('Pricing')}
+          >
+            <Text style={styles.subscribeButtonText}>Choose a Plan</Text>
+          </TouchableOpacity>
+          
+          <Text style={[styles.accessInfo, isDarkMode && styles.accessInfoDark]}>
+            As a free user, you can access:
+          </Text>
+          <View style={styles.accessList}>
+            <Text style={[styles.accessItem, isDarkMode && styles.accessItemDark]}>• Profile Settings</Text>
+            <Text style={[styles.accessItem, isDarkMode && styles.accessItemDark]}>• Help Center</Text>
+            <Text style={[styles.accessItem, isDarkMode && styles.accessItemDark]}>• Manage Plan</Text>
+            <Text style={[styles.accessItem, isDarkMode && styles.accessItemDark]}>• Account Settings</Text>
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
@@ -171,6 +216,68 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   messageCountDark: {
+    color: '#999',
+  },
+  // Subscription required styles
+  subscriptionRequiredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  subscriptionTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginTop: 24,
+    marginBottom: 12,
+  },
+  subscriptionTitleDark: {
+    color: '#fff',
+  },
+  subscriptionMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 24,
+  },
+  subscriptionMessageDark: {
+    color: '#ccc',
+  },
+  subscribeButton: {
+    backgroundColor: '#3366FF',
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginBottom: 32,
+  },
+  subscribeButtonDark: {
+    backgroundColor: '#5c8cff',
+  },
+  subscribeButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  accessInfo: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
+  },
+  accessInfoDark: {
+    color: '#999',
+  },
+  accessList: {
+    alignItems: 'flex-start',
+  },
+  accessItem: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  accessItemDark: {
     color: '#999',
   },
 });
