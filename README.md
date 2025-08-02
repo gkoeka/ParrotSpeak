@@ -6,6 +6,14 @@ A mobile-first AI-powered voice translation application using React Native and E
 
 ## 🎉 Recent Updates
 
+### Language Expansion & RTL Support (August 2, 2025)
+- **✅ Extended to 65 Languages** - Added Filipino, Cantonese, Kazakh, Uzbek, Azerbaijani, Sinhala, Slovenian, Icelandic, Maltese, and Albanian
+- **✅ Full RTL Layout Support** - Implemented right-to-left layouts for Arabic, Hebrew, Persian, and Urdu with automatic text direction detection
+- **✅ Enhanced Speech Synthesis** - Fixed Slovenian and other language audio with locale-specific mapping (sl-SI, fil-PH) and async fallback mechanisms
+- **✅ Low-Resolution Device Support** - Optimized UI components for devices as small as 320x480 with proper scrolling and touch targets
+- **✅ Jest Testing Framework** - Created comprehensive snapshot tests for LanguageSelectorMobile component with 16 test cases
+- **✅ OAuth Compatibility Fix** - Resolved Google Sign-In module error for Expo Go development environment
+
 ### Mobile-Only Optimization (August 1, 2025)
 - **✅ Mobile-Only Configuration Complete** - Removed all web platform checks (`Platform.OS !== 'web'`) and web build configurations
 - **✅ Native Module Optimization** - Simplified availability checks to use `!!Module` instead of platform conditions for better performance
