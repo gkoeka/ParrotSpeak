@@ -7,6 +7,7 @@ import { ActivityIndicator, View } from "react-native";
 
 // Auth Provider
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 
 // Screens
 import HomeScreen from "./screens/HomeScreen";
@@ -20,6 +21,7 @@ import SubscriptionPlansScreen from "./screens/SubscriptionPlansScreen";
 import PasswordResetScreen from "./screens/PasswordResetScreen";
 import FeedbackScreen from "./screens/FeedbackScreen";
 import CheckoutScreen from "./screens/CheckoutScreen";
+import PricingScreen from "./screens/PricingScreen";
 
 // Define the stack navigator params
 export type RootStackParamList = {
@@ -31,9 +33,13 @@ export type RootStackParamList = {
   Auth: undefined;
   Profile: undefined;
   SubscriptionPlans: undefined;
+  Pricing: undefined;
   Checkout: { plan: string; amount: number; interval: string };
   PasswordReset: { token?: string };
   Feedback: undefined;
+  HelpCenter: undefined;
+  PrivacyPolicy: undefined;
+  CompareFeatures: undefined;
 };
 
 // Create stack navigator
@@ -75,6 +81,7 @@ function AuthNavigator() {
             name="SubscriptionPlans"
             component={SubscriptionPlansScreen}
           />
+          <Stack.Screen name="Pricing" component={PricingScreen} />
           <Stack.Screen name="Checkout" component={CheckoutScreen} />
           <Stack.Screen name="Feedback" component={FeedbackScreen} />
         </>
@@ -94,9 +101,11 @@ export default function App() {
     <SafeAreaProvider>
       <StatusBar barStyle="dark-content" />
       <AuthProvider>
-        <NavigationContainer>
-          <AuthNavigator />
-        </NavigationContainer>
+        <ThemeProvider>
+          <NavigationContainer>
+            <AuthNavigator />
+          </NavigationContainer>
+        </ThemeProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );
