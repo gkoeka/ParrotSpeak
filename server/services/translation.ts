@@ -118,6 +118,8 @@ function getLanguageName(languageCode: string): string {
     
     // Special languages
     "xsr-NP": "Sherpa",
+    "sher": "Sherpa",
+    "dz": "Bhutanese (Dzongkha)",
     "yue-HK": "Cantonese",
     
     // Indian languages
@@ -125,6 +127,10 @@ function getLanguageName(languageCode: string): string {
     "te-IN": "Telugu",
     "mr-IN": "Marathi",
     "gu-IN": "Gujarati",
+    "ta": "Tamil",
+    "te": "Telugu",
+    "mr": "Marathi",
+    "gu": "Gujarati",
     
     // Eastern Europe
     "pl-PL": "Polish",
@@ -165,5 +171,17 @@ function getLanguageName(languageCode: string): string {
     "kk-KZ": "Kazakh"
   };
 
-  return codeMap[languageCode] || languageCode.split('-')[0];
+  // Check exact match first
+  if (codeMap[languageCode]) {
+    return codeMap[languageCode];
+  }
+  
+  // Check base language code without region
+  const baseCode = languageCode.split('-')[0];
+  if (codeMap[baseCode]) {
+    return codeMap[baseCode];
+  }
+  
+  // Fallback to the code itself
+  return languageCode;
 }
