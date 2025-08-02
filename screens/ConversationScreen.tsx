@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
 import LanguageSelector from '../components/LanguageSelectorMobile';
+import PerformanceIndicator from '../components/PerformanceMonitor';
 
 type ConversationNavigationProp = StackNavigationProp<RootStackParamList, 'Conversation'>;
 
@@ -82,6 +83,8 @@ export default function ConversationScreen() {
         onSourceLanguageChange={setSourceLanguage}
         onTargetLanguageChange={setTargetLanguage}
       />
+      
+      <PerformanceIndicator showDetails={false} />
       
       <ScrollView style={styles.messagesContainer}>
         {messages.length === 0 ? (

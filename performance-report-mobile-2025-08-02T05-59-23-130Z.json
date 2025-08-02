@@ -1,0 +1,95 @@
+{
+  "totalTests": 46,
+  "successfulTests": 40,
+  "failedTests": 6,
+  "avgTime": 2085,
+  "minTime": 1225,
+  "maxTime": 5101,
+  "p50": 1768,
+  "p95": 3598,
+  "p99": 5101,
+  "under1500ms": 9,
+  "under1500msPercentage": 23,
+  "byNetwork": {
+    "WiFi-Excellent": {
+      "tests": 14,
+      "successful": 12,
+      "avgTime": 2324,
+      "successRate": 86
+    },
+    "WiFi-Good": {
+      "tests": 10,
+      "successful": 9,
+      "avgTime": 2039,
+      "successRate": 90
+    },
+    "LTE-Excellent": {
+      "tests": 3,
+      "successful": 3,
+      "avgTime": 2051,
+      "successRate": 100
+    },
+    "LTE-Average": {
+      "tests": 10,
+      "successful": 9,
+      "avgTime": 1802,
+      "successRate": 90
+    },
+    "3G-Good": {
+      "tests": 3,
+      "successful": 3,
+      "avgTime": 1854,
+      "successRate": 100
+    },
+    "3G-Poor": {
+      "tests": 3,
+      "successful": 2,
+      "avgTime": 2091,
+      "successRate": 67
+    },
+    "Edge": {
+      "tests": 3,
+      "successful": 2,
+      "avgTime": 2528,
+      "successRate": 67
+    }
+  },
+  "timeline": {
+    "0": {
+      "avgTime": 2631,
+      "count": 2
+    },
+    "10": {
+      "avgTime": 3154,
+      "count": 4
+    },
+    "20": {
+      "avgTime": 1882,
+      "count": 5
+    },
+    "30": {
+      "avgTime": 1950,
+      "count": 6
+    },
+    "40": {
+      "avgTime": 1949,
+      "count": 6
+    },
+    "50": {
+      "avgTime": 1957,
+      "count": 9
+    },
+    "60": {
+      "avgTime": 1777,
+      "count": 3
+    },
+    "70": {
+      "avgTime": 1982,
+      "count": 4
+    },
+    "80": {
+      "avgTime": 1849,
+      "count": 1
+    }
+  }
+}

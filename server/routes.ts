@@ -886,6 +886,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: errorMessage });
     }
   });
+  
+  // Performance test endpoint (no auth required for benchmarking)
+  app.post('/api/performance-test', async (req: Request, res: Response) => {
+    const startTime = Date.now();
+    try {
+      const { type, text, sourceLanguage, targetLanguage, audio, language } = req.body;
+      
+      if (type === 'text') {
+        if (!text || !sourceLanguage || !targetLanguage) {
+          return res.status(400).json({ 
+            message: 'Text, source language, and target language are required' 
+          });
+        }
+        
+        // Import translation service
+        const { translateText } = await import('./services/translation');
+        
+        // Translate the text
+        const translationResult = await translateText(text, sourceLanguage, targetLanguage);
+        
+        const processingTime = Date.now() - startTime;
+        
+        // Add performance headers
+        res.set('X-Processing-Time', processingTime.toString());
+        
+        // Return the translation
+        res.json({
+          type: 'text',
+          translation: translationResult.translation,
+          originalText: translationResult.originalText,
+          processingTime
+        });
+        
+      } else if (type === 'audio') {
+        if (!audio) {
+          return res.status(400).json({ message: 'Audio data is required' });
+        }
+        
+        // Import optimized audio service
+        const { transcribeAudioOptimized } = await import('./services/optimizedAudio');
+        
+        // Convert Base64 audio data to buffer
+        const audioBuffer = Buffer.from(audio, 'base64');
+        
+        // Transcribe
+        const transcription = await transcribeAudioOptimized(audioBuffer, language);
+        
+        const processingTime = Date.now() - startTime;
+        
+        // Add performance headers
+        res.set('X-Processing-Time', processingTime.toString());
+        
+        // Return the transcription
+        res.json({
+          type: 'audio',
+          text: transcription,
+          processingTime
+        });
+      } else {
+        return res.status(400).json({ message: 'Invalid test type' });
+      }
+      
+    } catch (error) {
+      const processingTime = Date.now() - startTime;
+      console.error(`Performance test error after ${processingTime}ms:`, error);
+      res.status(500).json({ 
+        message: 'Performance test failed',
+        processingTime 
+      });
+    }
+  });
 
   // BACKUP CODES ROUTE
   app.post('/api/backup-codes-generate', requireAuth, async (req: Request, res: Response) => {

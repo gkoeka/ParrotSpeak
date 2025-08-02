@@ -68,6 +68,7 @@
     "memoizee": "^0.4.17",
     "mixpanel": "^0.18.1",
     "multer": "^2.0.1",
+    "node-fetch": "^3.3.2",
     "openai": "^4.104.0",
     "openid-client": "^6.6.2",
     "ora": "^8.2.0",
