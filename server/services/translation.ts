@@ -122,6 +122,18 @@ function getLanguageName(languageCode: string): string {
     "dz": "Bhutanese (Dzongkha)",
     "yue-HK": "Cantonese",
     
+    // New languages batch 1
+    "fil": "Filipino",
+    "yue": "Cantonese",
+    "kk": "Kazakh",
+    "uz": "Uzbek",
+    "az": "Azerbaijani",
+    "si": "Sinhala",
+    "sl": "Slovenian",
+    "is": "Icelandic",
+    "mt": "Maltese",
+    "sq": "Albanian",
+    
     // Indian languages
     "ta-IN": "Tamil",
     "te-IN": "Telugu",

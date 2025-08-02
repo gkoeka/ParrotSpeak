@@ -355,6 +355,32 @@ export const LANGUAGE_CONFIGURATIONS: LanguageConfiguration[] = [
     popularity: 4
   },
   {
+    code: "sl",
+    name: "Slovenian",
+    nativeName: "Slovenščina",
+    country: "Slovenia",
+    flag: "https://flagcdn.com/si.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'medium',
+    popularity: 3
+  },
+  {
+    code: "is",
+    name: "Icelandic",
+    nativeName: "Íslenska",
+    country: "Iceland",
+    flag: "https://flagcdn.com/is.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'medium',
+    popularity: 3
+  },
+  {
     code: "el",
     name: "Greek",
     nativeName: "Ελληνικά",
@@ -579,6 +605,104 @@ export const LANGUAGE_CONFIGURATIONS: LanguageConfiguration[] = [
   },
 
   // Tier 5: Basic support languages
+  {
+    code: "fil",
+    name: "Filipino",
+    nativeName: "Wikang Filipino",
+    country: "Philippines",
+    flag: "https://flagcdn.com/ph.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'medium',
+    popularity: 6
+  },
+  {
+    code: "yue",
+    name: "Cantonese",
+    nativeName: "廣東話",
+    country: "Hong Kong",
+    flag: "https://flagcdn.com/hk.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'medium',
+    popularity: 6
+  },
+  {
+    code: "kk",
+    name: "Kazakh",
+    nativeName: "Қазақ тілі",
+    country: "Kazakhstan",
+    flag: "https://flagcdn.com/kz.svg",
+    speechSupported: false,
+    speechToTextSupported: false,
+    textToSpeechSupported: false,
+    translationQuality: 'basic',
+    popularity: 3
+  },
+  {
+    code: "uz",
+    name: "Uzbek",
+    nativeName: "Oʻzbek tili",
+    country: "Uzbekistan",
+    flag: "https://flagcdn.com/uz.svg",
+    speechSupported: false,
+    speechToTextSupported: false,
+    textToSpeechSupported: false,
+    translationQuality: 'basic',
+    popularity: 3
+  },
+  {
+    code: "az",
+    name: "Azerbaijani",
+    nativeName: "Azərbaycan dili",
+    country: "Azerbaijan",
+    flag: "https://flagcdn.com/az.svg",
+    speechSupported: false,
+    speechToTextSupported: false,
+    textToSpeechSupported: false,
+    translationQuality: 'basic',
+    popularity: 3
+  },
+  {
+    code: "si",
+    name: "Sinhala",
+    nativeName: "සිංහල",
+    country: "Sri Lanka",
+    flag: "https://flagcdn.com/lk.svg",
+    speechSupported: false,
+    speechToTextSupported: false,
+    textToSpeechSupported: false,
+    translationQuality: 'basic',
+    popularity: 3
+  },
+  {
+    code: "mt",
+    name: "Maltese",
+    nativeName: "Malti",
+    country: "Malta",
+    flag: "https://flagcdn.com/mt.svg",
+    speechSupported: false,
+    speechToTextSupported: false,
+    textToSpeechSupported: false,
+    translationQuality: 'basic',
+    popularity: 2
+  },
+  {
+    code: "sq",
+    name: "Albanian",
+    nativeName: "Shqip",
+    country: "Albania",
+    flag: "https://flagcdn.com/al.svg",
+    speechSupported: false,
+    speechToTextSupported: false,
+    textToSpeechSupported: false,
+    translationQuality: 'basic',
+    popularity: 3
+  },
   {
     code: "af",
     name: "Afrikaans",
