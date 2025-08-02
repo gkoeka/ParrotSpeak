@@ -13,12 +13,28 @@ import Header from '../components/Header';
 import { performanceTestRunner } from '../utils/performanceTestRunner';
 import { performanceMonitor } from '../utils/performanceMonitor';
 import { translationCache } from '../utils/translationCache';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigation } from '@react-navigation/native';
 
 export default function PerformanceTestScreen() {
   const { theme } = useTheme();
+  const { user } = useAuth();
+  const navigation = useNavigation();
   const [isRunning, setIsRunning] = useState(false);
   const [testReport, setTestReport] = useState<string>('');
   const [currentTest, setCurrentTest] = useState<string>('');
+  
+  // Restrict access to greg@parrotspeak.com only
+  React.useEffect(() => {
+    if (!user || user.email !== 'greg@parrotspeak.com') {
+      navigation.goBack();
+    }
+  }, [user, navigation]);
+  
+  // If not authorized, don't render
+  if (!user || user.email !== 'greg@parrotspeak.com') {
+    return null;
+  }
   
   const runPerformanceTests = async () => {
     setIsRunning(true);

@@ -187,13 +187,15 @@ export default function SettingsScreen() {
               <Text style={[styles.optionText, isDarkMode && styles.optionTextDark]}>Version</Text>
               <Text style={[styles.optionValue, isDarkMode && styles.optionValueDark]}>1.0.0 (Build 100)</Text>
             </View>
-            <TouchableOpacity 
-              style={styles.appInfoItem}
-              onPress={() => navigation.navigate('PerformanceTest' as any)}
-            >
-              <Text style={[styles.optionText, isDarkMode && styles.optionTextDark]}>Performance Testing</Text>
-              <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#999' : '#666'} />
-            </TouchableOpacity>
+            {user?.email === 'greg@parrotspeak.com' && (
+              <TouchableOpacity 
+                style={styles.appInfoItem}
+                onPress={() => navigation.navigate('PerformanceTest' as any)}
+              >
+                <Text style={[styles.optionText, isDarkMode && styles.optionTextDark]}>Performance Testing</Text>
+                <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#999' : '#666'} />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
         
