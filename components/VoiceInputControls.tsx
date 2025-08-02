@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput } from 'reac
 import { startRecording, stopRecording, processRecording, speakText } from '../api/speechService';
 import { translateText } from '../api/languageService';
 import { getLanguageByCode } from '../constants/languageConfiguration';
+import { performanceMonitor } from '../utils/performanceMonitor';
 
 interface VoiceInputControlsProps {
   onMessage: (message: {
@@ -86,22 +87,38 @@ export default function VoiceInputControls({
 
   const processAudio = async (uri: string) => {
     try {
+      // Performance timing
+      const startTime = Date.now();
+      const timings: Record<string, number> = {};
+      
       console.log('Processing audio...', uri);
       
       // Step 1: Transcribe audio to text
+      const transcribeStart = Date.now();
       const transcription = await processRecording(uri, sourceLanguage);
-      console.log('Transcription:', transcription);
+      timings.transcription = Date.now() - transcribeStart;
+      console.log(`Transcription (${timings.transcription}ms):`, transcription);
       
       // Step 2: Translate the text
+      const translateStart = Date.now();
       const translationResult = await translateText(
         transcription,
         sourceLanguage,
         targetLanguage
       );
-      console.log('Translation:', translationResult);
+      timings.translation = Date.now() - translateStart;
+      console.log(`Translation (${timings.translation}ms):`, translationResult);
       
-      // Step 3: Speak the translation
-      await speakTranslation(translationResult.translation, targetLanguage);
+      // Step 3: Speak the translation (non-blocking)
+      const speakStart = Date.now();
+      // Don't await speech synthesis to reduce total time
+      speakTranslation(translationResult.translation, targetLanguage)
+        .then(() => {
+          console.log(`Speech synthesis completed (${Date.now() - speakStart}ms)`);
+        })
+        .catch(err => {
+          console.error('Speech synthesis failed:', err);
+        });
       
       // Step 4: Add to conversation
       const message = {
@@ -115,6 +132,37 @@ export default function VoiceInputControls({
       
       onMessage(message);
       setIsProcessing(false);
+      
+      // Log total time
+      timings.total = Date.now() - startTime;
+      console.log('⏱️ Translation Performance:', {
+        transcription: `${timings.transcription}ms`,
+        translation: `${timings.translation}ms`,
+        total: `${timings.total}ms`,
+        target: '1500ms'
+      });
+      
+      // Track performance metrics
+      performanceMonitor.addMetric({
+        transcriptionTime: timings.transcription,
+        translationTime: timings.translation,
+        totalTime: timings.total,
+        audioSize: uri.length, // Approximate from URI length
+        textLength: transcription.length,
+        timestamp: new Date(),
+        sourceLanguage,
+        targetLanguage
+      });
+      
+      // Log performance stats periodically
+      if (Math.random() < 0.1) { // 10% of requests
+        const stats = performanceMonitor.getStats();
+        console.log('📊 Performance Stats:', stats);
+        const suggestions = performanceMonitor.getOptimizationSuggestions();
+        if (suggestions.length > 0) {
+          console.log('💡 Optimization suggestions:', suggestions);
+        }
+      }
       
     } catch (error) {
       console.error('Error processing audio:', error);

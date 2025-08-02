@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import rateLimit from "express-rate-limit";
 import slowDown from "express-slow-down";
 import helmet from "helmet";
+import compression from "compression";
 import { registerRoutes } from "./routes";
 // Mobile-only API server - no frontend serving needed
 import { setupAuth } from "./auth";
@@ -10,6 +11,20 @@ const app = express();
 
 // Basic setup for Replit environment
 app.set('trust proxy', 1);
+
+// Enable gzip compression for all responses
+app.use(compression({
+  level: 6, // Balance between compression ratio and speed
+  threshold: 1024, // Only compress responses larger than 1KB
+  filter: (req, res) => {
+    // Compress all JSON and text responses
+    const type = res.getHeader('Content-Type');
+    if (type && (type.includes('json') || type.includes('text'))) {
+      return true;
+    }
+    return compression.filter(req, res);
+  }
+}));
 
 // Enhanced JSON parsing with better error handling
 app.use(express.json({ 

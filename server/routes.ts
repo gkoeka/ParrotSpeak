@@ -769,6 +769,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Speech-to-text transcription endpoint
   app.post('/api/transcribe', requireAuth, requireSubscription, async (req: Request, res: Response) => {
+    const startTime = Date.now();
     try {
       const { audio, language } = req.body;
       
@@ -776,22 +777,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Audio data is required' });
       }
       
-      // Import OpenAI service
-      const { transcribeAudio } = await import('./services/openai');
+      // Import optimized audio service
+      const { transcribeAudioOptimized } = await import('./services/optimizedAudio');
       
       // Convert Base64 audio data to buffer
       const audioBuffer = Buffer.from(audio, 'base64');
       
-      // Transcribe the audio using OpenAI Whisper
-      const transcription = await transcribeAudio(audioBuffer, language);
+      // Log audio size for monitoring
+      console.log(`📊 Audio size: ${(audioBuffer.length / 1024).toFixed(2)}KB`);
       
-      console.log('Transcription successful:', transcription);
+      // Use optimized transcription (no file I/O)
+      const transcription = await transcribeAudioOptimized(audioBuffer, language);
+      
+      const processingTime = Date.now() - startTime;
+      console.log(`✅ Transcription successful in ${processingTime}ms:`, transcription.substring(0, 50) + '...');
+      
+      // Add performance headers
+      res.set('X-Processing-Time', processingTime.toString());
       
       // Return the transcribed text
       res.json({ text: transcription });
       
     } catch (error) {
-      console.error('Speech recognition error:', error);
+      const processingTime = Date.now() - startTime;
+      console.error(`❌ Speech recognition error after ${processingTime}ms:`, error);
       
       // Format a more user-friendly error message
       let errorMessage = 'Speech recognition failed';
@@ -821,6 +830,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Text translation endpoint
   app.post('/api/translate', requireAuth, requireSubscription, async (req: Request, res: Response) => {
+    const startTime = Date.now();
     try {
       const { text, sourceLanguage, targetLanguage } = req.body;
       
@@ -833,10 +843,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Import translation service
       const { translateText } = await import('./services/translation');
       
+      // Log text length for monitoring
+      console.log(`📊 Translating ${text.length} characters from ${sourceLanguage} to ${targetLanguage}`);
+      
       // Translate the text using OpenAI GPT-4
       const translationResult = await translateText(text, sourceLanguage, targetLanguage);
       
-      console.log('Translation successful:', translationResult.translation.substring(0, 50) + '...');
+      const processingTime = Date.now() - startTime;
+      console.log(`✅ Translation successful in ${processingTime}ms:`, translationResult.translation.substring(0, 50) + '...');
+      
+      // Add performance headers
+      res.set('X-Processing-Time', processingTime.toString());
       
       // Return the translation in expected format
       res.json({
@@ -845,7 +862,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
     } catch (error) {
-      console.error('Translation error:', error);
+      const processingTime = Date.now() - startTime;
+      console.error(`❌ Translation error after ${processingTime}ms:`, error);
       
       // Format user-friendly error message
       let errorMessage = 'Translation failed';
