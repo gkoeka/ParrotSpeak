@@ -1,21 +1,46 @@
 import * as AuthSession from 'expo-auth-session';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { GoogleSignin, statusCodes, ConfigureParams } from '@react-native-google-signin/google-signin';
 import { Platform } from 'react-native';
 import { API_BASE_URL } from '../api/config';
 
-// Configure Google Sign-In
-const googleConfig: ConfigureParams = {
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '', // From Google Cloud Console
-  iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID, // From Google Cloud Console
-};
-
-// Add Android client ID if available (different property name in newer versions)
-if (process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID) {
-  (googleConfig as any).googleServicePlistPath = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
+// Google Sign-In types
+interface GoogleSignInType {
+  configure: (config: any) => void;
+  hasPlayServices: () => Promise<void>;
+  signIn: () => Promise<any>;
+  signOut: () => Promise<void>;
+  isSignedIn: () => Promise<boolean>;
+  getCurrentUser: () => Promise<any>;
 }
 
-GoogleSignin.configure(googleConfig);
+// Initialize Google Sign-In conditionally
+let GoogleSignin: GoogleSignInType | null = null;
+let statusCodes: any = {};
+
+// Only load Google Sign-In in production builds or when not in Expo Go
+const isExpoGo = __DEV__ && Platform.OS !== 'web';
+
+if (!isExpoGo) {
+  try {
+    const googleSignInModule = require('@react-native-google-signin/google-signin');
+    GoogleSignin = googleSignInModule.GoogleSignin;
+    statusCodes = googleSignInModule.statusCodes;
+    
+    // Configure Google Sign-In
+    const googleConfig = {
+      webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
+      iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    };
+    
+    if (process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID) {
+      (googleConfig as any).googleServicePlistPath = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
+    }
+    
+    GoogleSignin.configure(googleConfig);
+  } catch (error) {
+    console.log('Google Sign-In module not available in this environment');
+  }
+}
 
 export const OAuthService = {
   // Apple Sign In
@@ -60,6 +85,12 @@ export const OAuthService = {
 
   // Google Sign In
   async signInWithGoogle(): Promise<any> {
+    // Check if Google Sign-In is available
+    if (!GoogleSignin) {
+      console.warn('Google Sign-In is not available in Expo Go. Use EAS Build for production.');
+      throw new Error('Google Sign-In requires a production build. Please use EAS Build.');
+    }
+    
     try {
       await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
@@ -103,6 +134,9 @@ export const OAuthService = {
 
   // Sign out from Google
   async signOutGoogle(): Promise<void> {
+    if (!GoogleSignin) {
+      return;
+    }
     try {
       await GoogleSignin.signOut();
     } catch (error) {
