@@ -112,7 +112,6 @@ export default function PricingScreen() {
       interval: 'one-time',
       duration: '90 days',
       description: 'For digital nomads',
-      savings: 'Save $4.98',
       type: 'traveler',
       features: [
         '90 days of access',
@@ -129,7 +128,6 @@ export default function PricingScreen() {
       interval: 'one-time',
       duration: '180 days',
       description: 'Extended stays abroad',
-      savings: 'Save $19.95',
       type: 'traveler',
       features: [
         '180 days of access',
