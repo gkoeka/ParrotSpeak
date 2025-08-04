@@ -148,6 +148,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(404).send('Test script not found');
   });
 
+  // IAP validation endpoint
+  app.post('/api/validate-purchase', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { platform, productId, purchaseToken, transactionId, transactionDate } = req.body;
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      // Map product IDs to subscription tiers and durations
+      const productMapping: Record<string, { tier: string; duration: number; unit: 'days' | 'months' | 'years' }> = {
+        'com.parrotspeak.monthly': { tier: 'premium', duration: 1, unit: 'months' },
+        'com.parrotspeak.yearly': { tier: 'premium', duration: 1, unit: 'years' },
+        'com.parrotspeak.week_pass': { tier: 'traveler', duration: 7, unit: 'days' },
+        'com.parrotspeak.month_pass': { tier: 'traveler', duration: 30, unit: 'days' },
+        'com.parrotspeak.three_month_pass': { tier: 'traveler', duration: 90, unit: 'days' },
+        'com.parrotspeak.six_month_pass': { tier: 'traveler', duration: 180, unit: 'days' }
+      };
+
+      const product = productMapping[productId];
+      if (!product) {
+        return res.status(400).json({ error: 'Invalid product ID' });
+      }
+
+      // Calculate expiration date
+      const now = new Date();
+      const expiresAt = new Date(now);
+      
+      if (product.unit === 'days') {
+        expiresAt.setDate(expiresAt.getDate() + product.duration);
+      } else if (product.unit === 'months') {
+        expiresAt.setMonth(expiresAt.getMonth() + product.duration);
+      } else if (product.unit === 'years') {
+        expiresAt.setFullYear(expiresAt.getFullYear() + product.duration);
+      }
+
+      // Update user subscription in database
+      await storage.updateUserSubscription(userId, {
+        subscriptionStatus: 'active',
+        subscriptionTier: product.tier,
+        subscriptionExpiresAt: expiresAt,
+        stripeCustomerId: `${platform}_${transactionId}`, // Store platform purchase ID
+        stripeSubscriptionId: transactionId
+      });
+
+      // Get updated user data
+      const updatedUser = await storage.getUser(userId);
+      
+      res.json({ 
+        success: true, 
+        user: updatedUser,
+        subscription: {
+          status: 'active',
+          tier: product.tier,
+          expiresAt: expiresAt
+        }
+      });
+    } catch (error) {
+      console.error('Purchase validation error:', error);
+      res.status(500).json({ error: 'Failed to validate purchase' });
+    }
+  });
+
   // API Routes
   app.get('/api/conversations', async (req: Request, res: Response) => {
     try {

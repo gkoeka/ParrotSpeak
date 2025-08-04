@@ -1,99 +1,317 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import { RouteProp } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  Platform
+} from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
 import Header from '../components/Header';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
+import { iapService, PRODUCT_IDS } from '../services/iapService';
 
-type CheckoutRouteProp = RouteProp<RootStackParamList, 'Checkout'>;
+type CheckoutNavigationProp = StackNavigationProp<RootStackParamList, 'Checkout'>;
+type CheckoutRouteProp = {
+  params: {
+    plan: string;
+    amount: number;
+    interval: string;
+  };
+};
 
 export default function CheckoutScreen() {
+  const navigation = useNavigation<CheckoutNavigationProp>();
   const route = useRoute<CheckoutRouteProp>();
-  const navigation = useNavigation();
   const { isDarkMode } = useTheme();
-  const [loading, setLoading] = useState(false);
+  const { user, refreshUserData } = useAuth();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   
   const { plan, amount, interval } = route.params;
 
-  const handlePurchase = async () => {
-    setLoading(true);
+  useEffect(() => {
+    initializeIAP();
+    
+    return () => {
+      // Cleanup IAP on unmount
+      iapService.cleanup();
+    };
+  }, []);
+
+  const initializeIAP = async () => {
     try {
-      // TODO: Implement actual payment processing
-      Alert.alert(
-        'Success',
-        'Subscription activated successfully!',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
+      const initialized = await iapService.initialize();
+      if (!initialized) {
+        Alert.alert(
+          'Store Not Available',
+          'In-app purchases are not available on this device.',
+          [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+      }
     } catch (error) {
-      Alert.alert('Error', 'Payment failed. Please try again.');
+      console.error('IAP initialization error:', error);
+      Alert.alert(
+        'Initialization Error',
+        'Unable to connect to the app store. Please try again later.',
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      );
     } finally {
-      setLoading(false);
+      setIsInitializing(false);
     }
   };
 
+  const getProductId = (): string | null => {
+    switch (plan) {
+      case 'premium':
+        return interval === 'month' ? PRODUCT_IDS.MONTHLY : PRODUCT_IDS.YEARLY;
+      case 'week':
+        return PRODUCT_IDS.WEEK_PASS;
+      case 'month':
+        return PRODUCT_IDS.MONTH_PASS;
+      case 'three-months':
+        return PRODUCT_IDS.THREE_MONTH_PASS;
+      case 'six-months':
+        return PRODUCT_IDS.SIX_MONTH_PASS;
+      default:
+        return null;
+    }
+  };
+
+  const getPlanName = (): string => {
+    if (plan === 'premium') {
+      return interval === 'month' ? 'Premium Monthly' : 'Premium Annual';
+    }
+    
+    const planNames: Record<string, string> = {
+      'week': '1 Week Pass',
+      'month': '1 Month Pass',
+      'three-months': '3 Month Pass',
+      'six-months': '6 Month Pass'
+    };
+    
+    return planNames[plan] || 'Unknown Plan';
+  };
+
+  const handlePurchase = async () => {
+    const productId = getProductId();
+    
+    if (!productId) {
+      Alert.alert('Error', 'Invalid plan selected');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      // Initiate purchase based on type
+      if (plan === 'premium') {
+        await iapService.purchaseSubscription(productId);
+      } else {
+        await iapService.purchaseProduct(productId);
+      }
+      
+      // Purchase validation happens in the IAP service listener
+      // After successful validation, refresh user data
+      await refreshUserData();
+      
+      // Navigate to success screen or home
+      Alert.alert(
+        'Success!',
+        'Your purchase was successful. Enjoy ParrotSpeak!',
+        [{ text: 'OK', onPress: () => navigation.navigate('Home') }]
+      );
+      
+    } catch (error: any) {
+      console.error('Purchase error:', error);
+      if (error.code !== 'E_USER_CANCELLED') {
+        Alert.alert(
+          'Purchase Failed',
+          error.message || 'Something went wrong with your purchase. Please try again.'
+        );
+      }
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRestorePurchases = async () => {
+    setIsProcessing(true);
+    
+    try {
+      const restored = await iapService.restorePurchases();
+      
+      if (restored) {
+        await refreshUserData();
+        Alert.alert(
+          'Success!',
+          'Your purchases have been restored.',
+          [{ text: 'OK', onPress: () => navigation.navigate('Home') }]
+        );
+      } else {
+        Alert.alert(
+          'No Purchases Found',
+          'No previous purchases were found for your account.'
+        );
+      }
+    } catch (error) {
+      console.error('Restore error:', error);
+      Alert.alert(
+        'Restore Failed',
+        'Unable to restore purchases. Please try again later.'
+      );
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  if (isInitializing) {
+    return (
+      <View style={[styles.container, isDarkMode && styles.containerDark]}>
+        <Header showBackButton={true} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={isDarkMode ? '#4169E1' : '#4169E1'} />
+          <Text style={[styles.loadingText, isDarkMode && styles.loadingTextDark]}>
+            Connecting to store...
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
-      <Header />
+      <Header showBackButton={true} />
       
-      <View style={styles.content}>
-        <Text style={[styles.title, isDarkMode && styles.titleDark]}>Complete Purchase</Text>
-        
+      <ScrollView 
+        style={styles.content}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.orderSummary}>
-          <Text style={styles.summaryTitle}>Order Summary</Text>
-          
-          <View style={styles.planDetails}>
-            <Text style={styles.planName}>{plan.charAt(0).toUpperCase() + plan.slice(1)} Plan</Text>
-            <View style={styles.priceRow}>
-              <Text style={styles.priceLabel}>Monthly subscription</Text>
-              <Text style={styles.priceAmount}>${amount.toFixed(2)}</Text>
-            </View>
-            <View style={styles.separator} />
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.totalAmount}>${amount.toFixed(2)}/{interval}</Text>
-            </View>
-          </View>
-        </View>
-        
-        <View style={styles.paymentSection}>
-          <Text style={styles.sectionTitle}>Payment Method</Text>
-          <View style={styles.paymentMethod}>
-            <Text style={styles.paymentText}>Mobile App Store Purchase</Text>
-            <Text style={styles.paymentDescription}>
-              Secure payment through {Platform.OS === 'ios' ? 'Apple App Store' : 'Google Play Store'}
-            </Text>
-          </View>
-        </View>
-        
-        <View style={styles.benefits}>
-          <Text style={styles.benefitsTitle}>What you get:</Text>
-          <Text style={styles.benefit}>✓ Unlimited voice translations</Text>
-          <Text style={styles.benefit}>✓ Advanced voice recognition</Text>
-          <Text style={styles.benefit}>✓ All language pairs</Text>
-          <Text style={styles.benefit}>✓ Conversation history</Text>
-          <Text style={styles.benefit}>✓ Cancel anytime</Text>
-        </View>
-        
-        <TouchableOpacity 
-          style={[styles.purchaseButton, loading && styles.purchaseButtonDisabled]}
-          onPress={handlePurchase}
-          disabled={loading}
-        >
-          <Text style={styles.purchaseButtonText}>
-            {loading ? 'Processing...' : `Subscribe for $${amount.toFixed(2)}/${interval}`}
+          <Text style={[styles.title, isDarkMode && styles.titleDark]}>
+            Order Summary
           </Text>
-        </TouchableOpacity>
-        
-        <Text style={styles.disclaimer}>
-          Subscription automatically renews unless cancelled. Cancel anytime in account settings.
-        </Text>
-      </View>
+          
+          <View style={[styles.summaryCard, isDarkMode && styles.summaryCardDark]}>
+            <View style={styles.summaryRow}>
+              <Text style={[styles.summaryLabel, isDarkMode && styles.summaryLabelDark]}>
+                Plan
+              </Text>
+              <Text style={[styles.summaryValue, isDarkMode && styles.summaryValueDark]}>
+                {getPlanName()}
+              </Text>
+            </View>
+            
+            <View style={styles.divider} />
+            
+            <View style={styles.summaryRow}>
+              <Text style={[styles.summaryLabel, isDarkMode && styles.summaryLabelDark]}>
+                Price
+              </Text>
+              <Text style={[styles.summaryPrice, isDarkMode && styles.summaryPriceDark]}>
+                ${amount.toFixed(2)}
+              </Text>
+            </View>
+            
+            {plan === 'premium' && interval === 'month' && (
+              <Text style={[styles.commitment, isDarkMode && styles.commitmentDark]}>
+                12 month minimum commitment
+              </Text>
+            )}
+          </View>
+          
+          <View style={styles.features}>
+            <Text style={[styles.featuresTitle, isDarkMode && styles.featuresTitleDark]}>
+              What's included:
+            </Text>
+            <View style={styles.featureList}>
+              <View style={styles.featureRow}>
+                <Ionicons 
+                  name="checkmark-circle" 
+                  size={20} 
+                  color="#4169E1" 
+                />
+                <Text style={[styles.featureText, isDarkMode && styles.featureTextDark]}>
+                  Unlimited voice-to-voice translations
+                </Text>
+              </View>
+              <View style={styles.featureRow}>
+                <Ionicons 
+                  name="checkmark-circle" 
+                  size={20} 
+                  color="#4169E1" 
+                />
+                <Text style={[styles.featureText, isDarkMode && styles.featureTextDark]}>
+                  All 65 supported languages
+                </Text>
+              </View>
+              <View style={styles.featureRow}>
+                <Ionicons 
+                  name="checkmark-circle" 
+                  size={20} 
+                  color="#4169E1" 
+                />
+                <Text style={[styles.featureText, isDarkMode && styles.featureTextDark]}>
+                  Real-time conversation mode
+                </Text>
+              </View>
+              <View style={styles.featureRow}>
+                <Ionicons 
+                  name="checkmark-circle" 
+                  size={20} 
+                  color="#4169E1" 
+                />
+                <Text style={[styles.featureText, isDarkMode && styles.featureTextDark]}>
+                  Conversation history
+                </Text>
+              </View>
+            </View>
+          </View>
+          
+          <TouchableOpacity
+            style={[styles.purchaseButton, isProcessing && styles.buttonDisabled]}
+            onPress={handlePurchase}
+            disabled={isProcessing}
+          >
+            {isProcessing ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <>
+                <Ionicons name="lock-closed" size={20} color="#FFFFFF" />
+                <Text style={styles.purchaseButtonText}>
+                  {Platform.OS === 'ios' ? 'Pay with Apple' : 'Complete Purchase'}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.restoreButton}
+            onPress={handleRestorePurchases}
+            disabled={isProcessing}
+          >
+            <Text style={[styles.restoreButtonText, isDarkMode && styles.restoreButtonTextDark]}>
+              Restore Purchases
+            </Text>
+          </TouchableOpacity>
+          
+          <Text style={[styles.disclaimer, isDarkMode && styles.disclaimerDark]}>
+            {Platform.OS === 'ios' 
+              ? 'Payment will be charged to your Apple ID account at confirmation of purchase.'
+              : 'Payment will be charged to your Google Play account at confirmation of purchase.'
+            }
+            {plan === 'premium' && '\n\nSubscription automatically renews unless auto-renew is turned off at least 24-hours before the end of the current period.'}
+          </Text>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -101,138 +319,158 @@ export default function CheckoutScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
   },
   containerDark: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#1A1A1A',
   },
   content: {
     flex: 1,
+  },
+  contentContainer: {
+    paddingBottom: 40,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666666',
+  },
+  loadingTextDark: {
+    color: '#AAAAAA',
+  },
+  orderSummary: {
     padding: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 24,
-    color: '#1a1a1a',
+    color: '#000000',
+    marginBottom: 20,
   },
   titleDark: {
-    color: '#fff',
+    color: '#FFFFFF',
   },
-  orderSummary: {
-    backgroundColor: '#f8f9fa',
+  summaryCard: {
+    backgroundColor: '#F5F5F5',
     borderRadius: 12,
     padding: 20,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
+    marginBottom: 20,
   },
-  summaryTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 16,
-    color: '#1a1a1a',
+  summaryCardDark: {
+    backgroundColor: '#2A2A2A',
   },
-  planDetails: {
-    gap: 12,
-  },
-  planName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#3366FF',
-  },
-  priceRow: {
+  summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  priceLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  priceAmount: {
-    fontSize: 14,
-    color: '#1a1a1a',
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#e9ecef',
     marginVertical: 8,
   },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  summaryLabel: {
+    fontSize: 16,
+    color: '#666666',
   },
-  totalLabel: {
+  summaryLabelDark: {
+    color: '#AAAAAA',
+  },
+  summaryValue: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: '#000000',
   },
-  totalAmount: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#3366FF',
+  summaryValueDark: {
+    color: '#FFFFFF',
   },
-  paymentSection: {
-    marginBottom: 24,
+  summaryPrice: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#4169E1',
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-    color: '#1a1a1a',
+  summaryPriceDark: {
+    color: '#6495ED',
   },
-  paymentMethod: {
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
+  divider: {
+    height: 1,
+    backgroundColor: '#E0E0E0',
+    marginVertical: 12,
   },
-  paymentText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#1a1a1a',
-    marginBottom: 4,
-  },
-  paymentDescription: {
+  commitment: {
     fontSize: 12,
-    color: '#666',
+    color: '#666666',
+    fontStyle: 'italic',
+    marginTop: 8,
   },
-  benefits: {
-    marginBottom: 32,
+  commitmentDark: {
+    color: '#AAAAAA',
   },
-  benefitsTitle: {
-    fontSize: 16,
+  features: {
+    marginBottom: 30,
+  },
+  featuresTitle: {
+    fontSize: 18,
     fontWeight: '600',
-    marginBottom: 12,
-    color: '#1a1a1a',
+    color: '#000000',
+    marginBottom: 15,
   },
-  benefit: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
+  featuresTitleDark: {
+    color: '#FFFFFF',
+  },
+  featureList: {
+    gap: 10,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  featureText: {
+    fontSize: 16,
+    color: '#333333',
+    flex: 1,
+  },
+  featureTextDark: {
+    color: '#CCCCCC',
   },
   purchaseButton: {
-    backgroundColor: '#3366FF',
-    paddingVertical: 16,
-    borderRadius: 12,
-    marginBottom: 16,
+    backgroundColor: '#4169E1',
+    borderRadius: 25,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 15,
+    gap: 8,
   },
-  purchaseButtonDisabled: {
+  buttonDisabled: {
     opacity: 0.6,
   },
   purchaseButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#FFFFFF',
+    fontSize: 18,
     fontWeight: '600',
-    textAlign: 'center',
+  },
+  restoreButton: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  restoreButtonText: {
+    color: '#4169E1',
+    fontSize: 16,
+  },
+  restoreButtonTextDark: {
+    color: '#6495ED',
   },
   disclaimer: {
     fontSize: 12,
-    color: '#666',
+    color: '#666666',
     textAlign: 'center',
-    lineHeight: 16,
+    lineHeight: 18,
+  },
+  disclaimerDark: {
+    color: '#AAAAAA',
   },
 });

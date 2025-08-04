@@ -18,6 +18,7 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<void>;
   loginWithApple: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<boolean>;
+  refreshUserData: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -190,6 +191,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const refreshUserData = async () => {
+    if (!user) return;
+    
+    try {
+      // Import the real auth service
+      const { getCurrentUser } = await import('../api/authService');
+      
+      // Get fresh user data from server
+      const freshUserData = await getCurrentUser();
+      
+      if (freshUserData) {
+        const userInfo = {
+          id: freshUserData.id,
+          email: freshUserData.email,
+          name: freshUserData.firstName ? `${freshUserData.firstName} ${freshUserData.lastName || ''}`.trim() : freshUserData.email,
+          subscriptionStatus: freshUserData.subscriptionStatus || 'free',
+          subscriptionTier: freshUserData.subscriptionTier,
+          subscriptionExpiresAt: freshUserData.subscriptionExpiresAt ? new Date(freshUserData.subscriptionExpiresAt) : null
+        };
+        setUser(userInfo);
+        await SecureStorage.setUserData(userInfo);
+      }
+    } catch (error) {
+      console.error('Failed to refresh user data:', error);
+    }
+  };
+
   const logout = async () => {
     try {
       // Import the real auth service
@@ -223,6 +251,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     loginWithGoogle,
     loginWithApple,
     requestPasswordReset,
+    refreshUserData,
     logout,
   };
 

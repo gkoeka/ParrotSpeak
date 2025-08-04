@@ -1,5 +1,5 @@
 import { db } from "@db";
-import { conversations, messages, voiceProfiles, speechSettings } from "@shared/schema";
+import { conversations, messages, voiceProfiles, speechSettings, users } from "@shared/schema";
 import { CreateVoiceProfileInput, UpdateVoiceProfileInput } from "@shared/types/speech";
 import { eq, desc, and } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
@@ -471,6 +471,31 @@ export const storage = {
         updatedAt: new Date().toISOString()
       })
       .where(eq(speechSettings.id, settings.id))
+      .returning();
+    
+    return updated;
+  },
+
+  // User management methods
+  async getUser(userId: number) {
+    return db.query.users.findFirst({
+      where: eq(users.id, userId)
+    });
+  },
+
+  async updateUserSubscription(userId: number, updates: {
+    subscriptionStatus: string;
+    subscriptionTier: string;
+    subscriptionExpiresAt: Date;
+    stripeCustomerId?: string;
+    stripeSubscriptionId?: string;
+  }) {
+    const [updated] = await db.update(users)
+      .set({
+        ...updates,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId))
       .returning();
     
     return updated;

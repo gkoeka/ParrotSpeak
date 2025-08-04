@@ -135,7 +135,7 @@ export default function PricingScreen() {
     navigation.navigate('Checkout', {
       plan: plan.id,
       amount: plan.price,
-      interval: plan.interval
+      interval: plan.interval === 'month' ? 'month' : plan.interval === 'year' ? 'year' : plan.id
     });
   };
 
