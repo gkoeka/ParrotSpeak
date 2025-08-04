@@ -20,6 +20,11 @@ Modal Navigation: Subscription prompts route to '/checkout' page for plan select
 App Store Setup: User will need DUNS number before setting up developer accounts. Must remember all app store setup information, credentials, and certificate processes for future reference when DUNS number is obtained.
 Pricing Model: One subscription option with monthly ($9.99/month, 12-month minimum) or yearly ($99/year) billing, plus four one-time traveler passes: 1 Week ($4.99), 1 Month ($14.99), 3 Months ($39.99), 6 Months ($69.99). This matches the original dual-architecture pricing structure.
 Feature Presentation: Only advertise features that are currently implemented and working. Removed references to offline mode, priority support, no ads, and other unsupported features from pricing screens.
+Test Account Passwords: These passwords are fixed and should NOT be changed by the agent. Only the user can change them via forgot password flow or direct request:
+- greg.koeka@gmail.com: Password!23 (expired monthly subscription)
+- greg@parrotspeak.com: Password!234 (active lifetime subscription)
+- greg@gregkoeka.com: Password!23 (no subscription)
+- koeka@colorado.edu: Passw0rd!234 (free user)
 
 ## System Architecture
 

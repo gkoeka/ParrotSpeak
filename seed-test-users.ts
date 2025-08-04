@@ -8,7 +8,7 @@ async function seedTestUsers() {
   const testUsers = [
     {
       email: 'greg.koeka@gmail.com',
-      password: 'password123',
+      password: 'Password!23',
       firstName: 'Greg',
       lastName: 'Koeka',
       subscriptionStatus: 'active',
@@ -18,7 +18,7 @@ async function seedTestUsers() {
     },
     {
       email: 'greg@parrotspeak.com',
-      password: 'password123',
+      password: 'Password!234',
       firstName: 'Greg',
       lastName: 'ParrotSpeak',
       subscriptionStatus: 'active',
@@ -28,7 +28,7 @@ async function seedTestUsers() {
     },
     {
       email: 'greg@gregkoeka.com',
-      password: 'password123',
+      password: 'Password!23',
       firstName: 'Greg',
       lastName: 'Standard',
       subscriptionStatus: 'active',
@@ -38,7 +38,7 @@ async function seedTestUsers() {
     },
     {
       email: 'koeka@colorado.edu',
-      password: 'password123',
+      password: 'Passw0rd!234',
       firstName: 'Test',
       lastName: 'Free',
       subscriptionStatus: 'free',
