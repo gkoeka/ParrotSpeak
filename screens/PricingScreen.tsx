@@ -65,7 +65,7 @@ export default function PricingScreen() {
     type: 'subscription',
     features: [
       'Unlimited voice-to-voice translations',
-      'All 65 supported languages',
+      'All 67 supported languages',
       'Real-time conversation mode',
       'Conversation history'
     ]
@@ -81,8 +81,11 @@ export default function PricingScreen() {
       description: 'Perfect for short trips',
       type: 'traveler',
       features: [
-        '7 days of full access',
-        'All 65 supported languages'
+        '7 days of access',
+        'Unlimited voice-to-voice translations',
+        'All 67 supported languages',
+        'Real-time conversation mode',
+        'Conversation history'
       ]
     },
     {
@@ -95,8 +98,11 @@ export default function PricingScreen() {
       popular: true,
       type: 'traveler',
       features: [
-        '30 days of full access',
-        'All 65 supported languages'
+        '30 days of access',
+        'Unlimited voice-to-voice translations',
+        'All 67 supported languages',
+        'Real-time conversation mode',
+        'Conversation history'
       ]
     },
     {
@@ -109,8 +115,11 @@ export default function PricingScreen() {
       savings: 'Save $4.98',
       type: 'traveler',
       features: [
-        '90 days of full access',
-        'All 65 supported languages'
+        '90 days of access',
+        'Unlimited voice-to-voice translations',
+        'All 67 supported languages',
+        'Real-time conversation mode',
+        'Conversation history'
       ]
     },
     {
@@ -123,8 +132,11 @@ export default function PricingScreen() {
       savings: 'Save $19.95',
       type: 'traveler',
       features: [
-        '180 days of full access',
-        'All 65 supported languages'
+        '180 days of access',
+        'Unlimited voice-to-voice translations',
+        'All 67 supported languages',
+        'Real-time conversation mode',
+        'Conversation history'
       ]
     }
   ];
