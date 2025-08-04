@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, I18nManager } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, I18nManager, ActivityIndicator } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
@@ -9,6 +9,7 @@ import { isRTLLanguage, rtlStyle, getWritingDirection } from '../utils/rtlSuppor
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import { API_BASE_URL } from '../config/api';
 
 import LanguageSelector from '../components/LanguageSelectorMobile';
 import PerformanceIndicator from '../components/PerformanceMonitor';
@@ -19,6 +20,9 @@ export default function ConversationScreen() {
   const { isDarkMode } = useTheme();
   const { user } = useAuth();
   const navigation = useNavigation<ConversationNavigationProp>();
+  const route = useRoute<any>();
+  const conversationId = route.params?.id;
+  
   const [messages, setMessages] = useState<Array<{
     id: string;
     text: string;
@@ -30,9 +34,61 @@ export default function ConversationScreen() {
   
   const [sourceLanguage, setSourceLanguage] = useState('en');
   const [targetLanguage, setTargetLanguage] = useState('es');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Check subscription status
   const hasActiveSubscription = user?.subscriptionStatus === 'active' || user?.subscriptionTier === 'lifetime';
+
+  // Load conversation data if viewing from history
+  useEffect(() => {
+    if (conversationId && hasActiveSubscription) {
+      loadConversation();
+    }
+  }, [conversationId, hasActiveSubscription]);
+
+  const loadConversation = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const response = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load conversation');
+      }
+
+      const data = await response.json();
+      
+      // Set the conversation messages
+      if (data.messages && Array.isArray(data.messages)) {
+        setMessages(data.messages.map((msg: any) => ({
+          id: msg.id,
+          text: msg.originalText,
+          translation: msg.translatedText,
+          fromLanguage: msg.fromLanguage,
+          toLanguage: msg.toLanguage,
+          timestamp: new Date(msg.createdAt),
+        })));
+      }
+
+      // Set the language pair from the first message
+      if (data.messages && data.messages.length > 0) {
+        setSourceLanguage(data.messages[0].fromLanguage);
+        setTargetLanguage(data.messages[0].toLanguage);
+      }
+    } catch (err) {
+      console.error('Error loading conversation:', err);
+      setError('Failed to load conversation history');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Show subscription required screen for non-subscribers
   if (!hasActiveSubscription) {
@@ -87,10 +143,28 @@ export default function ConversationScreen() {
       <PerformanceIndicator showDetails={false} />
       
       <ScrollView style={styles.messagesContainer}>
-        {messages.length === 0 ? (
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={isDarkMode ? '#5c8cff' : '#3366FF'} />
+            <Text style={[styles.loadingText, isDarkMode && styles.loadingTextDark]}>
+              Loading conversation...
+            </Text>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <Ionicons 
+              name="alert-circle" 
+              size={48} 
+              color={isDarkMode ? '#ff6b6b' : '#dc3545'} 
+            />
+            <Text style={[styles.errorText, isDarkMode && styles.errorTextDark]}>
+              {error}
+            </Text>
+          </View>
+        ) : messages.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>
-              Start speaking to begin your conversation
+            <Text style={[styles.emptyStateText, isDarkMode && styles.emptyStateTextDark]}>
+              {conversationId ? 'No messages in this conversation' : 'Start speaking to begin your conversation'}
             </Text>
           </View>
         ) : (
@@ -163,6 +237,38 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
+  },
+  emptyStateTextDark: {
+    color: '#999',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
+  },
+  loadingTextDark: {
+    color: '#999',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  errorText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#dc3545',
+    textAlign: 'center',
+  },
+  errorTextDark: {
+    color: '#ff6b6b',
   },
   messageCard: {
     backgroundColor: '#f8f9fa',

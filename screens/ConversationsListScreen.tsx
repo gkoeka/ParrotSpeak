@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
@@ -7,6 +7,7 @@ import Header from '../components/Header';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import { API_BASE_URL } from '../config/api';
 
 type ConversationsListNavigationProp = StackNavigationProp<RootStackParamList, 'ConversationsList'>;
 
@@ -18,23 +19,66 @@ export default function ConversationsListScreen() {
   // Check subscription status
   const hasActiveSubscription = user?.subscriptionStatus === 'active' || user?.subscriptionTier === 'lifetime';
 
-  // Mock data for now
-  const conversations = [
-    {
-      id: '1',
-      title: 'Business Meeting',
-      languages: 'English ↔ Spanish',
-      lastActivity: '2 hours ago',
-      messageCount: 15,
-    },
-    {
-      id: '2',
-      title: 'Travel Conversation',
-      languages: 'English ↔ French',
-      lastActivity: '1 day ago',
-      messageCount: 8,
-    },
-  ];
+  const [conversations, setConversations] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (hasActiveSubscription) {
+      loadConversations();
+    }
+  }, [hasActiveSubscription]);
+
+  const loadConversations = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const response = await fetch(`${API_BASE_URL}/api/conversations`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load conversations');
+      }
+
+      const data = await response.json();
+      
+      // Transform the data to match the expected format
+      const formattedConversations = data.map((conv: any) => ({
+        id: conv.id,
+        title: conv.title || `Conversation ${conv.id.slice(0, 8)}`,
+        languages: `${conv.sourceLanguage || 'Unknown'} → ${conv.targetLanguage || 'Unknown'}`,
+        lastActivity: formatTimeAgo(new Date(conv.updatedAt || conv.createdAt)),
+        messageCount: conv.messageCount || 0,
+      }));
+      
+      setConversations(formattedConversations);
+    } catch (err) {
+      console.error('Error loading conversations:', err);
+      setError('Failed to load conversations');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formatTimeAgo = (date: Date) => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString();
+  };
 
   const renderConversation = ({ item }: { item: typeof conversations[0] }) => (
     <TouchableOpacity 
@@ -96,7 +140,31 @@ export default function ConversationsListScreen() {
       <View style={styles.content}>
         <Text style={[styles.title, isDarkMode && styles.titleDark]}>My Conversations</Text>
         
-        {conversations.length === 0 ? (
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={isDarkMode ? '#5c8cff' : '#3366FF'} />
+            <Text style={[styles.loadingText, isDarkMode && styles.loadingTextDark]}>
+              Loading conversations...
+            </Text>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <Ionicons 
+              name="alert-circle" 
+              size={48} 
+              color={isDarkMode ? '#ff6b6b' : '#dc3545'} 
+            />
+            <Text style={[styles.errorText, isDarkMode && styles.errorTextDark]}>
+              {error}
+            </Text>
+            <TouchableOpacity 
+              style={[styles.retryButton, isDarkMode && styles.retryButtonDark]}
+              onPress={loadConversations}
+            >
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        ) : conversations.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={[styles.emptyStateText, isDarkMode && styles.emptyStateTextDark]}>
               No conversations yet. Start a new conversation to get started!
@@ -279,5 +347,49 @@ const styles = StyleSheet.create({
   },
   accessItemDark: {
     color: '#999',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
+  },
+  loadingTextDark: {
+    color: '#999',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  errorText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#dc3545',
+    textAlign: 'center',
+  },
+  errorTextDark: {
+    color: '#ff6b6b',
+  },
+  retryButton: {
+    backgroundColor: '#3366FF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  retryButtonDark: {
+    backgroundColor: '#5c8cff',
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
