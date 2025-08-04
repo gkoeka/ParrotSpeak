@@ -11,6 +11,7 @@ Preferred preview mode: Mobile app preview only (not web app preview).
 Dark mode preference: Should persist when selected.
 Change Management: Always check with user before making extensive changes, especially to core functionality. No rapid bulk changes without approval.
 Server Restart Protocol: Always restart the server after making changes to expedite testing and ensure changes take effect immediately.
+Git Backup Protocol: When completing major features or phases, create new Git branches with descriptive names (e.g., restore-subscription-logic-phase2) and remind user to push code. Document branch names in task summaries.
 Business Terminology: Use "Customer" for anyone who has ever paid (past subscribers, expired plans, one-time purchases). "Subscriber" implies ongoing subscription which may not apply to all payment models.
 Subscription Modal Messaging:
 - New Users: "Connect with Others" / "Please purchase a plan that fits your needs..." / "Choose your plan"
