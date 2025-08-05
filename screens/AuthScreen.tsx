@@ -129,11 +129,16 @@ export default function AuthScreen() {
             <TouchableOpacity
               style={styles.eyeIcon}
               onPress={() => setShowPassword(!showPassword)}
+              testID="password-toggle"
+              accessible={true}
+              accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+              accessibilityRole="button"
             >
               <Ionicons 
                 name={showPassword ? "eye-off" : "eye"} 
                 size={24} 
-                color={isDarkMode ? '#999' : '#666'} 
+                color={isDarkMode ? '#999' : '#666'}
+                testID="password-toggle-icon"
               />
             </TouchableOpacity>
           </View>
@@ -181,7 +186,10 @@ export default function AuthScreen() {
 
           <TouchableOpacity 
             style={styles.switchButton}
-            onPress={() => setIsLogin(!isLogin)}
+            onPress={() => {
+              setIsLogin(!isLogin);
+              setShowPassword(false); // Reset password visibility when switching modes
+            }}
           >
             <Text style={styles.switchButtonText}>
               {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
