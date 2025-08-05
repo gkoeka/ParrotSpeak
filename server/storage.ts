@@ -177,7 +177,7 @@ export const storage = {
       where: eq(conversations.id, id),
       with: {
         messages: {
-          orderBy: [conversations.createdAt]
+          orderBy: [messages.createdAt]
         }
       }
     });

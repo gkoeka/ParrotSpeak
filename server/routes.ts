@@ -257,13 +257,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/conversations/:id', async (req: Request, res: Response) => {
+  app.get('/api/conversations/:id', requireAuth, async (req: Request, res: Response) => {
     try {
+      const userId = req.user?.id;
       const conversation = await storage.getConversation(req.params.id);
       if (!conversation) {
         return res.status(404).json({ message: 'Conversation not found' });
       }
-      res.json(conversation);
+      
+      // Group messages by pairs (user message + translation response)
+      const pairedMessages: any[] = [];
+      const processedMessages = conversation.messages || [];
+      
+      for (let i = 0; i < processedMessages.length; i++) {
+        const msg = processedMessages[i];
+        
+        // If it's a user message, look for the next message which should be the translation
+        if (msg.isUser) {
+          const nextMsg = processedMessages[i + 1];
+          
+          // If there's a translation message right after
+          if (nextMsg && !nextMsg.isUser) {
+            pairedMessages.push({
+              id: msg.id,
+              originalText: msg.text || '',
+              translatedText: nextMsg.text || '',
+              fromLanguage: msg.sourceLanguage,
+              toLanguage: msg.targetLanguage,
+              createdAt: msg.createdAt,
+              isUser: true
+            });
+            i++; // Skip the translation message since we've processed it
+          } else {
+            // User message without translation
+            pairedMessages.push({
+              id: msg.id,
+              originalText: msg.text || '',
+              translatedText: '', // No translation yet
+              fromLanguage: msg.sourceLanguage,
+              toLanguage: msg.targetLanguage,
+              createdAt: msg.createdAt,
+              isUser: true
+            });
+          }
+        } else {
+          // This is a standalone translation/system message
+          pairedMessages.push({
+            id: msg.id,
+            originalText: '',
+            translatedText: msg.text || '',
+            fromLanguage: msg.sourceLanguage,
+            toLanguage: msg.targetLanguage,
+            createdAt: msg.createdAt,
+            isUser: false
+          });
+        }
+      }
+      
+      const transformedConversation = {
+        ...conversation,
+        messages: pairedMessages
+      };
+      
+      res.json(transformedConversation);
     } catch (error) {
       console.error('Get conversation error:', error);
       res.status(500).json({ message: 'Failed to retrieve conversation' });
