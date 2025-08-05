@@ -4,9 +4,14 @@ import { Ionicons } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useRoute, RouteProp } from '@react-navigation/native';
+import { RootStackParamList } from '../App';
+
+type AuthScreenRouteProp = RouteProp<RootStackParamList, 'Auth'>;
 
 export default function AuthScreen() {
-  const [isLogin, setIsLogin] = useState(true);
+  const route = useRoute<AuthScreenRouteProp>();
+  const [isLogin, setIsLogin] = useState(!route.params?.defaultToSignUp);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');

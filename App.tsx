@@ -4,6 +4,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { ActivityIndicator, View } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Auth Provider
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -12,6 +13,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 
 
 // Screens
+import WelcomeScreen from "./screens/WelcomeScreen";
 import HomeScreen from "./screens/HomeScreen";
 import ConversationScreen from "./screens/ConversationScreen";
 import ConversationsListScreen from "./screens/ConversationsListScreen";
@@ -32,12 +34,13 @@ import SplashScreen from "./screens/SplashScreen";
 
 // Define the stack navigator params
 export type RootStackParamList = {
+  Welcome: undefined;
   Home: undefined;
   Conversation: { id?: string };
   ConversationsList: undefined;
   Analytics: undefined;
   Settings: undefined;
-  Auth: undefined;
+  Auth: { defaultToSignUp?: boolean };
   Profile: undefined;
   SubscriptionPlans: undefined;
   Pricing: undefined;
@@ -56,14 +59,38 @@ const Stack = createStackNavigator<RootStackParamList>();
 // Auth Navigator component
 function AuthNavigator() {
   const { user, isLoading } = useAuth();
+  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
 
-  if (isLoading) {
+  useEffect(() => {
+    checkFirstLaunch();
+  }, []);
+
+  const checkFirstLaunch = async () => {
+    try {
+      const hasLaunched = await AsyncStorage.getItem('hasLaunched');
+      setIsFirstLaunch(hasLaunched === null);
+      if (hasLaunched === null) {
+        await AsyncStorage.setItem('hasLaunched', 'true');
+      }
+    } catch (error) {
+      console.error('Error checking first launch:', error);
+      setIsFirstLaunch(false);
+    }
+  };
+
+  if (isLoading || isFirstLaunch === null) {
     return <SplashScreen />;
   }
 
+  const getInitialRoute = () => {
+    if (user) return "Home";
+    if (isFirstLaunch) return "Welcome";
+    return "Auth";
+  };
+
   return (
     <Stack.Navigator
-      initialRouteName={user ? "Home" : "Auth"}
+      initialRouteName={getInitialRoute()}
       screenOptions={{
         headerShown: false,
       }}
@@ -95,6 +122,7 @@ function AuthNavigator() {
       ) : (
         // Auth screens
         <>
+          <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="Auth" component={AuthScreen} />
           <Stack.Screen name="PasswordReset" component={PasswordResetScreen} />
         </>
