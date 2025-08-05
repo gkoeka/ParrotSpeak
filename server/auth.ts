@@ -185,14 +185,10 @@ export async function requireSubscription(req: Request, res: any, next: any) {
     }
     
     // Check subscription status with fresh data from database
+    const { hasValidAccess } = await import("../services/auth");
     
-    if (!freshUser.subscriptionStatus || freshUser.subscriptionStatus !== 'active') {
-      return res.status(403).json({ message: 'Active subscription required' });
-    }
-    
-    // Also check if subscription has expired
-    if (freshUser.subscriptionExpiresAt && new Date(freshUser.subscriptionExpiresAt) < new Date()) {
-      return res.status(403).json({ message: 'Subscription has expired' });
+    if (!hasValidAccess(freshUser)) {
+      return res.status(403).json({ message: 'Active subscription or preview access required' });
     }
     
     next();

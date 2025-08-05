@@ -101,7 +101,10 @@ export async function findOrCreateGoogleUser(
     }
   }
   
-  // Create new user
+  // Create new user with 3-day preview access
+  const previewExpiresAt = new Date();
+  previewExpiresAt.setDate(previewExpiresAt.getDate() + 3); // 3 days from now
+
   const [newUser] = await db
     .insert(users)
     .values({
@@ -111,6 +114,9 @@ export async function findOrCreateGoogleUser(
       lastName: googleProfile.name?.familyName || null,
       profileImageUrl: googleProfile.photos?.[0]?.value || null,
       emailVerified: true,
+      previewExpiresAt,
+      previewStartedAt: new Date(),
+      hasUsedPreview: true,
       createdAt: new Date(),
       updatedAt: new Date()
     })
@@ -216,6 +222,57 @@ export async function resetPassword(token: string, newPassword: string): Promise
 }
 
 /**
+ * Checks if a user has valid preview access
+ * @param user User object
+ * @returns Boolean indicating if preview is active
+ */
+export function hasValidPreviewAccess(user: any): boolean {
+  if (!user.previewExpiresAt || user.hasUsedPreview === false) {
+    return false;
+  }
+  
+  const now = new Date();
+  return now < new Date(user.previewExpiresAt);
+}
+
+/**
+ * Checks if user has any valid access (subscription or preview)
+ * @param user User object
+ * @returns Boolean indicating if user has access
+ */
+export function hasValidAccess(user: any): boolean {
+  // Check subscription access
+  if (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'lifetime') {
+    return true;
+  }
+  
+  // Check preview access
+  return hasValidPreviewAccess(user);
+}
+
+/**
+ * Gets preview expiry warning status
+ * @param user User object
+ * @returns Object with warning status and hours remaining
+ */
+export function getPreviewWarningStatus(user: any): { shouldShowWarning: boolean; hoursRemaining: number } {
+  if (!hasValidPreviewAccess(user)) {
+    return { shouldShowWarning: false, hoursRemaining: 0 };
+  }
+  
+  const now = new Date();
+  const expiryTime = new Date(user.previewExpiresAt);
+  const msRemaining = expiryTime.getTime() - now.getTime();
+  const hoursRemaining = Math.floor(msRemaining / (1000 * 60 * 60));
+  
+  // Show warning if less than 24 hours remaining
+  return {
+    shouldShowWarning: hoursRemaining <= 24 && hoursRemaining > 0,
+    hoursRemaining
+  };
+}
+
+/**
  * Register a new user
  * @param userData User registration data
  * @returns Registered user
@@ -237,6 +294,10 @@ export async function registerUser(userData: {
   // Hash the password
   const hashedPassword = await hashPassword(userData.password);
 
+  // Set up 3-day preview access for new users
+  const previewExpiresAt = new Date();
+  previewExpiresAt.setDate(previewExpiresAt.getDate() + 3); // 3 days from now
+
   // Create the user
   const [newUser] = await db
     .insert(users)
@@ -246,6 +307,9 @@ export async function registerUser(userData: {
       firstName: userData.firstName,
       lastName: userData.lastName || null,
       emailVerified: false,
+      previewExpiresAt,
+      previewStartedAt: new Date(),
+      hasUsedPreview: true,
       createdAt: new Date(),
       updatedAt: new Date()
     })

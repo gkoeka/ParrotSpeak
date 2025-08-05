@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../contexts/ThemeContext';
 import ParrotSpeakLogo from './ParrotSpeakLogo';
+import PreviewStatusPill from './PreviewStatusPill';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Header() {
@@ -26,8 +27,10 @@ export default function Header() {
           </Text>
         </View>
         
-        {/* Right section placeholder for balance */}
-        <View style={styles.rightSection} />
+        {/* Right section with preview status */}
+        <View style={styles.rightSection}>
+          <PreviewStatusPill />
+        </View>
       </View>
     </View>
   );

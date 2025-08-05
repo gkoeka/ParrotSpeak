@@ -14,6 +14,20 @@ export interface SubscriptionInfo {
 export function checkSubscriptionAccess(user: User): SubscriptionInfo {
   const now = new Date();
   
+  // Check if user has valid preview access first
+  if (user.previewExpiresAt && user.hasUsedPreview && new Date(user.previewExpiresAt) > now) {
+    const previewExpiresAt = new Date(user.previewExpiresAt);
+    const daysRemaining = Math.ceil((previewExpiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return {
+      hasAccess: true,
+      isExpired: false,
+      tier: 'preview',
+      expiresAt: previewExpiresAt,
+      daysRemaining
+    };
+  }
+  
   // If user has no subscription status, they're on free tier (no access)
   if (!user.subscriptionStatus || user.subscriptionStatus === 'free' || user.subscriptionStatus === 'cancelled') {
     return {
