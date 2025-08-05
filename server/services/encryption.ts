@@ -79,7 +79,7 @@ export function decryptUserData(encryptedData: EncryptedData, userId: string): s
     );
     
     // Create decipher
-    const decipher = crypto.createDecipheriv(ALGORITHM, userKey, Buffer.from(encryptedData.iv, 'hex'));
+    const decipher = crypto.createDecipheriv(ALGORITHM, userKey, Buffer.from(encryptedData.iv, 'hex'), { authTagLength: TAG_LENGTH });
     decipher.setAuthTag(Buffer.from(encryptedData.tag, 'hex'));
     decipher.setAAD(Buffer.from(userId)); // Same additional authenticated data
     
