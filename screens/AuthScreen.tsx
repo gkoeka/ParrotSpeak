@@ -13,6 +13,7 @@ export default function AuthScreen() {
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login, register, loginWithGoogle, loginWithApple } = useAuth();
   const { isDarkMode } = useTheme();
 
@@ -116,14 +117,26 @@ export default function AuthScreen() {
             keyboardType="email-address"
           />
           
-          <TextInput
-            style={[styles.input, isDarkMode && styles.inputDark]}
-            placeholder="Password"
-            placeholderTextColor={isDarkMode ? '#999' : '#666'}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={[styles.passwordInput, isDarkMode && styles.inputDark]}
+              placeholder="Password"
+              placeholderTextColor={isDarkMode ? '#999' : '#666'}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+            />
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <Ionicons 
+                name={showPassword ? "eye-off" : "eye"} 
+                size={24} 
+                color={isDarkMode ? '#999' : '#666'} 
+              />
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity 
             style={[styles.submitButton, loading && styles.submitButtonDisabled]}
@@ -242,6 +255,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#2a2a2a',
     borderColor: '#333',
     color: '#fff',
+  },
+  passwordContainer: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  passwordInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingRight: 50,
+    fontSize: 16,
+    backgroundColor: '#f8f9fa',
+    color: '#1a1a1a',
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 12,
+    padding: 8,
   },
   submitButton: {
     backgroundColor: '#3366FF',
