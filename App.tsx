@@ -68,11 +68,18 @@ function AuthNavigator() {
 
   useEffect(() => {
     checkFirstLaunch();
-  }, []);
+  }, [user]);
 
   const checkFirstLaunch = async () => {
     try {
       const hasLaunched = await AsyncStorage.getItem('hasLaunched');
+      
+      // For now, always show welcome screen when not authenticated to see the updated design
+      if (!user) {
+        setIsFirstLaunch(true);
+        return;
+      }
+      
       setIsFirstLaunch(hasLaunched === null);
       if (hasLaunched === null) {
         await AsyncStorage.setItem('hasLaunched', 'true');
@@ -92,6 +99,9 @@ function AuthNavigator() {
     if (isFirstLaunch) return "Welcome";
     return "Auth";
   };
+
+  // Debug logging to see what's happening
+  console.log('Auth Navigator state:', { user: !!user, isLoading, isFirstLaunch, initialRoute: getInitialRoute() });
 
   return (
     <Stack.Navigator
