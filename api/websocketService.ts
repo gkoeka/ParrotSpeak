@@ -22,6 +22,27 @@ class WebSocketService {
   private reconnectInterval = 1000;
   private isConnecting = false;
 
+  private createSecureWebSocketUrl(baseUrl: string): string {
+    try {
+      const url = new URL(baseUrl);
+      
+      // Always use secure WebSocket protocol (wss://) for production
+      // Only allow ws:// for localhost development
+      if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+        url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+      } else {
+        // Force secure WebSocket for all non-localhost connections
+        url.protocol = 'wss:';
+      }
+      
+      return url.toString();
+    } catch (error) {
+      // Fallback for malformed URLs - always use secure protocol
+      console.error('Error parsing WebSocket URL:', error);
+      return baseUrl.replace(/^https?:/, 'wss:');
+    }
+  }
+
   connect(config: WebSocketConfig) {
     if (this.isConnecting || (this.ws && this.ws.readyState === WebSocket.CONNECTING)) {
       return;
@@ -31,8 +52,8 @@ class WebSocketService {
     this.isConnecting = true;
 
     try {
-      // Convert HTTP URL to WebSocket URL
-      const wsUrl = API_BASE_URL.replace('http://', 'ws://').replace('https://', 'wss://');
+      // Convert HTTP URL to secure WebSocket URL
+      const wsUrl = this.createSecureWebSocketUrl(API_BASE_URL);
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
