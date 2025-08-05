@@ -1,7 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function ParrotSpeakLogo() {
+  const { isDarkMode } = useTheme();
+  
   return (
     <View style={styles.container}>
       <View style={styles.iconContainer}>
@@ -11,7 +14,7 @@ export default function ParrotSpeakLogo() {
           resizeMode="contain"
         />
       </View>
-      <Text style={styles.text}>ParrotSpeak</Text>
+      <Text style={[styles.text, isDarkMode && styles.textDark]}>ParrotSpeak</Text>
     </View>
   );
 }
@@ -32,5 +35,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#3366FF',
+  },
+  textDark: {
+    color: '#5B8FFF',
   },
 });
