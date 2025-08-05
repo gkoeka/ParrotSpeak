@@ -897,8 +897,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Audio data is required' });
       }
       
-      // Import optimized audio service
-      const { transcribeAudioOptimized } = await import('./services/optimizedAudio');
+      // Import the working transcription service
+      const { transcribeAudio } = await import('./services/openai');
       
       // Convert Base64 audio data to buffer
       const audioBuffer = Buffer.from(audio, 'base64');
@@ -906,8 +906,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log audio size for monitoring
       console.log(`📊 Audio size: ${(audioBuffer.length / 1024).toFixed(2)}KB`);
       
-      // Use optimized transcription (no file I/O)
-      const transcription = await transcribeAudioOptimized(audioBuffer, language);
+      // Use the working transcription method that handles file I/O properly
+      const transcription = await transcribeAudio(audioBuffer, language);
       
       const processingTime = Date.now() - startTime;
       console.log(`✅ Transcription successful in ${processingTime}ms:`, transcription.substring(0, 50) + '...');
