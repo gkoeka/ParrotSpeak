@@ -8,7 +8,7 @@ interface PerformanceIndicatorProps {
 }
 
 export default function PerformanceIndicator({ showDetails = false }: PerformanceIndicatorProps) {
-  const { theme } = useTheme();
+  const { isDarkMode } = useTheme();
   const [stats, setStats] = useState(performanceMonitor.getStats());
   const [lastTranslationTime, setLastTranslationTime] = useState<number | null>(null);
   
@@ -36,12 +36,12 @@ export default function PerformanceIndicator({ showDetails = false }: Performanc
   
   const styles = StyleSheet.create({
     container: {
-      backgroundColor: theme.surface,
+      backgroundColor: isDarkMode ? '#1e1e1e' : '#f5f5f5',
       borderRadius: 8,
       padding: 12,
       margin: 8,
       borderWidth: 1,
-      borderColor: theme.border,
+      borderColor: isDarkMode ? '#333' : '#e0e0e0',
     },
     header: {
       flexDirection: 'row',
@@ -52,7 +52,7 @@ export default function PerformanceIndicator({ showDetails = false }: Performanc
     title: {
       fontSize: 14,
       fontWeight: '600',
-      color: theme.text,
+      color: isDarkMode ? '#fff' : '#000',
     },
     indicator: {
       flexDirection: 'row',
@@ -65,13 +65,13 @@ export default function PerformanceIndicator({ showDetails = false }: Performanc
     },
     unit: {
       fontSize: 12,
-      color: theme.textSecondary,
+      color: isDarkMode ? '#999' : '#666',
     },
     details: {
       marginTop: 8,
       paddingTop: 8,
       borderTopWidth: 1,
-      borderTopColor: theme.border,
+      borderTopColor: isDarkMode ? '#333' : '#e0e0e0',
     },
     detailRow: {
       flexDirection: 'row',
@@ -80,12 +80,12 @@ export default function PerformanceIndicator({ showDetails = false }: Performanc
     },
     detailLabel: {
       fontSize: 12,
-      color: theme.textSecondary,
+      color: isDarkMode ? '#999' : '#666',
     },
     detailValue: {
       fontSize: 12,
       fontWeight: '500',
-      color: theme.text,
+      color: isDarkMode ? '#fff' : '#000',
     },
     statusDot: {
       width: 8,
