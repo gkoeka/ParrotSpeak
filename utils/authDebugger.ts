@@ -13,7 +13,7 @@ export async function debugAuthState() {
     }
     
     // Check user data
-    const user = await SecureStorage.getUser();
+    const user = await SecureStorage.getUserData();
     console.log(`👤 User Data: ${user ? 'Present' : 'Missing'}`);
     if (user) {
       console.log(`   Email: ${user.email}`);
