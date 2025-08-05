@@ -165,6 +165,10 @@ export default function LanguageSelector({
                       const flag = getFlagEmoji(language);
                       
                       console.log(`📱 Rendering language ${index + 1}:`, language.name, language.nativeName);
+                      // Special check for Arabic
+                      if (language.code === 'ar') {
+                        console.log('📱 Arabic full data:', JSON.stringify(language, null, 2));
+                      }
                       
                       return (
                         <TouchableOpacity
@@ -214,7 +218,7 @@ export default function LanguageSelector({
                               numberOfLines={1}
                               ellipsizeMode="tail"
                             >
-                              {language.nativeName || language.name || 'Unknown'}
+                              {language.code === 'ar' ? 'العربية' : (language.nativeName || language.name || 'Unknown')}
                             </Text>
                           </View>
                           
