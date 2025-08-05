@@ -39,7 +39,11 @@ class WebSocketService {
     } catch (error) {
       // Fallback for malformed URLs - always use secure protocol
       console.error('Error parsing WebSocket URL:', error);
-      return baseUrl.replace(/^https?:/, 'wss:');
+      // If URL doesn't start with protocol, prepend wss://
+      if (!baseUrl.match(/^wss?:\/\/|^https?:\/\//i)) {
+        return `wss://${baseUrl}`;
+      }
+      return baseUrl.replace(/^https?:/i, 'wss:');
     }
   }
 
