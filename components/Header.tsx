@@ -11,16 +11,19 @@ export default function Header() {
   return (
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
       <View style={styles.content}>
-        {/* Empty left section for balance */}
-        <View style={styles.leftSection} />
+        {/* Left section with logo */}
+        <View style={styles.leftSection}>
+          <TouchableOpacity onPress={() => navigation.navigate('Home' as never)}>
+            <ParrotSpeakLogo showText={false} />
+          </TouchableOpacity>
+        </View>
         
-        {/* Centered logo */}
-        <TouchableOpacity 
-          style={styles.centerSection}
-          onPress={() => navigation.navigate('Home' as never)}
-        >
-          <ParrotSpeakLogo />
-        </TouchableOpacity>
+        {/* Centered brand name */}
+        <View style={styles.centerSection}>
+          <Text style={[styles.brandName, isDarkMode && styles.brandNameDark]}>
+            ParrotSpeak
+          </Text>
+        </View>
         
         {/* Right section with settings */}
         <View style={styles.rightSection}>
@@ -72,5 +75,13 @@ const styles = StyleSheet.create({
   },
   menuIcon: {
     fontSize: 20,
+  },
+  brandName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#3366FF',
+  },
+  brandNameDark: {
+    color: '#5B8FFF',
   },
 });

@@ -2,7 +2,11 @@ import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 
-export default function ParrotSpeakLogo() {
+interface ParrotSpeakLogoProps {
+  showText?: boolean;
+}
+
+export default function ParrotSpeakLogo({ showText = true }: ParrotSpeakLogoProps) {
   const { isDarkMode } = useTheme();
   
   return (
@@ -14,7 +18,9 @@ export default function ParrotSpeakLogo() {
           resizeMode="contain"
         />
       </View>
-      <Text style={[styles.text, isDarkMode && styles.textDark]}>ParrotSpeak</Text>
+      {showText && (
+        <Text style={[styles.text, isDarkMode && styles.textDark]}>ParrotSpeak</Text>
+      )}
     </View>
   );
 }
