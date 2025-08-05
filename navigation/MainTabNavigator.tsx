@@ -73,9 +73,10 @@ function ChatStackNavigator() {
         gestureEnabled: true,
         gestureDirection: 'horizontal',
       }}
+      initialRouteName="Conversation"
     >
-      <ChatStack.Screen name="Home" component={HomeScreen} />
       <ChatStack.Screen name="Conversation" component={ConversationScreen} />
+      <ChatStack.Screen name="Home" component={HomeScreen} />
       <ChatStack.Screen name="Analytics" component={AnalyticsScreen} />
     </ChatStack.Navigator>
   );
