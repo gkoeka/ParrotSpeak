@@ -46,21 +46,12 @@ export default function WelcomeScreen() {
         <View style={styles.benefitsContainer}>
           <View style={styles.benefitItem}>
             <Text style={[styles.benefitIcon, isDarkMode && styles.textDark]}>🌍</Text>
-            <Text style={[styles.benefitText, isDarkMode && styles.textDark]}>
-              Real-time voice translation
-            </Text>
           </View>
           <View style={styles.benefitItem}>
             <Text style={[styles.benefitIcon, isDarkMode && styles.textDark]}>💬</Text>
-            <Text style={[styles.benefitText, isDarkMode && styles.textDark]}>
-              Natural conversations in any language
-            </Text>
           </View>
           <View style={styles.benefitItem}>
             <Text style={[styles.benefitIcon, isDarkMode && styles.textDark]}>🎯</Text>
-            <Text style={[styles.benefitText, isDarkMode && styles.textDark]}>
-              AI-powered accuracy
-            </Text>
           </View>
         </View>
 
@@ -123,16 +114,18 @@ const styles = StyleSheet.create({
     color: '#aaa',
   },
   benefitsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
     marginBottom: 60,
+    paddingHorizontal: 20,
   },
   benefitItem: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'center',
   },
   benefitIcon: {
-    fontSize: 24,
-    marginRight: 15,
+    fontSize: 40,
   },
   benefitText: {
     fontSize: 16,
