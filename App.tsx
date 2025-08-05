@@ -26,6 +26,7 @@ import HelpCenterScreen from "./screens/HelpCenterScreen";
 import PrivacyPolicyScreen from "./screens/PrivacyPolicyScreen";
 import TermsConditionsScreen from "./screens/TermsConditionsScreen";
 import PerformanceTestScreen from "./screens/PerformanceTestScreen";
+import SplashScreen from "./screens/SplashScreen";
 
 // Define the stack navigator params
 export type RootStackParamList = {
@@ -55,11 +56,7 @@ function AuthNavigator() {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#3366FF" />
-      </View>
-    );
+    return <SplashScreen />;
   }
 
   return (

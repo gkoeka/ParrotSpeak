@@ -7,6 +7,7 @@ import helmet from "helmet";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import { jwtAuthMiddleware } from "./middleware/jwt-auth";
 
 // ES module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -42,6 +43,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Security middleware
   app.use(generalLimiter);
   app.use(slowDownMiddleware);
+  
+  // JWT Authentication middleware - runs before session auth
+  app.use(jwtAuthMiddleware);
 
   app.use(helmet({
     contentSecurityPolicy: {
@@ -530,7 +534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Authentication routes
   app.post('/api/auth/login', (req: Request, res: Response, next: NextFunction) => {
-    passport.authenticate('local', (err: any, user: any, info: any) => {
+    passport.authenticate('local', async (err: any, user: any, info: any) => {
       if (err) {
         return res.status(500).json({ message: 'Authentication error' });
       }
@@ -538,11 +542,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: info?.message || 'Invalid credentials' });
       }
       
+      // Generate JWT token for mobile persistence
+      const { generateToken } = await import('./utils/jwt');
+      const token = generateToken(user);
+      
       req.logIn(user, (err) => {
         if (err) {
           return res.status(500).json({ message: 'Login failed' });
         }
         res.json({ 
+          token, // Include JWT token in response
           user: { 
             id: user.id, 
             email: user.email, 
@@ -601,16 +610,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Log the user in (remove password for security)
       const { password: _, ...sessionUser } = newUser;
+      
+      // Generate JWT token for mobile persistence
+      const { generateToken } = await import('./utils/jwt');
+      const token = generateToken(sessionUser);
+      
       req.logIn(sessionUser as Express.User, (err) => {
         if (err) {
           return res.status(500).json({ message: 'Registration successful but login failed' });
         }
         res.status(201).json({ 
+          token, // Include JWT token in response
           user: { 
             id: newUser.id, 
             email: newUser.email, 
             firstName: newUser.firstName,
-            lastName: newUser.lastName
+            lastName: newUser.lastName,
+            subscriptionStatus: newUser.subscriptionStatus,
+            subscriptionTier: newUser.subscriptionTier
           } 
         });
       });
@@ -660,9 +677,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         oauthId: user.id
       };
 
+      // Generate JWT token for mobile persistence
+      const { generateToken } = await import('./utils/jwt');
+      const token = generateToken(userData as any);
+      
       // For demo purposes, return success with user data
       res.json({ 
         success: true, 
+        token, // Include JWT token
         user: userData,
         message: 'Google authentication successful' 
       });
@@ -692,9 +714,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         oauthId: user || identityToken
       };
 
+      // Generate JWT token for mobile persistence
+      const { generateToken } = await import('./utils/jwt');
+      const token = generateToken(userData as any);
+      
       // For demo purposes, return success with user data
       res.json({ 
         success: true, 
+        token, // Include JWT token
         user: userData,
         message: 'Apple authentication successful' 
       });

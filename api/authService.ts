@@ -1,8 +1,23 @@
 import { API_BASE_URL } from "../api/config";
+import { SecureStorage } from "../utils/secureStorage";
 
 const requestHeaders = {
   "Content-Type": "application/json",
 };
+
+// Get auth headers with token if available
+async function getAuthHeaders(): Promise<HeadersInit> {
+  const token = await SecureStorage.getAuthToken();
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+  
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  
+  return headers;
+}
 
 // Utility: Safe fetch with error and timeout handling
 async function safeFetch(
@@ -13,8 +28,13 @@ async function safeFetch(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
+    const authHeaders = await getAuthHeaders();
     const response = await fetch(url, {
       ...options,
+      headers: {
+        ...authHeaders,
+        ...(options?.headers || {}),
+      },
       credentials: 'include',
       signal: controller.signal,
     });
@@ -39,6 +59,10 @@ export async function logout(): Promise<boolean> {
     method: "POST",
     headers: requestHeaders,
   });
+  
+  // Clear stored auth token on logout regardless of server response
+  await SecureStorage.clearAuthData();
+  
   if (!response) return false; // network error
 
   if (!response.ok) {
@@ -91,7 +115,12 @@ export async function login(credentials: {
     return null;
   }
   try {
-    return await response.json();
+    const data = await response.json();
+    // Store auth token if provided by server
+    if (data.token) {
+      await SecureStorage.setAuthToken(data.token);
+    }
+    return data;
   } catch (e) {
     console.error("Error parsing login JSON:", e);
     return null;
@@ -116,7 +145,12 @@ export async function register(credentials: {
     return null;
   }
   try {
-    return await response.json();
+    const data = await response.json();
+    // Store auth token if provided by server
+    if (data.token) {
+      await SecureStorage.setAuthToken(data.token);
+    }
+    return data;
   } catch (e) {
     console.error("Error parsing register JSON:", e);
     return null;

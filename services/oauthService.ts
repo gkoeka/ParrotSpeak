@@ -2,6 +2,7 @@ import * as AuthSession from 'expo-auth-session';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { Platform } from 'react-native';
 import { API_BASE_URL } from '../api/config';
+import { SecureStorage } from '../utils/secureStorage';
 
 // Google Sign-In types
 interface GoogleSignInType {
@@ -70,7 +71,12 @@ export const OAuthService = {
       });
 
       if (response.ok) {
-        return await response.json();
+        const data = await response.json();
+        // Store auth token if provided by server
+        if (data.token) {
+          await SecureStorage.setAuthToken(data.token);
+        }
+        return data;
       } else {
         throw new Error('Apple authentication failed');
       }
@@ -110,7 +116,12 @@ export const OAuthService = {
       });
 
       if (response.ok) {
-        return await response.json();
+        const data = await response.json();
+        // Store auth token if provided by server
+        if (data.token) {
+          await SecureStorage.setAuthToken(data.token);
+        }
+        return data;
       } else {
         throw new Error('Google authentication failed');
       }

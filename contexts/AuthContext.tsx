@@ -89,14 +89,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       if (response && response.user) {
         const userData = response.user;
-        setUser({
+        const userInfo = {
           id: userData.id,
           email: userData.email,
           name: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.email,
           subscriptionStatus: userData.subscriptionStatus || 'free',
           subscriptionTier: userData.subscriptionTier,
           subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null
-        });
+        };
+        setUser(userInfo);
+        // Store user data for persistence
+        await SecureStorage.setUserData(userInfo);
       } else {
         throw new Error('Invalid email or password');
       }
@@ -116,14 +119,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       if (response && response.user) {
         const userData = response.user;
-        setUser({
+        const userInfo = {
           id: userData.id,
           email: userData.email,
           name: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.email,
           subscriptionStatus: userData.subscriptionStatus || 'free',
           subscriptionTier: userData.subscriptionTier,
           subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null
-        });
+        };
+        setUser(userInfo);
+        // Store user data for persistence
+        await SecureStorage.setUserData(userInfo);
       } else {
         throw new Error('Registration failed');
       }
