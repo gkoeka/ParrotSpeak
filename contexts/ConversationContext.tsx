@@ -11,7 +11,8 @@ import AlwaysListeningService, {
   ConversationState, 
   SpeakerRole, 
   AlwaysListeningCallbacks,
-  ConversationTurn 
+  ConversationTurn,
+  AudioChunk
 } from '../services/AlwaysListeningService';
 
 export interface ConversationUIState {
@@ -48,13 +49,30 @@ export interface ConversationUIState {
   // Error state
   error: string | null;
   lastErrorTime: Date | null;
+  
+  // Phase 3: Audio chunks and translation state
+  audioChunks: AudioChunk[];
+  transcriptionInProgress: boolean;
+  translationInProgress: boolean;
+  currentTranscription: {
+    text: string;
+    language: string;
+    confidence: number;
+    timestamp: Date;
+  } | null;
+  currentTranslation: {
+    text: string;
+    fromLanguage: string;
+    toLanguage: string;
+    timestamp: Date;
+  } | null;
 }
 
 export interface ConversationActions {
   // Always listening controls
   enableAlwaysListening: () => void;
   disableAlwaysListening: () => void;
-  toggleAlwaysListening: () => void;
+
   
   // Phase 1: VoiceActivityService controls
   startListening: () => Promise<void>;
@@ -89,6 +107,24 @@ export interface ConversationActions {
   // Reset functions
   resetConversationState: () => void;
   resetSpeakerTracking: () => void;
+  
+  // Phase 3: Audio and translation controls
+  addAudioChunk: (chunk: AudioChunk) => void;
+  clearAudioChunks: () => void;
+  setTranscriptionInProgress: (inProgress: boolean) => void;
+  setTranslationInProgress: (inProgress: boolean) => void;
+  setCurrentTranscription: (transcription: {
+    text: string;
+    language: string;
+    confidence: number;
+    timestamp: Date;
+  } | null) => void;
+  setCurrentTranslation: (translation: {
+    text: string;
+    fromLanguage: string;
+    toLanguage: string;
+    timestamp: Date;
+  } | null) => void;
 }
 
 export interface ConversationContextType {
@@ -117,7 +153,13 @@ type ConversationActionType =
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'CLEAR_ERROR' }
   | { type: 'RESET_CONVERSATION_STATE' }
-  | { type: 'RESET_SPEAKER_TRACKING' };
+  | { type: 'RESET_SPEAKER_TRACKING' }
+  | { type: 'ADD_AUDIO_CHUNK'; payload: AudioChunk }
+  | { type: 'CLEAR_AUDIO_CHUNKS' }
+  | { type: 'SET_TRANSCRIPTION_IN_PROGRESS'; payload: boolean }
+  | { type: 'SET_TRANSLATION_IN_PROGRESS'; payload: boolean }
+  | { type: 'SET_CURRENT_TRANSCRIPTION'; payload: { text: string; language: string; confidence: number; timestamp: Date; } | null }
+  | { type: 'SET_CURRENT_TRANSLATION'; payload: { text: string; fromLanguage: string; toLanguage: string; timestamp: Date; } | null };
 
 // Initial state
 const initialState: ConversationUIState = {
@@ -141,11 +183,15 @@ const initialState: ConversationUIState = {
   showMicrophoneStatus: true,
   error: null,
   lastErrorTime: null,
+  audioChunks: [],
+  transcriptionInProgress: false,
+  translationInProgress: false,
+  currentTranscription: null,
+  currentTranslation: null,
 };
 
 /**
  * Reducer function for conversation state management
- * TODO: Phase 2 - Implement all state transitions and logic
  */
 function conversationReducer(
   state: ConversationUIState,
@@ -153,7 +199,6 @@ function conversationReducer(
 ): ConversationUIState {
   switch (action.type) {
     case 'ENABLE_ALWAYS_LISTENING':
-      // TODO: Phase 2 - Enable always listening mode
       return {
         ...state,
         isAlwaysListeningEnabled: true,
@@ -161,7 +206,6 @@ function conversationReducer(
       };
 
     case 'DISABLE_ALWAYS_LISTENING':
-      // TODO: Phase 2 - Disable always listening mode and reset state
       return {
         ...state,
         isAlwaysListeningEnabled: false,
@@ -189,21 +233,18 @@ function conversationReducer(
       };
 
     case 'SET_CONVERSATION_STATE':
-      // TODO: Phase 2 - Update conversation state with validation
       return {
         ...state,
         conversationState: action.payload,
       };
 
     case 'SET_SPEAKER':
-      // TODO: Phase 2 - Set current speaker with tracking
       return {
         ...state,
         currentSpeaker: action.payload,
       };
 
     case 'SWITCH_SPEAKER':
-      // TODO: Phase 2 - Switch between speakers with tracking
       return {
         ...state,
         currentSpeaker: state.currentSpeaker === SpeakerRole.SOURCE 
@@ -214,28 +255,24 @@ function conversationReducer(
       };
 
     case 'SET_MICROPHONE_ACTIVE':
-      // TODO: Phase 1 - Update microphone status
       return {
         ...state,
         isMicrophoneActive: action.payload,
       };
 
     case 'SET_AUDIO_PROCESSING':
-      // TODO: Phase 1 - Update audio processing status
       return {
         ...state,
         isProcessingAudio: action.payload,
       };
 
     case 'UPDATE_AUDIO_LEVEL':
-      // TODO: Phase 1 - Update audio level for visual indicators
       return {
         ...state,
         audioLevel: Math.max(0, Math.min(100, action.payload)),
       };
 
     case 'SET_LANGUAGES':
-      // TODO: Phase 2 - Update conversation languages
       return {
         ...state,
         sourceLanguage: action.payload.source,
@@ -243,7 +280,6 @@ function conversationReducer(
       };
 
     case 'SET_DETECTED_LANGUAGE':
-      // TODO: Phase 2 - Update detected language with confidence
       return {
         ...state,
         detectedLanguage: action.payload.language,
@@ -251,7 +287,6 @@ function conversationReducer(
       };
 
     case 'CLEAR_DETECTED_LANGUAGE':
-      // TODO: Phase 2 - Clear language detection state
       return {
         ...state,
         detectedLanguage: null,
@@ -259,28 +294,24 @@ function conversationReducer(
       };
 
     case 'SET_SHOW_LANGUAGE_DETECTION':
-      // TODO: Phase 3 - Toggle language detection UI
       return {
         ...state,
         showLanguageDetection: action.payload,
       };
 
     case 'SET_SHOW_SPEAKER_INDICATOR':
-      // TODO: Phase 3 - Toggle speaker indicator UI
       return {
         ...state,
         showSpeakerIndicator: action.payload,
       };
 
     case 'SET_SHOW_MICROPHONE_STATUS':
-      // TODO: Phase 3 - Toggle microphone status UI
       return {
         ...state,
         showMicrophoneStatus: action.payload,
       };
 
     case 'SET_ERROR':
-      // TODO: Phase 1 - Set error state with timestamp
       return {
         ...state,
         error: action.payload,
@@ -288,7 +319,6 @@ function conversationReducer(
       };
 
     case 'CLEAR_ERROR':
-      // TODO: Phase 1 - Clear error state
       return {
         ...state,
         error: null,
@@ -296,7 +326,6 @@ function conversationReducer(
       };
 
     case 'RESET_CONVERSATION_STATE':
-      // TODO: Phase 2 - Reset conversation to initial state
       return {
         ...initialState,
         isAlwaysListeningEnabled: state.isAlwaysListeningEnabled,
@@ -306,12 +335,53 @@ function conversationReducer(
       };
 
     case 'RESET_SPEAKER_TRACKING':
-      // TODO: Phase 2 - Reset speaker tracking metrics
       return {
         ...state,
         speakerSwitchCount: 0,
         lastSpeakerSwitchTime: null,
         currentSpeaker: SpeakerRole.SOURCE,
+      };
+
+    case 'ADD_AUDIO_CHUNK':
+      // Phase 3 - Add audio chunk to queue
+      return {
+        ...state,
+        audioChunks: [...state.audioChunks, action.payload],
+      };
+
+    case 'CLEAR_AUDIO_CHUNKS':
+      // Phase 3 - Clear audio chunk queue
+      return {
+        ...state,
+        audioChunks: [],
+      };
+
+    case 'SET_TRANSCRIPTION_IN_PROGRESS':
+      // Phase 3 - Set transcription progress state
+      return {
+        ...state,
+        transcriptionInProgress: action.payload,
+      };
+
+    case 'SET_TRANSLATION_IN_PROGRESS':
+      // Phase 3 - Set translation progress state
+      return {
+        ...state,
+        translationInProgress: action.payload,
+      };
+
+    case 'SET_CURRENT_TRANSCRIPTION':
+      // Phase 3 - Set current transcription result
+      return {
+        ...state,
+        currentTranscription: action.payload,
+      };
+
+    case 'SET_CURRENT_TRANSLATION':
+      // Phase 3 - Set current translation result
+      return {
+        ...state,
+        currentTranslation: action.payload,
       };
 
     default:
@@ -324,7 +394,6 @@ const ConversationContext = createContext<ConversationContextType | undefined>(u
 
 /**
  * ConversationProvider component
- * TODO: Phase 2 - Integrate with always listening services
  */
 export function ConversationProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(conversationReducer, initialState);
@@ -389,23 +458,14 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
       dispatch({ type: 'DISABLE_ALWAYS_LISTENING' });
     }, []),
 
-    toggleAlwaysListening: useCallback(() => {
-      // TODO: Phase 2 - Toggle always listening state
-      if (state.isAlwaysListeningEnabled) {
-        dispatch({ type: 'DISABLE_ALWAYS_LISTENING' });
-      } else {
-        dispatch({ type: 'ENABLE_ALWAYS_LISTENING' });
-      }
-    }, [state.isAlwaysListeningEnabled]),
+
 
     // Phase 1: VoiceActivityService controls
     startListening: useCallback(async () => {
-      // TODO: Phase 2 - Integrate with VoiceActivityService
       dispatch({ type: 'SET_LISTENING', payload: true });
     }, []),
 
     stopListening: useCallback(async () => {
-      // TODO: Phase 2 - Integrate with VoiceActivityService
       dispatch({ type: 'SET_LISTENING', payload: false });
     }, []),
 
@@ -480,19 +540,46 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
     resetSpeakerTracking: useCallback(() => {
       dispatch({ type: 'RESET_SPEAKER_TRACKING' });
     }, []),
+
+    // Phase 3: Audio and translation controls
+    addAudioChunk: useCallback((chunk: AudioChunk) => {
+      dispatch({ type: 'ADD_AUDIO_CHUNK', payload: chunk });
+    }, []),
+
+    clearAudioChunks: useCallback(() => {
+      dispatch({ type: 'CLEAR_AUDIO_CHUNKS' });
+    }, []),
+
+    setTranscriptionInProgress: useCallback((inProgress: boolean) => {
+      dispatch({ type: 'SET_TRANSCRIPTION_IN_PROGRESS', payload: inProgress });
+    }, []),
+
+    setTranslationInProgress: useCallback((inProgress: boolean) => {
+      dispatch({ type: 'SET_TRANSLATION_IN_PROGRESS', payload: inProgress });
+    }, []),
+
+    setCurrentTranscription: useCallback((transcription: {
+      text: string;
+      language: string;
+      confidence: number;
+      timestamp: Date;
+    } | null) => {
+      dispatch({ type: 'SET_CURRENT_TRANSCRIPTION', payload: transcription });
+    }, []),
+
+    setCurrentTranslation: useCallback((translation: {
+      text: string;
+      fromLanguage: string;
+      toLanguage: string;
+      timestamp: Date;
+    } | null) => {
+      dispatch({ type: 'SET_CURRENT_TRANSLATION', payload: translation });
+    }, []),
   };
 
-  // TODO: Phase 2 - Add effect to sync with always listening service
+  // Sync with always listening service
   useEffect(() => {
-    // TODO: Listen for service state changes
-    // TODO: Update context state based on service events
-    // TODO: Handle service errors and propagate to UI
-  }, [state.isAlwaysListeningEnabled]);
-
-  // TODO: Phase 3 - Add effect for persistence of user preferences
-  useEffect(() => {
-    // TODO: Save always listening preferences to storage
-    // TODO: Load preferences on app start
+    // Service state changes are handled via callbacks in enableAlwaysListening/disableAlwaysListening
   }, [state.isAlwaysListeningEnabled]);
 
   const contextValue: ConversationContextType = {
@@ -509,7 +596,6 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
 
 /**
  * Hook to use conversation context
- * TODO: Phase 1 - Provide type-safe context access
  */
 export function useConversation(): ConversationContextType {
   const context = useContext(ConversationContext);

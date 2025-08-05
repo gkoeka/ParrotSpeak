@@ -292,13 +292,15 @@ export class AlwaysListeningService {
       }
     }
     
-    // Notify callbacks
-    this.callbacks?.onSilenceDetected(silenceDuration);
+    // Notify callbacks if they exist
+    if (this.callbacks?.onSilenceDetected) {
+      this.callbacks.onSilenceDetected(silenceDuration);
+    }
   }
 
   /**
    * Detect language from audio chunk
-   * TODO: Phase 2 - Implement language detection logic
+   * TODO: Phase 3 - Implement language detection logic
    * @param audioChunk Audio to analyze for language
    * @returns Promise resolving to detected language and confidence
    */
@@ -318,7 +320,7 @@ export class AlwaysListeningService {
 
   /**
    * Determine speaker based on detected language and context
-   * TODO: Phase 2 - Implement smart speaker detection
+   * TODO: Phase 3 - Implement smart speaker detection
    * @param detectedLanguage Language detected in audio
    * @param confidence Detection confidence score
    * @returns Determined speaker role

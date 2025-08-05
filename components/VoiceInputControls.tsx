@@ -22,7 +22,6 @@ interface VoiceInputControlsProps {
   }) => void;
   sourceLanguage?: string;
   targetLanguage?: string;
-  // TODO: Phase 2 - Add always listening props
   showAlwaysListeningToggle?: boolean;
   onAlwaysListeningToggle?: (enabled: boolean) => void;
 }
@@ -40,7 +39,7 @@ export default function VoiceInputControls({
   // Legacy recording state (for manual recording)
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [recordingUri, setRecordingUri] = useState<string | null>(null);
+
   const [textInput, setTextInput] = useState('');
   const [showTextInput, setShowTextInput] = useState(false);
   
@@ -156,7 +155,6 @@ export default function VoiceInputControls({
       console.log('Starting recording...');
       
       const result = await startRecording();
-      setRecordingUri(result.uri);
       console.log('Recording started:', result.uri);
       
     } catch (error) {

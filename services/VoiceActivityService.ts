@@ -47,7 +47,7 @@ export class VoiceActivityService {
   private lastSpeechTime: Date | null = null;
   private isSpeechActive: boolean = false;
   private speechStartTime: Date | null = null;
-  private currentChunkData: ArrayBuffer[] = [];
+
   private audioAnalysisInterval: NodeJS.Timeout | null = null;
   private chunkStartTime: Date | null = null;
 
@@ -190,7 +190,6 @@ export class VoiceActivityService {
       this.isListening = false;
       this.isSpeechActive = false;
       this.speechStartTime = null;
-      this.currentChunkData = [];
       this.chunkStartTime = null;
       this.lastSpeechTime = null;
 
@@ -439,7 +438,6 @@ export class VoiceActivityService {
       
       // Reset all internal state
       this.callbacks = null;
-      this.currentChunkData = [];
       
       console.log('✅ VoiceActivityService: Disposal complete');
       
