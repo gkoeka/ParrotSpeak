@@ -5,6 +5,7 @@ import { startRecording, stopRecording, processRecording, speakText } from '../a
 import { translateText } from '../api/languageService';
 import { getLanguageByCode } from '../constants/languageConfiguration';
 import { performanceMonitor } from '../utils/performanceMonitor';
+import AlwaysListeningToggle from './AlwaysListeningToggle';
 
 interface VoiceInputControlsProps {
   onMessage: (message: {
@@ -17,12 +18,17 @@ interface VoiceInputControlsProps {
   }) => void;
   sourceLanguage?: string;
   targetLanguage?: string;
+  // TODO: Phase 2 - Add always listening props
+  showAlwaysListeningToggle?: boolean;
+  onAlwaysListeningToggle?: (enabled: boolean) => void;
 }
 
 export default function VoiceInputControls({ 
   onMessage, 
   sourceLanguage = 'en-US',
-  targetLanguage = 'es-ES'
+  targetLanguage = 'es-ES',
+  showAlwaysListeningToggle = false,
+  onAlwaysListeningToggle
 }: VoiceInputControlsProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -238,6 +244,18 @@ export default function VoiceInputControls({
 
   return (
     <View style={styles.container}>
+      {/* Always Listening Toggle - TODO: Phase 2 - Wire up to conversation context */}
+      {showAlwaysListeningToggle && (
+        <View style={styles.alwaysListeningContainer}>
+          <AlwaysListeningToggle
+            variant="switch"
+            size="medium"
+            showStatus={true}
+            onToggle={onAlwaysListeningToggle}
+          />
+        </View>
+      )}
+      
       {/* Text-only warning if either language doesn't support speech */}
       {(!isSourceSpeechSupported || !isTargetSpeechSupported) && (
         <View style={styles.textOnlyWarning}>
@@ -313,6 +331,12 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     paddingVertical: 20,
+  },
+  // TODO: Phase 2 - Style always listening integration
+  alwaysListeningContainer: {
+    width: '100%',
+    marginBottom: 20,
+    paddingHorizontal: 16,
   },
   recordButton: {
     width: 80,
