@@ -39,7 +39,7 @@ export default function WelcomeScreen() {
           Welcome to ParrotSpeak
         </Text>
         <Text style={[styles.tagline, isDarkMode && styles.taglineDark]}>
-          Connect Across Languages
+          Connect Across Languages with Voice-to-Voice translation
         </Text>
 
         {/* Benefits */}
