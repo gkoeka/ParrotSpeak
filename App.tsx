@@ -131,15 +131,25 @@ function AuthNavigator() {
   );
 }
 
+function AppContent() {
+  const { isDarkMode } = useTheme();
+  
+  return (
+    <>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
+      <NavigationContainer>
+        <AuthNavigator />
+      </NavigationContainer>
+    </>
+  );
+}
+
 export default function App() {
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle="dark-content" />
       <AuthProvider>
         <ThemeProvider>
-          <NavigationContainer>
-            <AuthNavigator />
-          </NavigationContainer>
+          <AppContent />
         </ThemeProvider>
       </AuthProvider>
     </SafeAreaProvider>
