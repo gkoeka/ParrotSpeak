@@ -74,16 +74,23 @@ function AuthNavigator() {
     try {
       const hasLaunched = await AsyncStorage.getItem('hasLaunched');
       
-      // For now, always show welcome screen when not authenticated to see the updated design
-      if (!user) {
+      // Special case: greg@gregkoeka.com always shows welcome screen for testing
+      if (user?.email === 'greg@gregkoeka.com') {
         setIsFirstLaunch(true);
         return;
       }
       
-      setIsFirstLaunch(hasLaunched === null);
-      if (hasLaunched === null) {
-        await AsyncStorage.setItem('hasLaunched', 'true');
+      // For unauthenticated users, check normal first launch logic
+      if (!user) {
+        setIsFirstLaunch(hasLaunched === null);
+        if (hasLaunched === null) {
+          await AsyncStorage.setItem('hasLaunched', 'true');
+        }
+        return;
       }
+      
+      // For other authenticated users, don't show welcome screen
+      setIsFirstLaunch(false);
     } catch (error) {
       console.error('Error checking first launch:', error);
       setIsFirstLaunch(false);
@@ -95,6 +102,9 @@ function AuthNavigator() {
   }
 
   const getInitialRoute = () => {
+    // Special case: greg@gregkoeka.com always sees welcome screen for testing
+    if (user?.email === 'greg@gregkoeka.com') return "Welcome";
+    
     if (user) return "MainTabs";
     if (isFirstLaunch) return "Welcome";
     return "Auth";
@@ -110,15 +120,18 @@ function AuthNavigator() {
         headerShown: false,
       }}
     >
-      {user ? (
-        // Authenticated screens - Use Tab Navigator
+      {user && user.email !== 'greg@gregkoeka.com' ? (
+        // Authenticated screens - Use Tab Navigator (except test user)
         <Stack.Screen name="MainTabs" component={MainTabNavigator} />
       ) : (
-        // Auth screens
+        // Auth screens and Welcome screen (including for test user)
         <>
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="Auth" component={AuthScreen} />
           <Stack.Screen name="PasswordReset" component={PasswordResetScreen} />
+          {user?.email === 'greg@gregkoeka.com' && (
+            <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+          )}
         </>
       )}
     </Stack.Navigator>
