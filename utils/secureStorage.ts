@@ -53,6 +53,24 @@ export const SecureStorage = {
     }
   },
 
+  // Clear just the auth token
+  async clearAuthToken(): Promise<void> {
+    try {
+      await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
+    } catch (error) {
+      console.error('Failed to clear auth token:', error);
+    }
+  },
+
+  // Clear just the user data
+  async clearUserData(): Promise<void> {
+    try {
+      await SecureStore.deleteItemAsync(USER_DATA_KEY);
+    } catch (error) {
+      console.error('Failed to clear user data:', error);
+    }
+  },
+
   // Check if user is authenticated (has valid token)
   async isAuthenticated(): Promise<boolean> {
     const token = await this.getAuthToken();

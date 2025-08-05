@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { API_BASE_URL } from '../api/config';
 import { getFlagEmoji } from '../constants/languageConfiguration';
+import { authenticatedFetch } from '../utils/apiHelpers';
 
 type ConversationsListNavigationProp = StackNavigationProp<RootStackParamList, 'ConversationsList'>;
 
@@ -35,20 +36,14 @@ export default function ConversationsListScreen() {
       setIsLoading(true);
       setError(null);
       
-      // Import SecureStorage to get the auth token
-      const { SecureStorage } = await import('../utils/secureStorage');
-      const token = await SecureStorage.getAuthToken();
-      
-      const response = await fetch(`${API_BASE_URL}/api/conversations`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : '',
-        },
-      });
+      const response = await authenticatedFetch(`${API_BASE_URL}/api/conversations`);
 
       if (!response.ok) {
-        throw new Error('Failed to load conversations');
+        // Check for authentication errors
+        if (response.status === 401) {
+          throw new Error('401: Authentication expired. Please log in again.');
+        }
+        throw new Error(`Failed to load conversations: ${response.status}`);
       }
 
       const data = await response.json();
@@ -94,9 +89,15 @@ export default function ConversationsListScreen() {
       });
       
       setConversations(formattedConversations);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading conversations:', err);
-      setError('Failed to load conversations');
+      if (err.message && err.message.includes('Network request failed')) {
+        setError('Network error. Please check your connection.');
+      } else if (err.message && err.message.includes('401')) {
+        setError('Authentication error. Please log in again.');
+      } else {
+        setError(`Failed to load conversations: ${err.message || 'Unknown error'}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -208,7 +209,7 @@ export default function ConversationsListScreen() {
             </Text>
             <TouchableOpacity 
               style={[styles.startButton, isDarkMode && styles.startButtonDark]}
-              onPress={() => navigation.navigate('Conversation')}
+              onPress={() => navigation.navigate('Conversation', { id: undefined })}
             >
               <Text style={styles.startButtonText}>Start New Conversation</Text>
             </TouchableOpacity>
