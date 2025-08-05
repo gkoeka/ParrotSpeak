@@ -39,6 +39,7 @@ export default function ConversationScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState<string | undefined>(conversationId);
 
   // Check subscription status
   const hasActiveSubscription = user?.subscriptionStatus === 'active' || user?.subscriptionTier === 'lifetime';
@@ -281,7 +282,66 @@ export default function ConversationScreen() {
       
       <View style={styles.controlsContainer}>
         <VoiceInputControls 
-          onMessage={(message) => setMessages(prev => [...prev, message])}
+          onMessage={async (message) => {
+            // Create conversation if it doesn't exist yet and user is authenticated
+            if (!currentConversationId && hasActiveSubscription) {
+              try {
+                const response = await fetch(`${API_BASE_URL}/api/conversations`, {
+                  method: 'POST',
+                  credentials: 'include',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    sourceLanguage: message.fromLanguage,
+                    targetLanguage: message.toLanguage,
+                    title: `${getFlagEmoji(message.fromLanguage)} ${message.fromLanguage} → ${getFlagEmoji(message.toLanguage)} ${message.toLanguage}`,
+                  }),
+                });
+
+                if (response.ok) {
+                  const newConversation = await response.json();
+                  setCurrentConversationId(newConversation.id);
+                  
+                  // Save the message to the new conversation
+                  await fetch(`${API_BASE_URL}/api/conversations/${newConversation.id}/messages`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      text: message.text,
+                      sourceLanguage: message.fromLanguage,
+                      targetLanguage: message.toLanguage,
+                    }),
+                  });
+                }
+              } catch (error) {
+                console.error('Error creating conversation:', error);
+              }
+            } else if (currentConversationId && hasActiveSubscription) {
+              // Save message to existing conversation
+              try {
+                await fetch(`${API_BASE_URL}/api/conversations/${currentConversationId}/messages`, {
+                  method: 'POST',
+                  credentials: 'include',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    text: message.text,
+                    sourceLanguage: message.fromLanguage,
+                    targetLanguage: message.toLanguage,
+                  }),
+                });
+              } catch (error) {
+                console.error('Error saving message:', error);
+              }
+            }
+            
+            setMessages(prev => [...prev, message]);
+          }}
           sourceLanguage={sourceLanguage}
           targetLanguage={targetLanguage}
         />

@@ -8,6 +8,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { API_BASE_URL } from '../api/config';
+import { getFlagEmoji } from '../constants/languageConfiguration';
 
 type ConversationsListNavigationProp = StackNavigationProp<RootStackParamList, 'ConversationsList'>;
 
@@ -51,7 +52,9 @@ export default function ConversationsListScreen() {
       const formattedConversations = data.map((conv: any) => ({
         id: conv.id,
         title: conv.title || `Conversation ${conv.id.slice(0, 8)}`,
-        languages: `${conv.sourceLanguage || 'Unknown'} → ${conv.targetLanguage || 'Unknown'}`,
+        sourceLanguage: conv.sourceLanguage || 'en',
+        targetLanguage: conv.targetLanguage || 'es',
+        languages: `${getFlagEmoji(conv.sourceLanguage || 'en')} ${conv.sourceLanguage || 'Unknown'} → ${getFlagEmoji(conv.targetLanguage || 'es')} ${conv.targetLanguage || 'Unknown'}`,
         lastActivity: formatTimeAgo(new Date(conv.updatedAt || conv.createdAt)),
         messageCount: conv.messageCount || 0,
       }));
