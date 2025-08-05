@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, ActivityIndicator } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -12,9 +12,14 @@ type NavigationProp = StackNavigationProp<RootStackParamList, 'Welcome'>;
 export default function WelcomeScreen() {
   const { isDarkMode } = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const handleGetStarted = () => {
-    navigation.navigate('Auth', { defaultToSignUp: true });
+    setIsNavigating(true);
+    // Add 1.6 second delay before navigating
+    setTimeout(() => {
+      navigation.navigate('Auth', { defaultToSignUp: true });
+    }, 1600);
   };
 
   return (
@@ -61,11 +66,16 @@ export default function WelcomeScreen() {
 
         {/* Get Started Button */}
         <TouchableOpacity
-          style={styles.getStartedButton}
+          style={[styles.getStartedButton, isNavigating && styles.getStartedButtonDisabled]}
           onPress={handleGetStarted}
           activeOpacity={0.8}
+          disabled={isNavigating}
         >
-          <Text style={styles.getStartedText}>Get Started</Text>
+          {isNavigating ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.getStartedText}>Get Started</Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -147,5 +157,8 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '600',
+  },
+  getStartedButtonDisabled: {
+    opacity: 0.8,
   },
 });
