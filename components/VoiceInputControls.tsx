@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { startRecording, stopRecording, processRecording, speakText } from '../api/speechService';
 import { translateText } from '../api/languageService';
 import { getLanguageByCode } from '../constants/languageConfiguration';
 import { performanceMonitor } from '../utils/performanceMonitor';
 import AlwaysListeningToggle from './AlwaysListeningToggle';
+import VoiceActivityService, { VoiceActivityCallbacks, AudioChunk } from '../services/VoiceActivityService';
+import { useConversation } from '../contexts/ConversationContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface VoiceInputControlsProps {
   onMessage: (message: {
@@ -30,11 +34,19 @@ export default function VoiceInputControls({
   showAlwaysListeningToggle = false,
   onAlwaysListeningToggle
 }: VoiceInputControlsProps) {
+  const { isDarkMode } = useTheme();
+  const { state, actions } = useConversation();
+  
+  // Legacy recording state (for manual recording)
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [recordingUri, setRecordingUri] = useState<string | null>(null);
   const [textInput, setTextInput] = useState('');
   const [showTextInput, setShowTextInput] = useState(false);
+  
+  // Phase 1: VoiceActivityService integration
+  const voiceActivityServiceRef = useRef<VoiceActivityService | null>(null);
+  const [vadInitialized, setVadInitialized] = useState(false);
   
   // Check if source or target language supports speech
   // Handle language codes that might be passed with regional variants
@@ -55,6 +67,82 @@ export default function VoiceInputControls({
   const targetLanguageConfig = normalizeLanguageCode(targetLanguage);
   const isSourceSpeechSupported = sourceLanguageConfig?.speechSupported ?? true;
   const isTargetSpeechSupported = targetLanguageConfig?.speechSupported ?? true;
+
+  // Phase 1: Initialize VoiceActivityService on mount
+  useEffect(() => {
+    const initializeVAD = async () => {
+      try {
+        console.log('🎤 VoiceInputControls: Initializing VoiceActivityService...');
+        
+        const vadService = new VoiceActivityService();
+        voiceActivityServiceRef.current = vadService;
+        
+        // Set up callbacks for VAD events
+        const callbacks: VoiceActivityCallbacks = {
+          onSpeechStart: () => {
+            console.log('🗣️ VoiceInputControls: Speech start detected');
+            actions.setMicrophoneActive(true);
+          },
+          onSpeechEnd: (chunk: AudioChunk) => {
+            console.log('🔇 VoiceInputControls: Speech end detected, chunk:', chunk);
+            actions.setMicrophoneActive(false);
+            // TODO: Phase 2 - Process chunk for translation
+          },
+          onSilenceDetected: (duration: number) => {
+            console.log(`⏰ VoiceInputControls: Silence detected (${duration}ms)`);
+            // TODO: Phase 2 - Handle speaker switching
+          },
+          onError: (error: Error) => {
+            console.error('❌ VoiceInputControls: VAD error:', error);
+            actions.setError(error.message);
+          },
+        };
+        
+        await vadService.initialize(callbacks);
+        actions.setMicPermission(true);
+        setVadInitialized(true);
+        console.log('✅ VoiceInputControls: VoiceActivityService initialized');
+        
+      } catch (error) {
+        console.error('❌ VoiceInputControls: Failed to initialize VAD:', error);
+        actions.setError(error instanceof Error ? error.message : 'Failed to initialize voice detection');
+        actions.setMicPermission(false);
+      }
+    };
+
+    initializeVAD();
+
+    // Cleanup on unmount
+    return () => {
+      if (voiceActivityServiceRef.current) {
+        voiceActivityServiceRef.current.dispose();
+        voiceActivityServiceRef.current = null;
+      }
+    };
+  }, []);
+
+  // Phase 1: Handle VoiceActivityService start/stop
+  const handleVADToggle = async () => {
+    if (!voiceActivityServiceRef.current || !vadInitialized) {
+      Alert.alert('Error', 'Voice detection not initialized');
+      return;
+    }
+
+    try {
+      if (state.isListening) {
+        console.log('🛑 VoiceInputControls: Stopping VAD...');
+        await voiceActivityServiceRef.current.stopListening();
+        actions.setListening(false);
+      } else {
+        console.log('🎤 VoiceInputControls: Starting VAD...');
+        await voiceActivityServiceRef.current.startListening();
+        actions.setListening(true);
+      }
+    } catch (error) {
+      console.error('❌ VoiceInputControls: VAD toggle failed:', error);
+      actions.setError(error instanceof Error ? error.message : 'Failed to toggle voice detection');
+    }
+  };
 
   const handleStartRecording = async () => {
     try {
@@ -255,6 +343,79 @@ export default function VoiceInputControls({
           />
         </View>
       )}
+
+      {/* Phase 1: Voice Activity Detection Controls */}
+      <View style={styles.vadContainer}>
+        <Text style={[styles.vadTitle, { color: isDarkMode ? '#ffffff' : '#000000' }]}>
+          Voice Activity Detection (Phase 1)
+        </Text>
+        
+        <TouchableOpacity
+          style={[
+            styles.vadButton,
+            state.isListening && styles.vadButtonActive,
+            !vadInitialized && styles.vadButtonDisabled,
+            { backgroundColor: state.isListening ? '#ff4444' : '#3366FF' }
+          ]}
+          onPress={handleVADToggle}
+          disabled={!vadInitialized}
+        >
+          <Ionicons 
+            name={state.isListening ? 'stop' : 'mic'} 
+            size={24} 
+            color="#ffffff" 
+          />
+          <Text style={styles.vadButtonText}>
+            {!vadInitialized ? 'Initializing...' : state.isListening ? 'Stop Listening' : 'Start Listening'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Mic activity indicator */}
+        {state.isListening && (
+          <View style={[
+            styles.micIndicator,
+            state.isMicrophoneActive && styles.micIndicatorActive
+          ]}>
+            <Ionicons 
+              name={state.isMicrophoneActive ? 'mic' : 'mic-outline'} 
+              size={16} 
+              color={state.isMicrophoneActive ? '#00ff00' : '#666666'} 
+            />
+            <Text style={[
+              styles.micIndicatorText,
+              { color: state.isMicrophoneActive ? '#00ff00' : '#666666' }
+            ]}>
+              {state.isMicrophoneActive ? 'Speech Detected' : 'Listening...'}
+            </Text>
+          </View>
+        )}
+
+        {/* Permission status */}
+        <View style={styles.permissionStatus}>
+          <Ionicons 
+            name={state.micPermissionGranted ? 'checkmark-circle' : 'close-circle'} 
+            size={16} 
+            color={state.micPermissionGranted ? '#00ff00' : '#ff4444'} 
+          />
+          <Text style={[
+            styles.permissionText,
+            { color: state.micPermissionGranted ? '#00ff00' : '#ff4444' }
+          ]}>
+            Microphone {state.micPermissionGranted ? 'Granted' : 'Denied'}
+          </Text>
+        </View>
+
+        {/* Error display */}
+        {state.error && (
+          <View style={styles.errorContainer}>
+            <Ionicons name="warning" size={16} color="#ff4444" />
+            <Text style={styles.errorText}>{state.error}</Text>
+            <TouchableOpacity onPress={actions.clearError}>
+              <Ionicons name="close" size={16} color="#ff4444" />
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
       
       {/* Text-only warning if either language doesn't support speech */}
       {(!isSourceSpeechSupported || !isTargetSpeechSupported) && (
@@ -337,6 +498,87 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 20,
     paddingHorizontal: 16,
+  },
+  
+  // Phase 1: VAD Controls Styling
+  vadContainer: {
+    width: '100%',
+    paddingHorizontal: 16,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  vadTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  vadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 25,
+    gap: 8,
+    minWidth: 160,
+  },
+  vadButtonActive: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  vadButtonDisabled: {
+    opacity: 0.5,
+  },
+  vadButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  micIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  micIndicatorActive: {
+    backgroundColor: 'rgba(0, 255, 0, 0.1)',
+  },
+  micIndicatorText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  permissionStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+  },
+  permissionText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(255, 68, 68, 0.1)',
+    borderRadius: 8,
+    maxWidth: '100%',
+  },
+  errorText: {
+    flex: 1,
+    color: '#ff4444',
+    fontSize: 12,
   },
   recordButton: {
     width: 80,

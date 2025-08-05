@@ -18,10 +18,12 @@ export interface ConversationUIState {
   conversationState: ConversationState;
   currentSpeaker: SpeakerRole;
   
-  // Microphone and audio state
-  isMicrophoneActive: boolean;
+  // Phase 1: Microphone and audio state
+  isListening: boolean;                  // VoiceActivityService listening state
+  isMicrophoneActive: boolean;           // Mic permission and activity
   isProcessingAudio: boolean;
   audioLevel: number;                    // Current audio input level (0-100)
+  micPermissionGranted: boolean;         // Permission status
   
   // Language detection state
   detectedLanguage: string | null;
@@ -48,6 +50,12 @@ export interface ConversationActions {
   enableAlwaysListening: () => void;
   disableAlwaysListening: () => void;
   toggleAlwaysListening: () => void;
+  
+  // Phase 1: VoiceActivityService controls
+  startListening: () => Promise<void>;
+  stopListening: () => Promise<void>;
+  setListening: (listening: boolean) => void;
+  setMicPermission: (granted: boolean) => void;
   
   // Conversation state management
   setConversationState: (state: ConversationState) => void;
@@ -87,6 +95,8 @@ export interface ConversationContextType {
 type ConversationActionType =
   | { type: 'ENABLE_ALWAYS_LISTENING' }
   | { type: 'DISABLE_ALWAYS_LISTENING' }
+  | { type: 'SET_LISTENING'; payload: boolean }
+  | { type: 'SET_MIC_PERMISSION'; payload: boolean }
   | { type: 'SET_CONVERSATION_STATE'; payload: ConversationState }
   | { type: 'SET_SPEAKER'; payload: SpeakerRole }
   | { type: 'SWITCH_SPEAKER' }
@@ -110,9 +120,11 @@ const initialState: ConversationUIState = {
   isAlwaysListeningActive: false,
   conversationState: ConversationState.IDLE,
   currentSpeaker: SpeakerRole.SOURCE,
+  isListening: false,
   isMicrophoneActive: false,
   isProcessingAudio: false,
   audioLevel: 0,
+  micPermissionGranted: false,
   detectedLanguage: null,
   languageConfidence: 0,
   sourceLanguage: 'en',
@@ -150,9 +162,25 @@ function conversationReducer(
         isAlwaysListeningEnabled: false,
         isAlwaysListeningActive: false,
         conversationState: ConversationState.IDLE,
+        isListening: false,
         isMicrophoneActive: false,
         isProcessingAudio: false,
         audioLevel: 0,
+      };
+
+    case 'SET_LISTENING':
+      // Phase 1 - Update VoiceActivityService listening state
+      return {
+        ...state,
+        isListening: action.payload,
+        isAlwaysListeningActive: action.payload && state.isAlwaysListeningEnabled,
+      };
+
+    case 'SET_MIC_PERMISSION':
+      // Phase 1 - Update microphone permission status
+      return {
+        ...state,
+        micPermissionGranted: action.payload,
       };
 
     case 'SET_CONVERSATION_STATE':
@@ -269,6 +297,7 @@ function conversationReducer(
         isAlwaysListeningEnabled: state.isAlwaysListeningEnabled,
         sourceLanguage: state.sourceLanguage,
         targetLanguage: state.targetLanguage,
+        micPermissionGranted: state.micPermissionGranted,
       };
 
     case 'RESET_SPEAKER_TRACKING':
@@ -315,6 +344,25 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
         dispatch({ type: 'ENABLE_ALWAYS_LISTENING' });
       }
     }, [state.isAlwaysListeningEnabled]),
+
+    // Phase 1: VoiceActivityService controls
+    startListening: useCallback(async () => {
+      // TODO: Phase 2 - Integrate with VoiceActivityService
+      dispatch({ type: 'SET_LISTENING', payload: true });
+    }, []),
+
+    stopListening: useCallback(async () => {
+      // TODO: Phase 2 - Integrate with VoiceActivityService
+      dispatch({ type: 'SET_LISTENING', payload: false });
+    }, []),
+
+    setListening: useCallback((listening: boolean) => {
+      dispatch({ type: 'SET_LISTENING', payload: listening });
+    }, []),
+
+    setMicPermission: useCallback((granted: boolean) => {
+      dispatch({ type: 'SET_MIC_PERMISSION', payload: granted });
+    }, []),
 
     setConversationState: useCallback((conversationState: ConversationState) => {
       dispatch({ type: 'SET_CONVERSATION_STATE', payload: conversationState });

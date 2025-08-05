@@ -9,6 +9,12 @@
 
 import { Audio } from 'expo-av';
 
+// Phase 1 Configuration Constants
+const SILENCE_THRESHOLD_DB = -50;
+const MIN_SPEECH_DURATION_MS = 500;
+const MAX_SILENCE_DURATION_MS = 2000;
+const CHUNK_DURATION_MS = 2000;
+
 export interface AudioChunk {
   uri: string;
   duration: number;
@@ -39,13 +45,18 @@ export class VoiceActivityService {
   private callbacks: VoiceActivityCallbacks | null = null;
   private silenceTimer: NodeJS.Timeout | null = null;
   private lastSpeechTime: Date | null = null;
+  private isSpeechActive: boolean = false;
+  private speechStartTime: Date | null = null;
+  private currentChunkData: ArrayBuffer[] = [];
+  private audioAnalysisInterval: NodeJS.Timeout | null = null;
+  private chunkStartTime: Date | null = null;
 
   constructor(config?: Partial<VoiceActivityConfig>) {
     this.config = {
-      silenceThreshold: -50,           // dB
-      minSpeechDuration: 500,          // 500ms
-      maxSilenceDuration: 2000,        // 2 seconds
-      chunkSize: 1000,                 // 1 second chunks
+      silenceThreshold: SILENCE_THRESHOLD_DB,
+      minSpeechDuration: MIN_SPEECH_DURATION_MS,
+      maxSilenceDuration: MAX_SILENCE_DURATION_MS,
+      chunkSize: CHUNK_DURATION_MS,
       noiseFilterEnabled: true,
       ...config
     };
@@ -53,94 +64,287 @@ export class VoiceActivityService {
 
   /**
    * Initialize voice activity detection with callback handlers
-   * TODO: Phase 1 - Set up audio permissions and initialize recording
+   * Phase 1 - Set up audio permissions and initialize recording
    * @param callbacks Event handlers for voice activity events
    */
   public async initialize(callbacks: VoiceActivityCallbacks): Promise<void> {
-    // TODO: Request microphone permissions
-    // TODO: Initialize audio recording settings
-    // TODO: Set up audio analysis pipeline
-    // TODO: Configure noise filtering if enabled
-    this.callbacks = callbacks;
+    console.log('🎤 VoiceActivityService: Initializing...');
+    
+    try {
+      // Request microphone permissions
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== 'granted') {
+        throw new Error('Microphone permission not granted');
+      }
+      console.log('✅ VoiceActivityService: Microphone permissions granted');
+
+      // Configure audio recording settings for continuous recording
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+      });
+      console.log('✅ VoiceActivityService: Audio mode configured');
+
+      this.callbacks = callbacks;
+      console.log('✅ VoiceActivityService: Initialization complete');
+    } catch (error) {
+      console.error('❌ VoiceActivityService: Initialization failed:', error);
+      this.callbacks?.onError(error instanceof Error ? error : new Error('Initialization failed'));
+      throw error;
+    }
   }
 
   /**
    * Start continuous voice activity detection
-   * TODO: Phase 1 - Begin continuous audio capture and analysis
+   * Phase 1 - Begin continuous audio capture and analysis
    */
   public async startListening(): Promise<void> {
-    // TODO: Start continuous audio recording
-    // TODO: Begin real-time audio analysis
-    // TODO: Initialize VAD processing loop
-    // TODO: Set up silence detection timers
-    this.isListening = true;
+    if (this.isListening) {
+      console.log('⚠️ VoiceActivityService: Already listening');
+      return;
+    }
+
+    try {
+      console.log('🎤 VoiceActivityService: Starting continuous listening...');
+      
+      // Create new recording instance
+      this.recording = new Audio.Recording();
+      
+      // Configure recording options for VAD with proper Expo AV constants
+      const recordingOptions = {
+        android: {
+          extension: '.m4a',
+          outputFormat: Audio.AndroidOutputFormat.MPEG_4,
+          audioEncoder: Audio.AndroidAudioEncoder.AAC,
+          sampleRate: 44100,
+          numberOfChannels: 1,
+          bitRate: 128000,
+        },
+        ios: {
+          extension: '.m4a',
+          outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
+          audioQuality: Audio.IOSAudioQuality.HIGH,
+          sampleRate: 44100,
+          numberOfChannels: 1,
+          bitRate: 128000,
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
+        web: {
+          mimeType: 'audio/webm;codecs=opus',
+          bitsPerSecond: 128000,
+        },
+      };
+
+      // Start recording
+      await this.recording.prepareToRecordAsync(recordingOptions);
+      await this.recording.startAsync();
+      
+      this.isListening = true;
+      this.chunkStartTime = new Date();
+      console.log('✅ VoiceActivityService: Mic started');
+
+      // Begin audio level monitoring for VAD
+      this.startAudioAnalysis();
+      
+    } catch (error) {
+      console.error('❌ VoiceActivityService: Failed to start listening:', error);
+      this.isListening = false;
+      this.callbacks?.onError(error instanceof Error ? error : new Error('Failed to start listening'));
+      throw error;
+    }
   }
 
   /**
    * Stop voice activity detection and clean up resources
-   * TODO: Phase 1 - Clean shutdown of audio processing
+   * Phase 1 - Clean shutdown of audio processing
    */
   public async stopListening(): Promise<void> {
-    // TODO: Stop audio recording
-    // TODO: Clear all timers
-    // TODO: Clean up audio resources
-    // TODO: Reset internal state
-    this.isListening = false;
+    if (!this.isListening) {
+      console.log('⚠️ VoiceActivityService: Not currently listening');
+      return;
+    }
+
+    try {
+      console.log('🛑 VoiceActivityService: Stopping listening...');
+      
+      // Clear timers
+      this.clearTimers();
+      
+      // Stop audio analysis
+      if (this.audioAnalysisInterval) {
+        clearInterval(this.audioAnalysisInterval);
+        this.audioAnalysisInterval = null;
+      }
+
+      // Stop and clean up recording
+      if (this.recording) {
+        await this.recording.stopAndUnloadAsync();
+        this.recording = null;
+      }
+
+      // Reset state
+      this.isListening = false;
+      this.isSpeechActive = false;
+      this.speechStartTime = null;
+      this.currentChunkData = [];
+      this.chunkStartTime = null;
+      this.lastSpeechTime = null;
+
+      console.log('✅ VoiceActivityService: Mic stopped');
+      
+    } catch (error) {
+      console.error('❌ VoiceActivityService: Error stopping listening:', error);
+      this.callbacks?.onError(error instanceof Error ? error : new Error('Failed to stop listening'));
+    }
   }
 
   /**
-   * Process audio chunk for voice activity detection
-   * TODO: Phase 1 - Implement core VAD algorithm
-   * @param audioData Raw audio data to analyze
-   * @returns Promise resolving to VAD analysis results
+   * Start audio level monitoring for voice activity detection
+   * Phase 1 - Implement basic VAD using audio level thresholds
    */
-  private async processAudioChunk(audioData: ArrayBuffer): Promise<{
-    hasSpeech: boolean;
-    confidenceScore: number;
-    silenceDuration: number;
-  }> {
-    // TODO: Analyze audio levels and patterns
-    // TODO: Apply noise filtering if enabled
-    // TODO: Calculate confidence score for speech detection
-    // TODO: Track silence duration
-    return {
-      hasSpeech: false,
-      confidenceScore: 0,
-      silenceDuration: 0
-    };
+  private startAudioAnalysis(): void {
+    // Monitor audio levels every 100ms for responsive VAD
+    this.audioAnalysisInterval = setInterval(async () => {
+      if (!this.recording || !this.isListening) return;
+
+      try {
+        // Get current recording status with audio level
+        const status = await this.recording.getStatusAsync();
+        if (status.isRecording && status.metering !== undefined) {
+          const audioLevel = status.metering; // This is in dB, typically -160 to 0
+          await this.processAudioLevel(audioLevel);
+        }
+      } catch (error) {
+        console.error('❌ VoiceActivityService: Error in audio analysis:', error);
+      }
+    }, 100); // 100ms intervals for responsive detection
+  }
+
+  /**
+   * Process audio level for voice activity detection
+   * Phase 1 - Implement core VAD algorithm using volume thresholds
+   * @param audioLevel Current audio level in dB
+   */
+  private async processAudioLevel(audioLevel: number): Promise<void> {
+    const now = new Date();
+    const hasSpeech = audioLevel > this.config.silenceThreshold;
+
+    if (hasSpeech && !this.isSpeechActive) {
+      // Speech detected - start of speech
+      this.onSpeechDetected();
+    } else if (!hasSpeech && this.isSpeechActive) {
+      // Silence detected - potential end of speech
+      this.startSilenceTimer();
+    } else if (hasSpeech && this.isSpeechActive) {
+      // Continuing speech - reset silence timer
+      this.clearSilenceTimer();
+      this.lastSpeechTime = now;
+    }
+
+    // Check if we should create a chunk based on duration
+    if (this.chunkStartTime && (now.getTime() - this.chunkStartTime.getTime()) >= this.config.chunkSize) {
+      await this.createAudioChunk();
+    }
   }
 
   /**
    * Handle detected speech start event
-   * TODO: Phase 1 - Manage speech start detection
+   * Phase 1 - Manage speech start detection
    */
   private onSpeechDetected(): void {
-    // TODO: Clear silence timers
-    // TODO: Mark speech start time
-    // TODO: Notify callbacks of speech start
-    // TODO: Begin audio chunk collection
+    const now = new Date();
+    
+    // Clear any existing silence timer
+    this.clearSilenceTimer();
+    
+    // Mark speech as active
+    this.isSpeechActive = true;
+    this.speechStartTime = now;
+    this.lastSpeechTime = now;
+    
+    console.log('🗣️ VoiceActivityService: Speech detected');
+    
+    // Notify callbacks
+    this.callbacks?.onSpeechStart();
   }
 
   /**
    * Handle detected speech end event
-   * TODO: Phase 1 - Manage speech end detection and chunk creation
+   * Phase 1 - Manage speech end detection and chunk creation
    */
-  private onSpeechEnded(): void {
-    // TODO: Finalize current audio chunk
-    // TODO: Create AudioChunk object with metadata
-    // TODO: Notify callbacks with completed chunk
-    // TODO: Reset speech detection state
+  private async onSpeechEnded(): Promise<void> {
+    if (!this.isSpeechActive || !this.speechStartTime) return;
+
+    const now = new Date();
+    const speechDuration = now.getTime() - this.speechStartTime.getTime();
+    
+    // Only process if speech duration meets minimum threshold
+    if (speechDuration >= this.config.minSpeechDuration) {
+      console.log(`🔇 VoiceActivityService: Speech ended (${speechDuration}ms)`);
+      
+      // Create audio chunk for the completed speech
+      await this.createAudioChunk();
+    }
+    
+    // Reset speech state
+    this.isSpeechActive = false;
+    this.speechStartTime = null;
   }
 
   /**
-   * Handle silence detection for speaker switching
-   * TODO: Phase 2 - Implement speaker switch detection
-   * @param silenceDuration Duration of current silence in ms
+   * Start silence timer for speech end detection
+   * Phase 1 - Implement silence timeout detection
    */
-  private onSilenceTimeout(silenceDuration: number): void {
-    // TODO: Check if silence duration exceeds threshold
-    // TODO: Notify callbacks of potential speaker switch
-    // TODO: Reset silence detection timers
+  private startSilenceTimer(): void {
+    // Clear any existing timer
+    this.clearSilenceTimer();
+    
+    // Start new silence timer
+    this.silenceTimer = setTimeout(() => {
+      this.onSilenceTimeout();
+    }, this.config.maxSilenceDuration);
+  }
+
+  /**
+   * Clear silence timer
+   * Phase 1 - Timer management
+   */
+  private clearSilenceTimer(): void {
+    if (this.silenceTimer) {
+      clearTimeout(this.silenceTimer);
+      this.silenceTimer = null;
+    }
+  }
+
+  /**
+   * Clear all timers
+   * Phase 1 - Cleanup helper
+   */
+  private clearTimers(): void {
+    this.clearSilenceTimer();
+  }
+
+  /**
+   * Handle silence timeout for speech end detection
+   * Phase 1 - Implement silence timeout detection
+   */
+  private onSilenceTimeout(): void {
+    const now = new Date();
+    const silenceDuration = this.config.maxSilenceDuration;
+    
+    console.log(`⏰ VoiceActivityService: Silence timeout reached (${silenceDuration}ms) at ${now.toISOString()}`);
+    
+    // End current speech if active
+    if (this.isSpeechActive) {
+      this.onSpeechEnded();
+    }
+    
+    // Notify callbacks of silence detection
+    this.callbacks?.onSilenceDetected(silenceDuration);
   }
 
   /**
@@ -172,14 +376,76 @@ export class VoiceActivityService {
   }
 
   /**
+   * Create audio chunk from current recording
+   * Phase 1 - Create AudioChunk objects for downstream processing
+   */
+  private async createAudioChunk(): Promise<void> {
+    if (!this.recording || !this.chunkStartTime) return;
+
+    try {
+      const now = new Date();
+      const chunkDuration = now.getTime() - this.chunkStartTime.getTime();
+      
+      // Get current recording URI (this will be the audio file up to this point)
+      const status = await this.recording.getStatusAsync();
+      if (!status.isRecording) return;
+
+      // Create dummy AudioChunk for Phase 1 (actual audio extraction in Phase 2)
+      const audioChunk: AudioChunk = {
+        uri: `chunk_${now.getTime()}`, // Placeholder URI for Phase 1
+        duration: chunkDuration,
+        timestamp: this.chunkStartTime,
+        silenceDuration: this.isSpeechActive ? 0 : this.config.maxSilenceDuration,
+        confidenceScore: this.isSpeechActive ? 0.8 : 0.2, // Dummy confidence
+      };
+
+      console.log('📦 VoiceActivityService: Audio chunk created:', {
+        duration: `${chunkDuration}ms`,
+        timestamp: audioChunk.timestamp.toISOString(),
+        hasSpeech: this.isSpeechActive,
+        uri: audioChunk.uri
+      });
+
+      // Notify callback with chunk
+      this.callbacks?.onSpeechEnd(audioChunk);
+
+      // Reset chunk timing
+      this.chunkStartTime = now;
+      
+    } catch (error) {
+      console.error('❌ VoiceActivityService: Error creating audio chunk:', error);
+    }
+  }
+
+  /**
    * Clean up resources when service is destroyed
-   * TODO: Phase 1 - Ensure proper cleanup
+   * Phase 1 - Ensure proper cleanup
    */
   public async dispose(): Promise<void> {
-    // TODO: Stop listening if active
-    // TODO: Clean up all audio resources
-    // TODO: Clear all timers and callbacks
-    // TODO: Reset all internal state
+    console.log('🧹 VoiceActivityService: Disposing...');
+    
+    try {
+      // Stop listening if active
+      if (this.isListening) {
+        await this.stopListening();
+      }
+      
+      // Clear all timers and callbacks
+      this.clearTimers();
+      if (this.audioAnalysisInterval) {
+        clearInterval(this.audioAnalysisInterval);
+        this.audioAnalysisInterval = null;
+      }
+      
+      // Reset all internal state
+      this.callbacks = null;
+      this.currentChunkData = [];
+      
+      console.log('✅ VoiceActivityService: Disposal complete');
+      
+    } catch (error) {
+      console.error('❌ VoiceActivityService: Error during disposal:', error);
+    }
   }
 }
 

@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Auth Provider
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
+import { ConversationProvider } from "./contexts/ConversationContext";
 
 // Tab Navigator
 import MainTabNavigator from "./navigation/MainTabNavigator";
@@ -159,7 +160,9 @@ export default function App() {
     <SafeAreaProvider>
       <AuthProvider>
         <ThemeProvider>
-          <AppContent />
+          <ConversationProvider>
+            <AppContent />
+          </ConversationProvider>
         </ThemeProvider>
       </AuthProvider>
     </SafeAreaProvider>

@@ -282,6 +282,7 @@ export default function ConversationScreen() {
       
       <View style={styles.controlsContainer}>
         <VoiceInputControls 
+          showAlwaysListeningToggle={true}
           onMessage={async (message) => {
             // Create conversation if it doesn't exist yet and user is authenticated
             if (!currentConversationId && hasActiveSubscription) {
