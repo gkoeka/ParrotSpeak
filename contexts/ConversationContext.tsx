@@ -430,6 +430,17 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
           onError: (error: Error, context: string) => {
             console.error(`❌ ConversationContext: Error in ${context}:`, error);
             dispatch({ type: 'SET_ERROR', payload: error.message });
+          },
+          onTranscriptionStart: () => {
+            dispatch({ type: 'SET_TRANSCRIPTION_IN_PROGRESS', payload: true });
+          },
+          onTranscriptionComplete: (transcription) => {
+            dispatch({ type: 'SET_TRANSCRIPTION_IN_PROGRESS', payload: false });
+            dispatch({ type: 'SET_CURRENT_TRANSCRIPTION', payload: transcription });
+          },
+          onTranslationComplete: (translation) => {
+            dispatch({ type: 'SET_TRANSLATION_IN_PROGRESS', payload: false });
+            dispatch({ type: 'SET_CURRENT_TRANSLATION', payload: translation });
           }
         };
         

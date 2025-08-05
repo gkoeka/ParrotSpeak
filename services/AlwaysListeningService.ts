@@ -7,6 +7,8 @@
  */
 
 import VoiceActivityService, { AudioChunk } from './VoiceActivityService';
+import { speechService } from './speechService';
+import * as Speech from 'expo-speech';
 
 export enum ConversationState {
   IDLE = 'idle',
@@ -48,6 +50,8 @@ export interface ConversationTurn {
   confidence: number;
   audioChunk: AudioChunk;
   timestamp: Date;
+  transcription?: string;
+  translation?: string;
 }
 
 export interface AlwaysListeningCallbacks {
@@ -59,6 +63,9 @@ export interface AlwaysListeningCallbacks {
   onSilenceDetected?: (duration: number) => void;
   onChunkReceived?: (chunk: AudioChunk) => void;
   onStateChanged?: (state: ConversationState) => void;
+  onTranscriptionStart?: () => void;
+  onTranscriptionComplete?: (transcription: { text: string; language: string; confidence: number; timestamp: Date }) => void;
+  onTranslationComplete?: (translation: { text: string; fromLanguage: string; toLanguage: string; timestamp: Date }) => void;
 }
 
 export class AlwaysListeningService {
@@ -194,7 +201,7 @@ export class AlwaysListeningService {
 
   /**
    * Handle speech chunk from voice activity service
-   * Phase 2 - Process detected speech and manage state transitions
+   * Phase 3 - Process detected speech through AI pipeline
    * @param audioChunk Detected speech audio chunk
    */
   private async handleSpeechChunk(audioChunk: AudioChunk): Promise<void> {
@@ -202,6 +209,7 @@ export class AlwaysListeningService {
     console.log(`📦 AlwaysListeningService: Audio chunk received from ${speakerRole}`);
     console.log(`  Duration: ${audioChunk.duration}ms`);
     console.log(`  Timestamp: ${audioChunk.timestamp.toISOString()}`);
+    console.log(`  URI: ${audioChunk.uri}`);
     
     // Update state to processing
     if (this.currentSpeaker === SpeakerRole.SOURCE) {
@@ -210,68 +218,152 @@ export class AlwaysListeningService {
       this.updateConversationState(ConversationState.PROCESSING_TARGET);
     }
     
-    // Create conversation turn
-    const turn: ConversationTurn = {
-      id: `turn_${Date.now()}`,
-      speaker: this.currentSpeaker,
-      detectedLanguage: this.currentSpeaker === SpeakerRole.SOURCE ? this.sourceLanguage : this.targetLanguage,
-      confidence: 0.95, // Dummy confidence for Phase 2
-      audioChunk,
-      timestamp: new Date()
-    };
-    
-    // Add to conversation history
-    this.conversationTurns.push(turn);
-    
-    // Update speaker info
-    const speakerInfo = this.speakerInfo.get(this.currentSpeaker);
-    if (speakerInfo) {
-      speakerInfo.lastSpeechTime = new Date();
-      speakerInfo.messageCount++;
-      speakerInfo.totalSpeechTime += audioChunk.duration;
+    try {
+      // Check if speech service is ready
+      if (!speechService.isReady()) {
+        console.log('🔑 AlwaysListeningService: Initializing speech service...');
+        await speechService.initialize();
+      }
+      
+      // Phase 3: Process audio through AI pipeline
+      console.log('🧠 AlwaysListeningService: Sending to Whisper...');
+      
+      const sourceLanguage = this.currentSpeaker === SpeakerRole.SOURCE ? this.sourceLanguage : this.targetLanguage;
+      const targetLanguage = this.currentSpeaker === SpeakerRole.SOURCE ? this.targetLanguage : this.sourceLanguage;
+      
+      const { transcription, translation, totalDuration } = await speechService.processAudioChunk(
+        audioChunk.uri,
+        sourceLanguage,
+        targetLanguage
+      );
+      
+      console.log(`📝 AlwaysListeningService: Transcription: "${transcription.text}"`);
+      console.log(`🌍 AlwaysListeningService: Translation: "${translation.text}"`);
+      console.log(`⏱️ AlwaysListeningService: Total processing time: ${totalDuration}ms`);
+      
+      // Check for empty transcription
+      if (!transcription.text || transcription.text.trim().length === 0) {
+        console.log('⚠️ AlwaysListeningService: Empty transcription, skipping turn');
+        // Switch back to listening state
+        if (this.currentSpeaker === SpeakerRole.SOURCE) {
+          this.updateConversationState(ConversationState.LISTENING_SOURCE);
+        } else {
+          this.updateConversationState(ConversationState.LISTENING_TARGET);
+        }
+        return;
+      }
+      
+      // Check language detection confidence
+      if (transcription.confidence < 0.5) {
+        console.warn(`⚠️ AlwaysListeningService: Low language confidence: ${transcription.confidence}`);
+      }
+      
+      // Update detected language if confidence is high
+      if (transcription.confidence > this.config.languageConfidenceThreshold) {
+        this.callbacks?.onLanguageDetected(transcription.language, transcription.confidence);
+      }
+      
+      // Create conversation turn with real transcription/translation
+      const turn: ConversationTurn = {
+        id: `turn_${Date.now()}`,
+        speaker: this.currentSpeaker,
+        detectedLanguage: transcription.language,
+        confidence: transcription.confidence,
+        audioChunk,
+        timestamp: new Date(),
+        transcription: transcription.text,
+        translation: translation.text
+      };
+      
+      // Add to conversation history
+      this.conversationTurns.push(turn);
+      
+      // Update speaker info
+      const speakerInfo = this.speakerInfo.get(this.currentSpeaker);
+      if (speakerInfo) {
+        speakerInfo.lastSpeechTime = new Date();
+        speakerInfo.messageCount++;
+        speakerInfo.totalSpeechTime += audioChunk.duration;
+      }
+      
+      // Notify callbacks
+      this.callbacks?.onConversationTurn(turn);
+      
+      // Speak the translation
+      if (translation.text && translation.text.trim().length > 0) {
+        await this.speakTranslation(translation.text, targetLanguage);
+      } else {
+        console.log('⚠️ AlwaysListeningService: Empty translation, switching speakers');
+        this.switchSpeaker('auto');
+      }
+      
+    } catch (error) {
+      console.error('❌ AlwaysListeningService: Error processing audio chunk:', error);
+      
+      // Handle specific error types
+      if (error instanceof Error) {
+        if (error.message.includes('OpenAI API key')) {
+          console.error('🔑 AlwaysListeningService: OpenAI API key not configured');
+          this.callbacks?.onError(new Error('OpenAI API key required for transcription'), 'api_key_missing');
+        } else if (error.message.includes('Whisper API error')) {
+          console.error('🌐 AlwaysListeningService: Whisper API error');
+          this.callbacks?.onError(error, 'whisper_api_error');
+        } else if (error.message.includes('Audio file not found')) {
+          console.error('📁 AlwaysListeningService: Audio file not found');
+          this.callbacks?.onError(error, 'audio_file_error');
+        } else {
+          this.callbacks?.onError(error, 'processAudioChunk');
+        }
+      }
+      
+      // Update state to error
+      this.updateConversationState(ConversationState.ERROR);
+      
+      // Try to recover by switching speakers after a delay
+      setTimeout(() => {
+        this.switchSpeaker('error_recovery');
+      }, 2000);
     }
-    
-    // Notify callbacks
-    this.callbacks?.onConversationTurn(turn);
-    
-    // Simulate processing with delay
-    console.log(`🧠 AlwaysListeningService: Processing ${speakerRole} speech...`);
-    setTimeout(() => {
-      this.simulateTranslationComplete();
-    }, 500);
   }
-
+  
   /**
-   * Simulate translation completion
-   * Phase 2 - Mock translation and prepare for speaker switch
+   * Speak translation using expo-speech
+   * Phase 3 - Synthesize and play translated text
    */
-  private simulateTranslationComplete(): void {
-    console.log(`✅ AlwaysListeningService: Translation complete for ${this.currentSpeaker}`);
+  private async speakTranslation(text: string, language: string): Promise<void> {
+    console.log(`🔈 AlwaysListeningService: Speaking: "${text}" in ${language}`);
     
-    // Update state to speaking translation
+    // Update state to speaking
     if (this.currentSpeaker === SpeakerRole.SOURCE) {
       this.updateConversationState(ConversationState.SPEAKING_TRANSLATION);
     } else {
       this.updateConversationState(ConversationState.SPEAKING_RESPONSE);
     }
     
-    // Simulate speaking the translation
-    setTimeout(() => {
-      this.prepareSpeakerSwitch();
-    }, 300);
+    return new Promise((resolve) => {
+      Speech.speak(text, {
+        language: language,
+        pitch: 1.0,
+        rate: 1.0,
+        onDone: () => {
+          console.log('✅ AlwaysListeningService: Speech completed');
+          // Switch speakers after speaking
+          this.switchSpeaker('auto');
+          resolve();
+        },
+        onError: (error) => {
+          console.error('❌ AlwaysListeningService: Speech synthesis error:', error);
+          // Switch speakers even on error to continue conversation
+          this.switchSpeaker('error_recovery');
+          resolve();
+        }
+      });
+    });
   }
 
-  /**
-   * Prepare for speaker switch
-   * Phase 2 - Set up for next speaker
-   */
-  private prepareSpeakerSwitch(): void {
-    const previousSpeaker = this.currentSpeaker;
-    console.log(`🔁 AlwaysListeningService: Preparing to switch from ${previousSpeaker}`);
-    
-    // Switch speaker
-    this.switchSpeaker('auto');
-  }
+
+
+
 
   /**
    * Handle silence detection for speaker switching

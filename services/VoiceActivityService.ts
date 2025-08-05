@@ -376,7 +376,7 @@ export class VoiceActivityService {
 
   /**
    * Create audio chunk from current recording
-   * Phase 1 - Create AudioChunk objects for downstream processing
+   * Phase 3 - Extract real audio data for downstream processing
    */
   private async createAudioChunk(): Promise<void> {
     if (!this.recording || !this.chunkStartTime) return;
@@ -385,34 +385,65 @@ export class VoiceActivityService {
       const now = new Date();
       const chunkDuration = now.getTime() - this.chunkStartTime.getTime();
       
-      // Get current recording URI (this will be the audio file up to this point)
+      // Get current recording status
       const status = await this.recording.getStatusAsync();
       if (!status.isRecording) return;
 
-      // Create dummy AudioChunk for Phase 1 (actual audio extraction in Phase 2)
+      // Phase 3: Extract real audio chunk
+      // Stop current recording to get the audio file
+      await this.recording.stopAndUnloadAsync();
+      const recordingUri = this.recording.getURI();
+      
+      if (!recordingUri) {
+        console.error('❌ VoiceActivityService: No recording URI available');
+        return;
+      }
+
+      // Create real AudioChunk with actual audio file
       const audioChunk: AudioChunk = {
-        uri: `chunk_${now.getTime()}`, // Placeholder URI for Phase 1
+        uri: recordingUri,
         duration: chunkDuration,
         timestamp: this.chunkStartTime,
         silenceDuration: this.isSpeechActive ? 0 : this.config.maxSilenceDuration,
-        confidenceScore: this.isSpeechActive ? 0.8 : 0.2, // Dummy confidence
+        confidenceScore: this.isSpeechActive ? 0.8 : 0.2,
       };
 
-      console.log('📦 VoiceActivityService: Audio chunk created:', {
+      console.log('📦 VoiceActivityService: Audio chunk extracted:', {
         duration: `${chunkDuration}ms`,
         timestamp: audioChunk.timestamp.toISOString(),
         hasSpeech: this.isSpeechActive,
-        uri: audioChunk.uri
+        uri: audioChunk.uri,
+        fileExists: !!recordingUri
       });
 
-      // Notify callback with chunk
+      // Notify callback with real audio chunk
       this.callbacks?.onSpeechEnd(audioChunk);
 
+      // Start a new recording for the next chunk
+      this.recording = new Audio.Recording();
+      await this.recording.prepareToRecordAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      await this.recording.startAsync();
+      
       // Reset chunk timing
       this.chunkStartTime = now;
       
     } catch (error) {
       console.error('❌ VoiceActivityService: Error creating audio chunk:', error);
+      
+      // Try to restart recording if it failed
+      try {
+        this.recording = new Audio.Recording();
+        await this.recording.prepareToRecordAsync(
+          Audio.RecordingOptionsPresets.HIGH_QUALITY
+        );
+        await this.recording.startAsync();
+        this.chunkStartTime = new Date();
+      } catch (restartError) {
+        console.error('❌ VoiceActivityService: Failed to restart recording:', restartError);
+        this.callbacks?.onError(new Error('Failed to restart recording'));
+      }
     }
   }
 
