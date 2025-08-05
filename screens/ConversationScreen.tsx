@@ -9,7 +9,7 @@ import { isRTLLanguage, rtlStyle, getWritingDirection } from '../utils/rtlSuppor
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
-import { API_BASE_URL } from '../config/api';
+import { API_BASE_URL } from '../api/config';
 
 import LanguageSelector from '../components/LanguageSelectorMobile';
 import PerformanceIndicator from '../components/PerformanceMonitor';

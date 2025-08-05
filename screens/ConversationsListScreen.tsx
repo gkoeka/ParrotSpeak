@@ -7,7 +7,7 @@ import Header from '../components/Header';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
-import { API_BASE_URL } from '../config/api';
+import { API_BASE_URL } from '../api/config';
 
 type ConversationsListNavigationProp = StackNavigationProp<RootStackParamList, 'ConversationsList'>;
 
