@@ -21,7 +21,6 @@ export default function SettingsScreen() {
   const navigation = useNavigation<SettingsNavigationProp>();
   const { logout, user } = useAuth();
   const { isDarkMode, toggleDarkMode } = useTheme();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [autoPlayEnabled, setAutoPlayEnabled] = useState(true);
   const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
 
@@ -49,12 +48,6 @@ export default function SettingsScreen() {
       icon: 'moon-outline',
       value: isDarkMode,
       onValueChange: toggleDarkMode,
-    },
-    {
-      title: 'Push Notifications',
-      icon: 'notifications-outline',
-      value: notificationsEnabled,
-      onValueChange: setNotificationsEnabled,
     },
     {
       title: 'Auto-play Translations',
