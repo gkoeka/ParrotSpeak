@@ -56,6 +56,9 @@ export interface AlwaysListeningCallbacks {
   onLanguageDetected: (language: string, confidence: number) => void;
   onConversationTurn: (turn: ConversationTurn) => void;
   onError: (error: Error, context: string) => void;
+  onSilenceDetected?: (duration: number) => void;
+  onChunkReceived?: (chunk: AudioChunk) => void;
+  onStateChanged?: (state: ConversationState) => void;
 }
 
 export class AlwaysListeningService {
@@ -89,20 +92,28 @@ export class AlwaysListeningService {
 
   /**
    * Initialize the always listening service
-   * TODO: Phase 2 - Set up service dependencies and state
+   * Phase 2 - Set up service dependencies and state
    * @param callbacks Event handlers for conversation flow
    */
   public async initialize(callbacks: AlwaysListeningCallbacks): Promise<void> {
-    // TODO: Initialize voice activity service with our callbacks
-    // TODO: Set up language detection pipeline
-    // TODO: Initialize conversation state machine
-    // TODO: Configure audio processing parameters
+    console.log('🚀 AlwaysListeningService: Initializing...');
+    
     this.callbacks = callbacks;
+    
+    // Initialize voice activity service with our callbacks
+    await this.voiceActivityService.initialize({
+      onSpeechStart: () => this.handleSpeechStart(),
+      onSpeechEnd: (chunk: AudioChunk) => this.handleSpeechChunk(chunk),
+      onSilenceDetected: (duration: number) => this.handleSilenceDetected(duration),
+      onError: (error: Error) => this.handleError(error)
+    });
+    
+    console.log('✅ AlwaysListeningService: Initialization complete');
   }
 
   /**
    * Start always listening mode
-   * TODO: Phase 2 - Begin conversation flow management
+   * Phase 2 - Begin conversation flow management
    * @param sourceLanguage Primary speaker's language
    * @param targetLanguage Secondary speaker's language
    */
@@ -110,47 +121,179 @@ export class AlwaysListeningService {
     sourceLanguage: string,
     targetLanguage: string
   ): Promise<void> {
-    // TODO: Set conversation languages
-    // TODO: Reset conversation state
-    // TODO: Start voice activity detection
-    // TODO: Begin listening for source speaker
+    console.log(`🎤 AlwaysListeningService: Starting conversation loop (${sourceLanguage} ↔ ${targetLanguage})`);
+    
+    // Set conversation languages
     this.sourceLanguage = sourceLanguage;
     this.targetLanguage = targetLanguage;
+    
+    // Reset conversation state
+    this.currentState = ConversationState.LISTENING_SOURCE;
+    this.currentSpeaker = SpeakerRole.SOURCE;
+    this.conversationTurns = [];
+    
+    // Update speaker info with languages
+    const sourceInfo = this.speakerInfo.get(SpeakerRole.SOURCE);
+    const targetInfo = this.speakerInfo.get(SpeakerRole.TARGET);
+    if (sourceInfo) sourceInfo.language = sourceLanguage;
+    if (targetInfo) targetInfo.language = targetLanguage;
+    
+    // Notify state change
+    this.updateConversationState(ConversationState.LISTENING_SOURCE);
+    
+    // Start voice activity detection
+    await this.startConversationLoop();
   }
 
   /**
    * Stop always listening mode
-   * TODO: Phase 2 - Clean shutdown of conversation flow
+   * Phase 2 - Clean shutdown of conversation flow
    */
   public async stopAlwaysListening(): Promise<void> {
-    // TODO: Stop voice activity service
-    // TODO: Clear all timers
-    // TODO: Save conversation state if needed
-    // TODO: Reset to idle state
+    console.log('🛑 AlwaysListeningService: Stopping conversation loop');
+    
+    // Stop voice activity service
+    await this.voiceActivityService.stopListening();
+    
+    // Clear all timers
+    if (this.switchTimer) {
+      clearTimeout(this.switchTimer);
+      this.switchTimer = null;
+    }
+    
+    // Update state to idle
+    this.updateConversationState(ConversationState.IDLE);
+    this.currentSpeaker = SpeakerRole.SOURCE;
+    
+    console.log(`📊 AlwaysListeningService: Conversation ended with ${this.conversationTurns.length} turns`);
   }
 
   /**
-   * Handle speech detection from voice activity service
-   * TODO: Phase 2 - Process detected speech and manage state transitions
+   * Start the conversation loop
+   * Phase 2 - Begin listening for speech
+   */
+  private async startConversationLoop(): Promise<void> {
+    console.log('🔄 AlwaysListeningService: Starting conversation loop');
+    await this.voiceActivityService.startListening();
+  }
+
+  /**
+   * Handle speech start event
+   * Phase 2 - Track when speech begins
+   */
+  private handleSpeechStart(): void {
+    console.log(`🗣️ AlwaysListeningService: Speech started - ${this.currentSpeaker} speaking`);
+    
+    // Update state based on current speaker
+    if (this.currentSpeaker === SpeakerRole.SOURCE) {
+      this.updateConversationState(ConversationState.LISTENING_SOURCE);
+    } else {
+      this.updateConversationState(ConversationState.LISTENING_TARGET);
+    }
+  }
+
+  /**
+   * Handle speech chunk from voice activity service
+   * Phase 2 - Process detected speech and manage state transitions
    * @param audioChunk Detected speech audio chunk
    */
-  private async onSpeechDetected(audioChunk: AudioChunk): Promise<void> {
-    // TODO: Determine which speaker is talking
-    // TODO: Detect language if auto-detection enabled
-    // TODO: Process audio through translation pipeline
-    // TODO: Manage state transitions based on current state
+  private async handleSpeechChunk(audioChunk: AudioChunk): Promise<void> {
+    const speakerRole = this.currentSpeaker === SpeakerRole.SOURCE ? 'source' : 'target';
+    console.log(`📦 AlwaysListeningService: Audio chunk received from ${speakerRole}`);
+    console.log(`  Duration: ${audioChunk.duration}ms`);
+    console.log(`  Timestamp: ${audioChunk.timestamp.toISOString()}`);
+    
+    // Update state to processing
+    if (this.currentSpeaker === SpeakerRole.SOURCE) {
+      this.updateConversationState(ConversationState.PROCESSING_SOURCE);
+    } else {
+      this.updateConversationState(ConversationState.PROCESSING_TARGET);
+    }
+    
+    // Create conversation turn
+    const turn: ConversationTurn = {
+      id: `turn_${Date.now()}`,
+      speaker: this.currentSpeaker,
+      detectedLanguage: this.currentSpeaker === SpeakerRole.SOURCE ? this.sourceLanguage : this.targetLanguage,
+      confidence: 0.95, // Dummy confidence for Phase 2
+      audioChunk,
+      timestamp: new Date()
+    };
+    
+    // Add to conversation history
+    this.conversationTurns.push(turn);
+    
+    // Update speaker info
+    const speakerInfo = this.speakerInfo.get(this.currentSpeaker);
+    if (speakerInfo) {
+      speakerInfo.lastSpeechTime = new Date();
+      speakerInfo.messageCount++;
+      speakerInfo.totalSpeechTime += audioChunk.duration;
+    }
+    
+    // Notify callbacks
+    this.callbacks?.onConversationTurn(turn);
+    
+    // Simulate processing with delay
+    console.log(`🧠 AlwaysListeningService: Processing ${speakerRole} speech...`);
+    setTimeout(() => {
+      this.simulateTranslationComplete();
+    }, 500);
+  }
+
+  /**
+   * Simulate translation completion
+   * Phase 2 - Mock translation and prepare for speaker switch
+   */
+  private simulateTranslationComplete(): void {
+    console.log(`✅ AlwaysListeningService: Translation complete for ${this.currentSpeaker}`);
+    
+    // Update state to speaking translation
+    if (this.currentSpeaker === SpeakerRole.SOURCE) {
+      this.updateConversationState(ConversationState.SPEAKING_TRANSLATION);
+    } else {
+      this.updateConversationState(ConversationState.SPEAKING_RESPONSE);
+    }
+    
+    // Simulate speaking the translation
+    setTimeout(() => {
+      this.prepareSpeakerSwitch();
+    }, 300);
+  }
+
+  /**
+   * Prepare for speaker switch
+   * Phase 2 - Set up for next speaker
+   */
+  private prepareSpeakerSwitch(): void {
+    const previousSpeaker = this.currentSpeaker;
+    console.log(`🔁 AlwaysListeningService: Preparing to switch from ${previousSpeaker}`);
+    
+    // Switch speaker
+    this.switchSpeaker('auto');
   }
 
   /**
    * Handle silence detection for speaker switching
-   * TODO: Phase 2 - Implement intelligent speaker switching
+   * Phase 2 - Implement intelligent speaker switching
    * @param silenceDuration Duration of detected silence
    */
-  private onSilenceDetected(silenceDuration: number): void {
-    // TODO: Check if silence exceeds speaker switch threshold
-    // TODO: Determine if speaker switch should occur
-    // TODO: Update current speaker if switch detected
-    // TODO: Notify callbacks of speaker change
+  private handleSilenceDetected(silenceDuration: number): void {
+    console.log(`⏱️ AlwaysListeningService: Silence detected (${silenceDuration}ms) - Current speaker: ${this.currentSpeaker}`);
+    
+    // Check if we should switch speakers based on silence duration
+    if (silenceDuration >= this.config.speakerSwitchTimeout) {
+      console.log(`🔄 AlwaysListeningService: Silence threshold reached, considering speaker switch`);
+      
+      // Only switch if we're in a listening state
+      if (this.currentState === ConversationState.LISTENING_SOURCE || 
+          this.currentState === ConversationState.LISTENING_TARGET) {
+        this.switchSpeaker('silence');
+      }
+    }
+    
+    // Notify callbacks
+    this.callbacks?.onSilenceDetected(silenceDuration);
   }
 
   /**
@@ -190,15 +333,45 @@ export class AlwaysListeningService {
 
   /**
    * Switch to the next speaker in conversation
-   * TODO: Phase 2 - Manage speaker transitions
-   * @param reason Reason for speaker switch (silence, manual, language)
+   * Phase 2 - Manage speaker transitions
+   * @param reason Reason for speaker switch (silence, manual, language, timeout, auto)
    */
-  private switchSpeaker(reason: 'silence' | 'manual' | 'language' | 'timeout'): void {
-    // TODO: Update current speaker
-    // TODO: Clear any pending timers
-    // TODO: Update speaker statistics
-    // TODO: Notify callbacks of speaker change
-    // TODO: Transition conversation state
+  private switchSpeaker(reason: 'silence' | 'manual' | 'language' | 'timeout' | 'auto'): void {
+    const previousSpeaker = this.currentSpeaker;
+    const newSpeaker = this.toggleSpeaker(this.currentSpeaker);
+    
+    // Log the switch
+    if (previousSpeaker === SpeakerRole.SOURCE) {
+      console.log(`🎙️ AlwaysListeningService: Speech ended for source`);
+      console.log(`🔁 AlwaysListeningService: Switching to target`);
+    } else {
+      console.log(`🎙️ AlwaysListeningService: Speech ended for target`);
+      console.log(`🔁 AlwaysListeningService: Switching to source`);
+    }
+    
+    // Update current speaker
+    this.currentSpeaker = newSpeaker;
+    
+    // Clear any pending timers
+    if (this.switchTimer) {
+      clearTimeout(this.switchTimer);
+      this.switchTimer = null;
+    }
+    
+    // Update speaker statistics
+    const speakerInfo = this.speakerInfo.get(newSpeaker);
+    if (speakerInfo) {
+      speakerInfo.lastSpeechTime = new Date();
+    }
+    
+    // Notify callbacks of speaker change
+    this.callbacks?.onSpeakerSwitch(previousSpeaker, newSpeaker);
+    
+    // Transition conversation state
+    const newState = newSpeaker === SpeakerRole.SOURCE 
+      ? ConversationState.LISTENING_SOURCE 
+      : ConversationState.LISTENING_TARGET;
+    this.updateConversationState(newState);
   }
 
   /**
@@ -214,14 +387,64 @@ export class AlwaysListeningService {
   }
 
   /**
+   * Helper function to toggle speaker
+   * Phase 2 - Simple speaker switching logic
+   */
+  private toggleSpeaker(current: SpeakerRole): SpeakerRole {
+    return current === SpeakerRole.SOURCE ? SpeakerRole.TARGET : SpeakerRole.SOURCE;
+  }
+
+  /**
+   * Update conversation state and notify callbacks
+   * Phase 2 - Centralized state management
+   */
+  private updateConversationState(newState: ConversationState): void {
+    const previousState = this.currentState;
+    this.currentState = newState;
+    
+    console.log(`🧠 AlwaysListeningService: Conversation state updated: ${previousState} → ${newState}`);
+    
+    // Notify callbacks
+    this.callbacks?.onStateChange(newState, this.currentSpeaker);
+  }
+
+  /**
+   * Handle errors from voice activity service
+   * Phase 2 - Error handling
+   */
+  private handleError(error: Error): void {
+    console.error('❌ AlwaysListeningService: Error detected:', error);
+    
+    // Update state to error
+    this.updateConversationState(ConversationState.ERROR);
+    
+    // Notify callbacks
+    this.callbacks?.onError(error, 'voice_activity_error');
+  }
+
+  /**
    * Pause always listening mode temporarily
-   * TODO: Phase 3 - Implement conversation pause functionality
+   * Phase 2 - Implement conversation pause functionality
    */
   public pauseConversation(): void {
-    // TODO: Pause voice activity detection
-    // TODO: Save current conversation state
-    // TODO: Clear all active timers
-    // TODO: Transition to paused state
+    console.log('⏸️ AlwaysListeningService: Pausing conversation');
+    
+    // Update state to paused
+    const previousState = this.currentState;
+    this.updateConversationState(ConversationState.PAUSED);
+    
+    // Stop voice activity detection
+    this.voiceActivityService.stopListening().catch(error => {
+      console.error('❌ AlwaysListeningService: Error stopping VAD during pause:', error);
+    });
+    
+    // Clear all active timers
+    if (this.switchTimer) {
+      clearTimeout(this.switchTimer);
+      this.switchTimer = null;
+    }
+    
+    console.log(`⏸️ AlwaysListeningService: Paused from state ${previousState}`);
   }
 
   /**
@@ -271,12 +494,26 @@ export class AlwaysListeningService {
 
   /**
    * Initialize speaker information tracking
-   * TODO: Phase 2 - Set up speaker statistics tracking
+   * Phase 2 - Set up speaker statistics tracking
    */
   private initializeSpeakerInfo(): void {
-    // TODO: Initialize source speaker info
-    // TODO: Initialize target speaker info
-    // TODO: Set default values for tracking metrics
+    // Initialize source speaker info
+    this.speakerInfo.set(SpeakerRole.SOURCE, {
+      role: SpeakerRole.SOURCE,
+      language: this.sourceLanguage,
+      lastSpeechTime: null,
+      totalSpeechTime: 0,
+      messageCount: 0
+    });
+    
+    // Initialize target speaker info
+    this.speakerInfo.set(SpeakerRole.TARGET, {
+      role: SpeakerRole.TARGET,
+      language: this.targetLanguage,
+      lastSpeechTime: null,
+      totalSpeechTime: 0,
+      messageCount: 0
+    });
   }
 
   /**

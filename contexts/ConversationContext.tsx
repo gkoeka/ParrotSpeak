@@ -6,8 +6,13 @@
  * provides centralized state management for the conversation flow across all components.
  */
 
-import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
-import { ConversationState, SpeakerRole } from '../services/AlwaysListeningService';
+import React, { createContext, useContext, useReducer, useCallback, useEffect, useRef } from 'react';
+import AlwaysListeningService, { 
+  ConversationState, 
+  SpeakerRole, 
+  AlwaysListeningCallbacks,
+  ConversationTurn 
+} from '../services/AlwaysListeningService';
 
 export interface ConversationUIState {
   // Always listening mode state
@@ -323,16 +328,64 @@ const ConversationContext = createContext<ConversationContextType | undefined>(u
  */
 export function ConversationProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(conversationReducer, initialState);
+  const alwaysListeningServiceRef = useRef<AlwaysListeningService | null>(null);
 
   // Create action handlers
   const actions: ConversationActions = {
-    enableAlwaysListening: useCallback(() => {
-      // TODO: Phase 2 - Start always listening service
+    enableAlwaysListening: useCallback(async () => {
+      console.log('🔊 ConversationContext: Enabling always listening...');
+      
+      // Initialize always listening service if not already created
+      if (!alwaysListeningServiceRef.current) {
+        console.log('🔧 ConversationContext: Creating AlwaysListeningService instance...');
+        const service = new AlwaysListeningService();
+        
+        // Set up callbacks
+        const callbacks: AlwaysListeningCallbacks = {
+          onStateChange: (newState: ConversationState, speaker: SpeakerRole) => {
+            console.log(`📡 ConversationContext: State changed to ${newState} for ${speaker}`);
+            dispatch({ type: 'SET_CONVERSATION_STATE', payload: newState });
+            dispatch({ type: 'SET_SPEAKER', payload: speaker });
+          },
+          onSpeakerSwitch: (from: SpeakerRole, to: SpeakerRole) => {
+            console.log(`🔄 ConversationContext: Speaker switched from ${from} to ${to}`);
+            dispatch({ type: 'SET_SPEAKER', payload: to });
+          },
+          onLanguageDetected: (language: string, confidence: number) => {
+            console.log(`🌐 ConversationContext: Language detected: ${language} (${confidence})`);
+            dispatch({ type: 'SET_DETECTED_LANGUAGE', payload: { language, confidence } });
+          },
+          onConversationTurn: (turn: ConversationTurn) => {
+            console.log(`💬 ConversationContext: New conversation turn from ${turn.speaker}`);
+          },
+          onError: (error: Error, context: string) => {
+            console.error(`❌ ConversationContext: Error in ${context}:`, error);
+            dispatch({ type: 'SET_ERROR', payload: error.message });
+          }
+        };
+        
+        await service.initialize(callbacks);
+        alwaysListeningServiceRef.current = service;
+      }
+      
+      // Start always listening
+      if (alwaysListeningServiceRef.current) {
+        await alwaysListeningServiceRef.current.startAlwaysListening(
+          state.sourceLanguage,
+          state.targetLanguage
+        );
+      }
+      
       dispatch({ type: 'ENABLE_ALWAYS_LISTENING' });
-    }, []),
+    }, [state.sourceLanguage, state.targetLanguage]),
 
-    disableAlwaysListening: useCallback(() => {
-      // TODO: Phase 2 - Stop always listening service
+    disableAlwaysListening: useCallback(async () => {
+      console.log('🔇 ConversationContext: Disabling always listening...');
+      
+      if (alwaysListeningServiceRef.current) {
+        await alwaysListeningServiceRef.current.stopAlwaysListening();
+      }
+      
       dispatch({ type: 'DISABLE_ALWAYS_LISTENING' });
     }, []),
 

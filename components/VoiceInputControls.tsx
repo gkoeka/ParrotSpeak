@@ -68,11 +68,17 @@ export default function VoiceInputControls({
   const isSourceSpeechSupported = sourceLanguageConfig?.speechSupported ?? true;
   const isTargetSpeechSupported = targetLanguageConfig?.speechSupported ?? true;
 
-  // Phase 1: Initialize VoiceActivityService on mount
+  // Phase 2: Initialize VoiceActivityService when NOT in always listening mode
   useEffect(() => {
+    // Only initialize standalone VAD if not using always listening
+    if (state.isAlwaysListeningEnabled) {
+      console.log('🔇 VoiceInputControls: Skipping standalone VAD - Always listening is active');
+      return;
+    }
+    
     const initializeVAD = async () => {
       try {
-        console.log('🎤 VoiceInputControls: Initializing VoiceActivityService...');
+        console.log('🎤 VoiceInputControls: Initializing standalone VoiceActivityService...');
         
         const vadService = new VoiceActivityService();
         voiceActivityServiceRef.current = vadService;
@@ -119,7 +125,7 @@ export default function VoiceInputControls({
         voiceActivityServiceRef.current = null;
       }
     };
-  }, []);
+  }, [state.isAlwaysListeningEnabled, actions]);
 
   // Phase 1: Handle VoiceActivityService start/stop
   const handleVADToggle = async () => {

@@ -60,10 +60,10 @@ export default function AlwaysListeningToggle({
       // TODO: Provide user feedback during state changes
       
       if (state.isAlwaysListeningEnabled) {
-        actions.disableAlwaysListening();
+        await actions.disableAlwaysListening();
         onToggle?.(false);
       } else {
-        actions.enableAlwaysListening();
+        await actions.enableAlwaysListening();
         onToggle?.(true);
       }
     } catch (error) {
