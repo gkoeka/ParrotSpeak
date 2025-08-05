@@ -412,33 +412,62 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
         // Set up callbacks
         const callbacks: AlwaysListeningCallbacks = {
           onStateChange: (newState: ConversationState, speaker: SpeakerRole) => {
-            console.log(`📡 ConversationContext: State changed to ${newState} for ${speaker}`);
+            console.log(`📡 ConversationContext: State change → ${newState} (Speaker: ${speaker})`);
             dispatch({ type: 'SET_CONVERSATION_STATE', payload: newState });
             dispatch({ type: 'SET_SPEAKER', payload: speaker });
           },
           onSpeakerSwitch: (from: SpeakerRole, to: SpeakerRole) => {
-            console.log(`🔄 ConversationContext: Speaker switched from ${from} to ${to}`);
+            console.log(`🔄 ConversationContext: Speaker switch: ${from} → ${to}`);
             dispatch({ type: 'SET_SPEAKER', payload: to });
           },
           onLanguageDetected: (language: string, confidence: number) => {
-            console.log(`🌐 ConversationContext: Language detected: ${language} (${confidence})`);
+            console.log(`🌐 ConversationContext: Language detected: ${language} (confidence: ${confidence})`);
             dispatch({ type: 'SET_DETECTED_LANGUAGE', payload: { language, confidence } });
           },
           onConversationTurn: (turn: ConversationTurn) => {
-            console.log(`💬 ConversationContext: New conversation turn from ${turn.speaker}`);
+            console.log(`💬 ConversationContext: Conversation turn:`, {
+              speaker: turn.speaker,
+              transcription: turn.transcription?.substring(0, 50) + '...',
+              translation: turn.translation?.substring(0, 50) + '...',
+              language: turn.detectedLanguage
+            });
           },
           onError: (error: Error, context: string) => {
-            console.error(`❌ ConversationContext: Error in ${context}:`, error);
+            // Consistent error logging for different error types
+            if (context === 'api_key_missing') {
+              console.error('❌ ConversationContext: Missing mic input - OpenAI API key required');
+            } else if (context === 'whisper_api_error') {
+              console.error('❌ ConversationContext: Whisper API failure:', error.message);
+            } else if (context === 'audio_file_error') {
+              console.error('❌ ConversationContext: Audio file issues:', error.message);
+            } else if (context === 'translation_timeout') {
+              console.error('❌ ConversationContext: Translation API timeout');
+            } else if (context === 'tts_error') {
+              console.error('❌ ConversationContext: TTS errors:', error.message);
+            } else {
+              console.error(`❌ ConversationContext: Error in ${context}:`, error.message);
+            }
             dispatch({ type: 'SET_ERROR', payload: error.message });
           },
           onTranscriptionStart: () => {
+            console.log('🎯 ConversationContext: Transcription started');
             dispatch({ type: 'SET_TRANSCRIPTION_IN_PROGRESS', payload: true });
           },
           onTranscriptionComplete: (transcription) => {
+            console.log('📝 ConversationContext: Transcription complete:', {
+              text: transcription.text?.substring(0, 50) + '...',
+              language: transcription.language,
+              confidence: transcription.confidence
+            });
             dispatch({ type: 'SET_TRANSCRIPTION_IN_PROGRESS', payload: false });
             dispatch({ type: 'SET_CURRENT_TRANSCRIPTION', payload: transcription });
           },
           onTranslationComplete: (translation) => {
+            console.log('🔤 ConversationContext: Translation complete:', {
+              text: translation.text?.substring(0, 50) + '...',
+              fromLanguage: translation.fromLanguage,
+              toLanguage: translation.toLanguage
+            });
             dispatch({ type: 'SET_TRANSLATION_IN_PROGRESS', payload: false });
             dispatch({ type: 'SET_CURRENT_TRANSLATION', payload: translation });
           }

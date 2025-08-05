@@ -8,6 +8,7 @@
  */
 
 import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
 
 // Phase 1 Configuration Constants
 const SILENCE_THRESHOLD_DB = -50;
@@ -379,7 +380,10 @@ export class VoiceActivityService {
    * Phase 3 - Extract real audio data for downstream processing
    */
   private async createAudioChunk(): Promise<void> {
-    if (!this.recording || !this.chunkStartTime) return;
+    if (!this.recording || !this.chunkStartTime) {
+      console.warn('⚠️ VoiceActivityService: No active recording or chunk start time');
+      return;
+    }
 
     try {
       const now = new Date();
@@ -387,7 +391,10 @@ export class VoiceActivityService {
       
       // Get current recording status
       const status = await this.recording.getStatusAsync();
-      if (!status.isRecording) return;
+      if (!status.isRecording) {
+        console.warn('⚠️ VoiceActivityService: Recording not active, skipping chunk creation');
+        return;
+      }
 
       // Phase 3: Extract real audio chunk
       // Stop current recording to get the audio file
@@ -396,6 +403,27 @@ export class VoiceActivityService {
       
       if (!recordingUri) {
         console.error('❌ VoiceActivityService: No recording URI available');
+        this.callbacks?.onError(new Error('Recording URI is null'));
+        return;
+      }
+
+      // Validate audio file exists
+      try {
+        const fileInfo = await FileSystem.getInfoAsync(recordingUri);
+        if (!fileInfo.exists) {
+          console.error('❌ VoiceActivityService: Audio file does not exist:', recordingUri);
+          this.callbacks?.onError(new Error('Audio file not found'));
+          return;
+        }
+        
+        console.log('🎵 VoiceActivityService: Audio file validated:', {
+          uri: recordingUri,
+          size: fileInfo.size,
+          modificationTime: fileInfo.modificationTime
+        });
+      } catch (fileError) {
+        console.error('❌ VoiceActivityService: Error validating audio file:', fileError);
+        this.callbacks?.onError(new Error('Audio file validation failed'));
         return;
       }
 
@@ -413,13 +441,14 @@ export class VoiceActivityService {
         timestamp: audioChunk.timestamp.toISOString(),
         hasSpeech: this.isSpeechActive,
         uri: audioChunk.uri,
-        fileExists: !!recordingUri
+        confidenceScore: audioChunk.confidenceScore
       });
 
       // Notify callback with real audio chunk
       this.callbacks?.onSpeechEnd(audioChunk);
 
       // Start a new recording for the next chunk
+      console.log('🔄 VoiceActivityService: Starting new recording for next chunk');
       this.recording = new Audio.Recording();
       await this.recording.prepareToRecordAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
@@ -429,17 +458,29 @@ export class VoiceActivityService {
       // Reset chunk timing
       this.chunkStartTime = now;
       
+      // Schedule cleanup of old audio file after a delay
+      setTimeout(async () => {
+        try {
+          await FileSystem.deleteAsync(recordingUri, { idempotent: true });
+          console.log('🧹 VoiceActivityService: Cleaned up old audio file:', recordingUri);
+        } catch (cleanupError) {
+          console.warn('⚠️ VoiceActivityService: Failed to cleanup audio file:', cleanupError);
+        }
+      }, 30000); // Clean up after 30 seconds
+      
     } catch (error) {
       console.error('❌ VoiceActivityService: Error creating audio chunk:', error);
       
       // Try to restart recording if it failed
       try {
+        console.log('🔁 VoiceActivityService: Attempting to restart recording...');
         this.recording = new Audio.Recording();
         await this.recording.prepareToRecordAsync(
           Audio.RecordingOptionsPresets.HIGH_QUALITY
         );
         await this.recording.startAsync();
         this.chunkStartTime = new Date();
+        console.log('✅ VoiceActivityService: Recording restarted successfully');
       } catch (restartError) {
         console.error('❌ VoiceActivityService: Failed to restart recording:', restartError);
         this.callbacks?.onError(new Error('Failed to restart recording'));

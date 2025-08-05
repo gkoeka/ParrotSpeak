@@ -67,14 +67,29 @@ export class SpeechService {
     }
 
     const startTime = Date.now();
-    console.log('🧠 SpeechService: Sending to Whisper...');
+    console.log('🧠 SpeechService: Sending to Whisper...', {
+      audioUri,
+      languageHint
+    });
 
     try {
       // Read the audio file
       const fileInfo = await FileSystem.getInfoAsync(audioUri);
       if (!fileInfo.exists) {
+        console.error('❌ SpeechService: Audio file not found:', audioUri);
         throw new Error('Audio file not found');
       }
+
+      // Validate file size (Whisper API limit is 25MB)
+      if (fileInfo.size && fileInfo.size > 25 * 1024 * 1024) {
+        console.error('❌ SpeechService: Audio file too large:', fileInfo.size);
+        throw new Error('Audio file exceeds 25MB limit');
+      }
+
+      console.log('📁 SpeechService: Audio file validated:', {
+        size: fileInfo.size,
+        uri: audioUri
+      });
 
       // Create form data for multipart upload
       const formData = new FormData();
@@ -90,12 +105,14 @@ export class SpeechService {
       // Add language hint if provided
       if (languageHint) {
         formData.append('language', languageHint);
+        console.log('🌐 SpeechService: Using language hint:', languageHint);
       }
 
       // Add response format to get detailed output
       formData.append('response_format', 'verbose_json');
 
       // Make API request to Whisper
+      console.log('📡 SpeechService: Calling Whisper API...');
       const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
         method: 'POST',
         headers: {
@@ -106,16 +123,50 @@ export class SpeechService {
 
       if (!response.ok) {
         const error = await response.text();
+        console.error('❌ SpeechService: Whisper API error:', {
+          status: response.status,
+          error
+        });
+        
+        if (response.status === 401) {
+          throw new Error('OpenAI API key is invalid or missing');
+        }
         throw new Error(`Whisper API error: ${error}`);
       }
 
       const result = await response.json();
       const duration = Date.now() - startTime;
 
-      console.log(`📝 SpeechService: Transcription: "${result.text}" (${result.language}, ${duration}ms)`);
+      // Handle empty transcription
+      if (!result.text || result.text.trim().length === 0) {
+        console.warn('⚠️ SpeechService: Empty transcription received');
+        return {
+          text: '',
+          language: result.language || languageHint || 'en',
+          confidence: 0.1,
+          duration,
+        };
+      }
+
+      console.log(`📝 SpeechService: Transcription: "${result.text.substring(0, 50)}..." (${result.language}, ${duration}ms)`);
 
       // Calculate confidence based on response (Whisper doesn't provide confidence directly)
       const confidence = this.estimateConfidence(result);
+      
+      // Log language detection results
+      console.log('🌍 SpeechService: Language detection:', {
+        detected: result.language,
+        expected: languageHint,
+        confidence,
+        match: result.language === languageHint
+      });
+
+      // Check if confidence is too low
+      if (confidence < 0.5) {
+        console.warn('⚠️ SpeechService: Low confidence transcription:', confidence);
+        // Use last known language or default if confidence is too low
+        result.language = result.language || languageHint || 'en';
+      }
 
       // Track performance
       performanceMonitor.addMetric({
@@ -130,7 +181,7 @@ export class SpeechService {
       });
 
       return {
-        text: result.text,
+        text: result.text.trim(),
         language: result.language,
         confidence,
         duration,
@@ -154,9 +205,20 @@ export class SpeechService {
     toLanguage: string
   ): Promise<TranslationResult> {
     const startTime = Date.now();
-    console.log(`🌍 SpeechService: Translating to ${toLanguage}...`);
+    console.log(`🌍 SpeechService: Translating from ${fromLanguage} to ${toLanguage}...`);
 
     try {
+      // Handle empty text
+      if (!text || text.trim().length === 0) {
+        console.warn('⚠️ SpeechService: Empty text provided for translation');
+        return {
+          text: '(Translation unavailable)',
+          fromLanguage,
+          toLanguage,
+          duration: 0,
+        };
+      }
+
       // Check cache first
       const cacheKey = { text, sourceLanguage: fromLanguage, targetLanguage: toLanguage };
       const cachedTranslation = await translationCache.get(cacheKey);
@@ -201,6 +263,18 @@ export class SpeechService {
       };
     } catch (error) {
       console.error('❌ SpeechService: Translation failed:', error);
+      
+      // Handle translation errors gracefully
+      if (error instanceof Error && error.message.includes('Unsupported language')) {
+        console.warn('⚠️ SpeechService: Unsupported language, returning placeholder');
+        return {
+          text: '(Translation unavailable)',
+          fromLanguage,
+          toLanguage,
+          duration: Date.now() - startTime,
+        };
+      }
+      
       throw error;
     }
   }

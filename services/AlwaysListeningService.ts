@@ -79,6 +79,8 @@ export class AlwaysListeningService {
   private speakerInfo: Map<SpeakerRole, SpeakerInfo> = new Map();
   private conversationTurns: ConversationTurn[] = [];
   private switchTimer: NodeJS.Timeout | null = null;
+  private processingQueue: Set<string> = new Set(); // Track chunks being processed
+  private maxQueueSize: number = 10; // Maximum chunks to keep in memory
 
   constructor(config?: Partial<ConversationFlowConfig>) {
     this.config = {
@@ -211,6 +213,25 @@ export class AlwaysListeningService {
     console.log(`  Timestamp: ${audioChunk.timestamp.toISOString()}`);
     console.log(`  URI: ${audioChunk.uri}`);
     
+    // Check if chunk is already being processed
+    const chunkId = `${audioChunk.timestamp.getTime()}-${audioChunk.uri}`;
+    if (this.processingQueue.has(chunkId)) {
+      console.warn('⚠️ AlwaysListeningService: Chunk already being processed, skipping duplicate');
+      return;
+    }
+    
+    // Add to processing queue
+    this.processingQueue.add(chunkId);
+    
+    // Check queue size and remove oldest if exceeded
+    if (this.processingQueue.size > this.maxQueueSize) {
+      console.warn(`⚠️ AlwaysListeningService: Queue size exceeded (${this.processingQueue.size}), removing oldest`);
+      const oldest = Array.from(this.processingQueue)[0];
+      this.processingQueue.delete(oldest);
+    }
+    
+    console.log(`📊 AlwaysListeningService: Processing queue size: ${this.processingQueue.size}`);
+    
     // Update state to processing
     if (this.currentSpeaker === SpeakerRole.SOURCE) {
       this.updateConversationState(ConversationState.PROCESSING_SOURCE);
@@ -222,7 +243,16 @@ export class AlwaysListeningService {
       // Check if speech service is ready
       if (!speechService.isReady()) {
         console.log('🔑 AlwaysListeningService: Initializing speech service...');
+        // Notify about transcription start
+        if (this.callbacks?.onTranscriptionStart) {
+          this.callbacks.onTranscriptionStart();
+        }
         await speechService.initialize();
+      } else {
+        // Notify about transcription start
+        if (this.callbacks?.onTranscriptionStart) {
+          this.callbacks.onTranscriptionStart();
+        }
       }
       
       // Phase 3: Process audio through AI pipeline
@@ -289,6 +319,25 @@ export class AlwaysListeningService {
       // Notify callbacks
       this.callbacks?.onConversationTurn(turn);
       
+      // Notify UI of transcription and translation completion
+      if (this.callbacks?.onTranscriptionComplete) {
+        this.callbacks.onTranscriptionComplete({
+          text: transcription.text,
+          language: transcription.language,
+          confidence: transcription.confidence,
+          timestamp: new Date()
+        });
+      }
+      
+      if (this.callbacks?.onTranslationComplete) {
+        this.callbacks.onTranslationComplete({
+          text: translation.text,
+          fromLanguage: translation.fromLanguage,
+          toLanguage: translation.toLanguage,
+          timestamp: new Date()
+        });
+      }
+      
       // Speak the translation
       if (translation.text && translation.text.trim().length > 0) {
         await this.speakTranslation(translation.text, targetLanguage);
@@ -323,6 +372,10 @@ export class AlwaysListeningService {
       setTimeout(() => {
         this.switchSpeaker('error_recovery');
       }, 2000);
+    } finally {
+      // Remove from processing queue when done
+      this.processingQueue.delete(chunkId);
+      console.log(`✅ AlwaysListeningService: Chunk processed, queue size: ${this.processingQueue.size}`);
     }
   }
   
@@ -331,7 +384,15 @@ export class AlwaysListeningService {
    * Phase 3 - Synthesize and play translated text
    */
   private async speakTranslation(text: string, language: string): Promise<void> {
-    console.log(`🔈 AlwaysListeningService: Speaking: "${text}" in ${language}`);
+    console.log(`🔈 AlwaysListeningService: Speaking: "${text.substring(0, 50)}..." in ${language}`);
+    
+    try {
+      // Cancel any pending speech before playing new
+      await Speech.stop();
+      console.log('🔇 AlwaysListeningService: Cancelled pending speech');
+    } catch (error) {
+      console.warn('⚠️ AlwaysListeningService: Failed to cancel pending speech:', error);
+    }
     
     // Update state to speaking
     if (this.currentSpeaker === SpeakerRole.SOURCE) {
@@ -346,13 +407,14 @@ export class AlwaysListeningService {
         pitch: 1.0,
         rate: 1.0,
         onDone: () => {
-          console.log('✅ AlwaysListeningService: Speech completed');
+          console.log('✅ AlwaysListeningService: Speech synthesis completed successfully');
           // Switch speakers after speaking
           this.switchSpeaker('auto');
           resolve();
         },
         onError: (error) => {
           console.error('❌ AlwaysListeningService: Speech synthesis error:', error);
+          console.error('❌ AlwaysListeningService: Language not supported on device:', language);
           // Switch speakers even on error to continue conversation
           this.switchSpeaker('error_recovery');
           resolve();
