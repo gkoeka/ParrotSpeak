@@ -516,31 +516,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // IAP routes
   app.use('/api/iap', iapRoutes);
 
-  // Test logout endpoint to clear session
-  app.post('/api/test-logout', requireAuth, async (req: Request, res: Response) => {
-    try {
-      // Clear the session
-      req.session.destroy((err) => {
-        if (err) {
-          console.error('Error destroying session:', err);
-        }
-      });
-      
-      // Clear the JWT cookie if it exists
-      res.clearCookie('jwt');
-      res.clearCookie('connect.sid');
-      
-      res.json({ 
-        success: true, 
-        message: 'Logged out successfully. You should now see the welcome screen.',
-        action: 'reload_app'
-      });
-    } catch (error) {
-      console.error('Error during test logout:', error);
-      res.status(500).json({ message: 'Logout failed' });
-    }
-  });
-
   // Languages endpoint with comprehensive support
   app.get('/api/languages', async (req: Request, res: Response) => {
     try {
