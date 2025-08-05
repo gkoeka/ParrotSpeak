@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { CompositeNavigationProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { RootStackParamList } from '../App';
+import { SettingsStackParamList } from '../navigation/MainTabNavigator';
+import { TabParamList } from '../navigation/MainTabNavigator';
 import Header from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 
-type SettingsNavigationProp = StackNavigationProp<RootStackParamList, 'Settings'>;
+type SettingsNavigationProp = CompositeNavigationProp<
+  StackNavigationProp<SettingsStackParamList, 'Settings'>,
+  BottomTabNavigationProp<TabParamList>
+>;
 
 export default function SettingsScreen() {
   const navigation = useNavigation<SettingsNavigationProp>();
@@ -21,21 +28,25 @@ export default function SettingsScreen() {
   const accountOptions = [
     { 
       title: 'Profile', 
-      screen: 'Profile' as keyof RootStackParamList,
+      screen: 'Profile',
       icon: 'person-outline',
-      subtitle: user?.email || 'Manage your profile'
+      subtitle: user?.email || 'Manage your profile',
+      isStack: true
     },
     { 
       title: 'Subscription', 
-      screen: 'Pricing' as keyof RootStackParamList,
+      screen: 'Pricing',
       icon: 'card-outline',
-      subtitle: 'Manage your plan'
+      subtitle: 'Manage your plan',
+      isStack: true
     },
     { 
       title: 'Analytics', 
-      screen: 'Analytics' as keyof RootStackParamList,
+      screen: 'ChatTab',
       icon: 'stats-chart-outline',
-      subtitle: 'View your usage stats'
+      subtitle: 'View your usage stats',
+      isTab: true,
+      params: { screen: 'Analytics' }
     },
   ];
 
@@ -69,17 +80,18 @@ export default function SettingsScreen() {
   const supportOptions = [
     { 
       title: 'Help Center', 
-      screen: 'HelpCenter' as keyof RootStackParamList,
+      screen: 'HelpCenter',
       icon: 'help-circle-outline',
-      subtitle: 'Get help and support'
+      subtitle: 'Get help and support',
+      isStack: true
     },
     { 
       title: 'Send Feedback', 
-      screen: 'Feedback' as keyof RootStackParamList,
+      screen: 'FeedbackTab',
       icon: 'chatbubble-outline',
-      subtitle: 'Share your thoughts'
+      subtitle: 'Share your thoughts',
+      isTab: true
     },
-
   ];
 
   return (
@@ -104,7 +116,17 @@ export default function SettingsScreen() {
                   styles.optionItem,
                   index === accountOptions.length - 1 && styles.lastOptionItem
                 ]}
-                onPress={() => navigation.navigate(option.screen)}
+                onPress={() => {
+                  if (option.isTab) {
+                    if (option.params) {
+                      navigation.navigate(option.screen as keyof TabParamList, option.params);
+                    } else {
+                      navigation.navigate(option.screen as keyof TabParamList);
+                    }
+                  } else {
+                    navigation.navigate(option.screen as keyof SettingsStackParamList);
+                  }
+                }}
               >
                 <View style={styles.optionLeft}>
                   <View style={[styles.iconContainer, isDarkMode && styles.iconContainerDark]}>
@@ -162,7 +184,13 @@ export default function SettingsScreen() {
                   styles.optionItem,
                   index === supportOptions.length - 1 && styles.lastOptionItem
                 ]}
-                onPress={() => navigation.navigate(option.screen)}
+                onPress={() => {
+                  if (option.isTab) {
+                    navigation.navigate(option.screen as keyof TabParamList);
+                  } else {
+                    navigation.navigate(option.screen as keyof SettingsStackParamList);
+                  }
+                }}
               >
                 <View style={styles.optionLeft}>
                   <View style={[styles.iconContainer, isDarkMode && styles.iconContainerDark]}>
