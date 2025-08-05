@@ -39,7 +39,10 @@ export default function LanguageSelector({
   const allLanguages = useMemo(() => {
     const languages = getSupportedLanguages();
     console.log('📱 LanguageSelector: Loaded', languages.length, 'languages');
-    console.log('📱 Sample language:', languages[0]);
+    console.log('📱 Sample language:', JSON.stringify(languages[0], null, 2));
+    // Check if Arabic has native name
+    const arabic = languages.find(lang => lang.code === 'ar');
+    console.log('📱 Arabic language data:', JSON.stringify(arabic, null, 2));
     return languages.sort((a, b) => b.popularity - a.popularity);
   }, []);
 
