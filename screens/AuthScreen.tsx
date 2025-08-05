@@ -205,12 +205,11 @@ export default function AuthScreen() {
           {isLogin && (
             <TouchableOpacity 
               style={styles.forgotPasswordButton}
-              onPress={() => {
-                // Navigate to password reset screen
-                Alert.alert('Password Reset', 'Password reset feature will be available soon.');
-              }}
+              onPress={() => navigation.navigate('PasswordReset')}
             >
-              <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
+              <Text style={[styles.forgotPasswordText, isDarkMode && styles.forgotPasswordTextDark]}>
+                Forgot your password?
+              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -369,5 +368,8 @@ const styles = StyleSheet.create({
     color: '#3366FF',
     fontSize: 14,
     fontWeight: '500',
+  },
+  forgotPasswordTextDark: {
+    color: '#5B8FFF',
   },
 });

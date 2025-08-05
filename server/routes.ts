@@ -793,14 +793,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Email is required' });
       }
 
-      // TODO: Send actual password reset email via SendGrid
-      // For demo purposes, just return success
-      console.log(`Password reset requested for: ${email}`);
+      const { createPasswordResetToken } = await import('./services/auth');
+      const originUrl = `${req.protocol}://${req.get('host')}`;
+      const result = await createPasswordResetToken(email, originUrl);
       
-      res.json({ 
-        success: true, 
-        message: 'Password reset email sent if account exists' 
-      });
+      if (result.success) {
+        res.json({ 
+          success: true, 
+          message: result.message 
+        });
+      } else {
+        res.status(400).json({ error: result.message });
+      }
     } catch (error) {
       console.error('Password reset request error:', error);
       res.status(500).json({ error: 'Failed to process password reset request' });
@@ -815,14 +819,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Token and new password are required' });
       }
 
-      // TODO: Verify reset token and update password in database
-      // For demo purposes, just return success
-      console.log(`Password reset completed with token: ${token}`);
+      // Validate password strength
+      if (newPassword.length < 8) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters long' });
+      }
+
+      const { resetPassword } = await import('./services/auth');
+      const result = await resetPassword(token, newPassword);
       
-      res.json({ 
-        success: true, 
-        message: 'Password reset successful' 
-      });
+      if (result.success) {
+        res.json({ 
+          success: true, 
+          message: result.message 
+        });
+      } else {
+        res.status(400).json({ error: result.message });
+      }
     } catch (error) {
       console.error('Password reset error:', error);
       res.status(500).json({ error: 'Failed to reset password' });

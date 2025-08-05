@@ -26,6 +26,7 @@ import AuthScreen from "./screens/AuthScreen";
 import ProfileScreen from "./screens/ProfileScreen";
 import SubscriptionPlansScreen from "./screens/SubscriptionPlansScreen";
 import PasswordResetScreen from "./screens/PasswordResetScreen";
+import NewPasswordScreen from "./screens/NewPasswordScreen";
 import FeedbackScreen from "./screens/FeedbackScreen";
 import CheckoutScreen from "./screens/CheckoutScreen";
 import PricingScreen from "./screens/PricingScreen";
@@ -41,6 +42,7 @@ export type RootStackParamList = {
   MainTabs: undefined;
   Auth: { defaultToSignUp?: boolean };
   PasswordReset: { token?: string };
+  NewPassword: { token: string };
   // Legacy routes for deep linking
   Home: undefined;
   Conversation: { id?: string };
@@ -129,6 +131,7 @@ function AuthNavigator() {
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="Auth" component={AuthScreen} />
           <Stack.Screen name="PasswordReset" component={PasswordResetScreen} />
+          <Stack.Screen name="NewPassword" component={NewPasswordScreen} />
           {user?.email === 'greg@gregkoeka.com' && (
             <Stack.Screen name="MainTabs" component={MainTabNavigator} />
           )}

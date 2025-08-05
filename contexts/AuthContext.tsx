@@ -17,7 +17,7 @@ interface AuthContextType {
   register: (email: string, password: string, firstName: string, lastName?: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   loginWithApple: () => Promise<void>;
-  requestPasswordReset: (email: string) => Promise<boolean>;
+  requestPasswordReset: (email: string) => Promise<{ success: boolean; message: string }>;
   refreshUserData: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -187,13 +187,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const requestPasswordReset = async (email: string): Promise<boolean> => {
+  const requestPasswordReset = async (email: string): Promise<{ success: boolean; message: string }> => {
     try {
-      const { requestPasswordReset: apiRequestReset } = await import('../api/authService');
+      const { requestPasswordReset: apiRequestReset } = await import('../api/passwordResetService');
       return await apiRequestReset(email);
     } catch (error) {
       console.error('Password reset request failed:', error);
-      return false;
+      return {
+        success: false,
+        message: 'Failed to send reset email. Please try again.'
+      };
     }
   };
 
