@@ -34,31 +34,25 @@ export async function requestPasswordReset(email: string): Promise<{ success: bo
   }
 }
 
-/**
- * Reset password with token
- * @param token Reset token from email
- * @param password New password
- * @returns Success status
- */
-export async function resetPassword(token: string, password: string): Promise<{ success: boolean; message: string }> {
+export async function resetPassword(token: string, newPassword: string): Promise<{ success: boolean; message: string }> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ token, password }),
+      body: JSON.stringify({ token, newPassword }),
     });
     
     const data = await response.json();
     
     if (!response.ok) {
-      throw new Error(data.message || 'Failed to reset password');
+      throw new Error(data.error || 'Failed to reset password');
     }
     
     return { 
       success: true, 
-      message: data.message || 'Your password has been successfully reset.' 
+      message: data.message || 'Password reset successful' 
     };
   } catch (error) {
     console.error('Password reset error:', error);
@@ -68,3 +62,4 @@ export async function resetPassword(token: string, password: string): Promise<{ 
     };
   }
 }
+

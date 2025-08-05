@@ -1,6 +1,48 @@
 // Enhanced language configuration with speech synthesis support
 // Based on dual architecture language support with mobile-optimized features
 
+// Comprehensive flag mapping for all supported languages
+export const getFlagEmoji = (code: string): string => {
+  if (!code) return '🌍';
+  
+  // Handle language codes with country suffixes (e.g., en-US, de-DE)
+  const baseCode = code.split('-')[0].toLowerCase();
+  
+  const flagMap: { [key: string]: string } = {
+    'en': '🇺🇸', 'es': '🇪🇸', 'fr': '🇫🇷', 'de': '🇩🇪',
+    'it': '🇮🇹', 'pt': '🇵🇹', 'ru': '🇷🇺', 'zh': '🇨🇳',
+    'ja': '🇯🇵', 'ko': '🇰🇷', 'ar': '🇸🇦', 'hi': '🇮🇳', 'nl': '🇳🇱',
+    'sv': '🇸🇪', 'no': '🇳🇴', 'da': '🇩🇰', 'fi': '🇫🇮', 'pl': '🇵🇱',
+    'tr': '🇹🇷', 'he': '🇮🇱', 'th': '🇹🇭', 'vi': '🇻🇳', 'uk': '🇺🇦',
+    'cs': '🇨🇿', 'sk': '🇸🇰', 'hu': '🇭🇺', 'ro': '🇷🇴', 'bg': '🇧🇬',
+    'hr': '🇭🇷', 'sr': '🇷🇸', 'sl': '🇸🇮', 'et': '🇪🇪', 'lv': '🇱🇻',
+    'lt': '🇱🇹', 'mt': '🇲🇹', 'ga': '🇮🇪', 'cy': '🏴󠁧󠁢󠁷󠁬󠁳󞁿', 'is': '🇮🇸',
+    'mk': '🇲🇰', 'sq': '🇦🇱', 'eu': '🏴󠁥󠁳󠁰󠁶󞁿', 'ca': '🏴󠁥󠁳󠁣󠁴󞁿', 'gl': '🏴󠁥󠁳󠁧󠁡󞁿',
+    'af': '🇿🇦', 'sw': '🇰🇪', 'zu': '🇿🇦', 'xh': '🇿🇦', 'yo': '🇳🇬',
+    'ig': '🇳🇬', 'ha': '🇳🇬', 'am': '🇪🇹', 'or': '🇮🇳', 'as': '🇮🇳',
+    'bn': '🇧🇩', 'gu': '🇮🇳', 'kn': '🇮🇳', 'ml': '🇮🇳', 'mr': '🇮🇳',
+    'ne': '🇳🇵', 'pa': '🇮🇳', 'si': '🇱🇰', 'ta': '🇮🇳', 'te': '🇮🇳',
+    'ur': '🇵🇰', 'fil': '🇵🇭', 'yue': '🇭🇰', 'kk': '🇰🇿', 'uz': '🇺🇿',
+    'az': '🇦🇿', 'id': '🇮🇩', 'ms': '🇲🇾', 'sher': '🇳🇵', 'dz': '🇧🇹', 
+    'hy': '🇦🇲', 'ka': '🇬🇪', 'mn': '🇲🇳'
+  };
+  
+  // Special handling for specific language-country combinations
+  if (code === 'es-ES') return '🇪🇸'; // Spain Spanish
+  if (code === 'es-419' || code === 'es-MX') return '🇲🇽'; // Latin American Spanish
+  if (code === 'pt-BR') return '🇧🇷'; // Brazilian Portuguese
+  if (code === 'pt-PT') return '🇵🇹'; // European Portuguese
+  if (code === 'zh-CN') return '🇨🇳'; // Simplified Chinese
+  if (code === 'zh-TW') return '🇹🇼'; // Traditional Chinese
+  
+  // Handle generic Spanish
+  if (baseCode === 'es') {
+    return '🇲🇽'; // Default to Mexico flag for generic Spanish
+  }
+  
+  return flagMap[baseCode] || '🌍';
+};
+
 export interface LanguageConfiguration {
   code: string;
   name: string;
@@ -39,11 +81,24 @@ export const LANGUAGE_CONFIGURATIONS: LanguageConfiguration[] = [
     popularity: 10
   },
   {
-    code: "es",
-    name: "Spanish",
-    nativeName: "Español",
+    code: "es-ES",
+    name: "Spanish (Spain)",
+    nativeName: "Español (España)",
     country: "Spain",
     flag: "https://flagcdn.com/es.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'high',
+    popularity: 9
+  },
+  {
+    code: "es-419",
+    name: "Spanish (Latin America)",
+    nativeName: "Español (Latinoamérica)",
+    country: "Latin America",
+    flag: "https://flagcdn.com/mx.svg",
     speechSupported: true,
     speechToTextSupported: true,
     textToSpeechSupported: true,
@@ -342,6 +397,32 @@ export const LANGUAGE_CONFIGURATIONS: LanguageConfiguration[] = [
     popularity: 4
   },
   {
+    code: "sl",
+    name: "Slovenian",
+    nativeName: "Slovenščina",
+    country: "Slovenia",
+    flag: "https://flagcdn.com/si.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'medium',
+    popularity: 3
+  },
+  {
+    code: "is",
+    name: "Icelandic",
+    nativeName: "Íslenska",
+    country: "Iceland",
+    flag: "https://flagcdn.com/is.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'medium',
+    popularity: 3
+  },
+  {
     code: "el",
     name: "Greek",
     nativeName: "Ελληνικά",
@@ -567,6 +648,104 @@ export const LANGUAGE_CONFIGURATIONS: LanguageConfiguration[] = [
 
   // Tier 5: Basic support languages
   {
+    code: "fil",
+    name: "Filipino",
+    nativeName: "Wikang Filipino",
+    country: "Philippines",
+    flag: "https://flagcdn.com/ph.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'medium',
+    popularity: 6
+  },
+  {
+    code: "yue",
+    name: "Cantonese",
+    nativeName: "廣東話",
+    country: "Hong Kong",
+    flag: "https://flagcdn.com/hk.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'medium',
+    popularity: 6
+  },
+  {
+    code: "kk",
+    name: "Kazakh",
+    nativeName: "Қазақ тілі",
+    country: "Kazakhstan",
+    flag: "https://flagcdn.com/kz.svg",
+    speechSupported: false,
+    speechToTextSupported: false,
+    textToSpeechSupported: false,
+    translationQuality: 'basic',
+    popularity: 3
+  },
+  {
+    code: "uz",
+    name: "Uzbek",
+    nativeName: "Oʻzbek tili",
+    country: "Uzbekistan",
+    flag: "https://flagcdn.com/uz.svg",
+    speechSupported: false,
+    speechToTextSupported: false,
+    textToSpeechSupported: false,
+    translationQuality: 'basic',
+    popularity: 3
+  },
+  {
+    code: "az",
+    name: "Azerbaijani",
+    nativeName: "Azərbaycan dili",
+    country: "Azerbaijan",
+    flag: "https://flagcdn.com/az.svg",
+    speechSupported: false,
+    speechToTextSupported: false,
+    textToSpeechSupported: false,
+    translationQuality: 'basic',
+    popularity: 3
+  },
+  {
+    code: "si",
+    name: "Sinhala",
+    nativeName: "සිංහල",
+    country: "Sri Lanka",
+    flag: "https://flagcdn.com/lk.svg",
+    speechSupported: false,
+    speechToTextSupported: false,
+    textToSpeechSupported: false,
+    translationQuality: 'basic',
+    popularity: 3
+  },
+  {
+    code: "mt",
+    name: "Maltese",
+    nativeName: "Malti",
+    country: "Malta",
+    flag: "https://flagcdn.com/mt.svg",
+    speechSupported: false,
+    speechToTextSupported: false,
+    textToSpeechSupported: false,
+    translationQuality: 'basic',
+    popularity: 2
+  },
+  {
+    code: "sq",
+    name: "Albanian",
+    nativeName: "Shqip",
+    country: "Albania",
+    flag: "https://flagcdn.com/al.svg",
+    speechSupported: false,
+    speechToTextSupported: false,
+    textToSpeechSupported: false,
+    translationQuality: 'basic',
+    popularity: 3
+  },
+  {
     code: "af",
     name: "Afrikaans",
     nativeName: "Afrikaans",
@@ -697,6 +876,30 @@ export const LANGUAGE_CONFIGURATIONS: LanguageConfiguration[] = [
     textToSpeechSupported: false,
     translationQuality: 'basic',
     popularity: 2
+  },
+  {
+    code: "sher",
+    name: "Sherpa",
+    nativeName: "ཤར་པ་ཁ",
+    country: "Nepal",
+    flag: "https://flagcdn.com/np.svg",
+    speechSupported: false,
+    speechToTextSupported: false,
+    textToSpeechSupported: false,
+    translationQuality: 'basic',
+    popularity: 1
+  },
+  {
+    code: "dz",
+    name: "Bhutanese (Dzongkha)",
+    nativeName: "རྫོང་ཁ",
+    country: "Bhutan",
+    flag: "https://flagcdn.com/bt.svg",
+    speechSupported: false,
+    speechToTextSupported: false,
+    textToSpeechSupported: false,
+    translationQuality: 'basic',
+    popularity: 1
   }
 ];
 
@@ -722,7 +925,7 @@ export function getLanguagesWithoutSpeechSupport(): LanguageConfiguration[] {
 }
 
 // Speech fallback configuration
-export const SPEECH_FALLBACK_ORDER = ['en', 'es', 'fr', 'de', 'it'];
+export const SPEECH_FALLBACK_ORDER = ['en', 'es-419', 'es-ES', 'fr', 'de', 'it'];
 
 export function getSpeechFallbackLanguage(requestedLanguage: string): string {
   const language = getLanguageByCode(requestedLanguage);

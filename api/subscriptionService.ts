@@ -1,5 +1,6 @@
 import { API_BASE_URL, ENDPOINTS, getHeaders } from './config';
 import { getCurrentUser } from './authService';
+import { authenticatedFetch } from '../utils/apiHelpers';
 
 // Define SubscriptionInfo interface locally for client-side use
 export interface SubscriptionInfo {
@@ -133,13 +134,11 @@ export async function makeProtectedRequest<T>(
   
   // Make the API request
   try {
-    const response = await fetch(`${API_BASE_URL}${url}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}${url}`, {
       ...options,
       headers: {
-        ...getHeaders(),
         ...options.headers,
       },
-      credentials: 'include',
     });
     
     if (!response.ok) {

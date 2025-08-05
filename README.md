@@ -1,10 +1,44 @@
 # ParrotSpeak 🦜
 
-A mobile-first AI-powered voice translation application using React Native and Expo. ParrotSpeak enables seamless cross-language communication through real-time speech recognition, translation, and synthesis for travelers, businesses, and global communicators.
+## 📱 Mobile-Only Architecture
 
-**Architecture**: Mobile-only application optimized for iOS and Android app store distribution, with development web interface for testing.
+ParrotSpeak is a **100% mobile-only application** built exclusively with React Native and Expo for iOS and Android deployment. The entire codebase has been optimized for mobile performance with all web-specific code removed.
+
+**Key Architecture Points:**
+- **Pure React Native**: No web platform dependencies or conditional checks
+- **Expo SDK 53**: Latest Expo framework for streamlined mobile development
+- **Mobile-First Design**: All UI components optimized for touch interfaces
+- **App Store Ready**: Built for distribution via Apple App Store and Google Play Store
+
+ParrotSpeak enables seamless cross-language communication through real-time speech recognition, translation, and synthesis for travelers, businesses, and global communicators.
 
 ## 🎉 Recent Updates
+
+### Authentication Persistence & UI Enhancements (February 5, 2025)
+- **✅ JWT Authentication for Mobile** - Implemented JWT token-based auth ensuring reliable session persistence across app restarts with expo-secure-store
+- **✅ Authentication Persistence Verified** - Users remain logged in after app reloads, working correctly for all test accounts including Google/Apple sign-ins
+- **✅ Welcome Screen for New Users** - Added first-time launch detection with dedicated welcome screen showing app benefits and "Get Started" button
+- **✅ Header Redesign Complete** - Logo positioned left, "ParrotSpeak" brand name centered, settings icon right with full dark mode support
+- **✅ Status Bar Dark Mode** - System status bar (time, wifi, battery) now adapts to theme with light icons in dark mode, dark icons in light mode
+- **✅ Flag Display Enhancement** - All 67 languages now show appropriate country flags in conversations with special handling for Spanish dialects
+- **✅ Language Persistence** - User's last selected languages automatically load for new conversations, eliminating repetitive selection
+
+### Subscription Verification & IAP Integration (February 2, 2025)
+- **✅ In-App Purchase Infrastructure** - Completed IAP service integration with product configuration for Monthly ($9.99/mo), Annual ($99/yr), and Traveler passes (1 week/$4.99, 1 month/$14.99, 3 months/$39.99, 6 months/$69.99)
+- **✅ Subscription Enforcement Verified** - Comprehensive testing confirms all subscription types (lifetime, monthly, expired, free) are properly validated with correct API access control
+- **✅ Authentication System** - Fixed user authentication with proper password hashing and session management using `/api/auth/*` endpoints
+- **✅ Checkout Flow Restoration** - Rebuilt CheckoutScreen with complete purchase flow integration and proper AuthContext updates via refreshUserData
+- **✅ Test User Validation** - Seeded database with test accounts for all subscription scenarios (lifetime active, expired monthly, free users)
+- **✅ API Protection** - Translation endpoints (`/api/conversations/:id/messages`) require active subscription with proper 403 error handling
+- **✅ Git Branch Management** - Documented workflow for creating feature branches (e.g., restore-subscription-logic-phase2) for code preservation
+
+### Language Expansion & RTL Support (August 2, 2025)
+- **✅ Extended to 65 Languages** - Added Filipino, Cantonese, Kazakh, Uzbek, Azerbaijani, Sinhala, Slovenian, Icelandic, Maltese, and Albanian
+- **✅ Full RTL Layout Support** - Implemented right-to-left layouts for Arabic, Hebrew, Persian, and Urdu with automatic text direction detection
+- **✅ Enhanced Speech Synthesis** - Fixed Slovenian and other language audio with locale-specific mapping (sl-SI, fil-PH) and async fallback mechanisms
+- **✅ Low-Resolution Device Support** - Optimized UI components for devices as small as 320x480 with proper scrolling and touch targets
+- **✅ Jest Testing Framework** - Created comprehensive snapshot tests for LanguageSelectorMobile component with 16 test cases
+- **✅ OAuth Compatibility Fix** - Resolved Google Sign-In module error for Expo Go development environment
 
 ### Mobile-Only Optimization (August 1, 2025)
 - **✅ Mobile-Only Configuration Complete** - Removed all web platform checks (`Platform.OS !== 'web'`) and web build configurations
@@ -83,7 +117,9 @@ A mobile-first AI-powered voice translation application using React Native and E
 - **Mobile-First Design** - Optimized for one-handed smartphone operation
 - **Conversation Management** - Save, organize, and revisit past conversations
 - **Voice Profile Customization** - Personalize output speech characteristics
-- **Dark Mode Support** - Eye-friendly interface for all lighting conditions
+- **Enhanced Dark Mode** - Complete theme support including header, status bar, and persistent preferences
+- **Welcome Experience** - First-time users see dedicated welcome screen with clear onboarding
+- **Smart Language Defaults** - Automatically remembers your last used language pair for new conversations
 - **Accessibility Features** - High-contrast mode, dynamic text sizing, voice control
 - **Real-time Feedback** - Live voice level indicators and processing states
 
@@ -164,11 +200,17 @@ conversation_patterns  // Conversation flow analysis and insights
 
 ## 📝 Development Status & Deployment
 
-### Current Status (August 1, 2025)
+### Current Status (February 5, 2025)
 - **✅ Mobile-Only Architecture**: Optimized for iOS and Android exclusively
+- **✅ Subscription System**: IAP integration complete with all subscription types verified and enforced
+- **✅ Authentication**: JWT token-based auth with reliable persistence across app restarts
+- **✅ User Experience**: Welcome screen for new users, persistent dark mode, centered header design
+- **✅ Language Features**: Flag display for all 67 languages, automatic language preference persistence
+- **✅ API Protection**: All translation endpoints require active subscription with proper access control
 - **🚨 Package Compatibility**: Requires Expo SDK 50 downgrade for React Native 0.73.9 compatibility
 - **✅ Core Features**: Voice translation, subscription protection, and navigation complete
 - **⏳ MVP Launch**: Camera features disabled for initial release (code preserved)
+- **📱 Next Steps**: Configure products in App Store Connect and Google Play Console for production IAP
 
 ### Repository & Deployment
 - **GitHub Integration**: SSH-based deployment configured

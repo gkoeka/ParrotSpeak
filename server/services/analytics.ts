@@ -1,6 +1,7 @@
 import { analyticsAnonymization, AnonymizedEvent } from './analytics-anonymization';
 import { analyticsConsent } from './analytics-consent';
 import { mixpanelService } from './mixpanel-service';
+import { fullstoryService } from './fullstory-service';
 
 export interface AnalyticsEvent {
   eventName: string;
@@ -37,8 +38,11 @@ class AnalyticsService {
         return;
       }
 
-      // Send to Mixpanel
-      await mixpanelService.trackEvent(anonymizedEvent);
+      // Send to analytics services
+      await Promise.all([
+        mixpanelService.trackEvent(anonymizedEvent),
+        fullstoryService.trackEvent(anonymizedEvent)
+      ]);
 
       // Log for debugging
       console.log('Analytics event tracked:', {
@@ -273,6 +277,83 @@ class AnalyticsService {
    */
   async getConsentStatistics(): Promise<any> {
     return await analyticsConsent.getBulkConsentStatus();
+  }
+
+  /**
+   * Handle user opting out of analytics
+   */
+  async handleOptOut(userId: number): Promise<void> {
+    try {
+      // Update consent in database
+      await analyticsConsent.updateUserConsent(userId, false);
+      
+      // Get anonymized user ID for external services
+      const anonymizedUserId = analyticsAnonymization.hashUserId(userId);
+      
+      // Disable tracking in external services
+      await Promise.all([
+        fullstoryService.disableRecording(anonymizedUserId),
+        // Note: Mixpanel doesn't need explicit opt-out as we stop sending events
+      ]);
+      
+      console.log(`Analytics opt-out completed for user ${userId}`);
+    } catch (error) {
+      console.error('Error handling analytics opt-out:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Handle user opting back into analytics
+   */
+  async handleOptIn(userId: number): Promise<void> {
+    try {
+      // Update consent in database
+      await analyticsConsent.updateUserConsent(userId, true);
+      
+      // Get anonymized user ID for external services
+      const anonymizedUserId = analyticsAnonymization.hashUserId(userId);
+      
+      // Re-enable tracking in external services
+      await Promise.all([
+        fullstoryService.enableRecording(anonymizedUserId),
+        // Note: Mixpanel will automatically resume when we start sending events
+      ]);
+      
+      console.log(`Analytics opt-in completed for user ${userId}`);
+    } catch (error) {
+      console.error('Error handling analytics opt-in:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Initialize analytics for a new user session
+   */
+  async initializeUserSession(userId: number, sessionId: string): Promise<void> {
+    try {
+      // Check if user has consented to analytics
+      const hasConsent = await analyticsConsent.hasUserConsent(userId);
+      
+      if (!hasConsent) {
+        console.log(`User ${userId} has opted out - skipping analytics initialization`);
+        return;
+      }
+
+      // Get anonymized user ID
+      const anonymizedUserId = analyticsAnonymization.hashUserId(userId);
+      
+      // Initialize analytics services
+      await Promise.all([
+        fullstoryService.initializeUserSession(anonymizedUserId, { sessionId }),
+        // Mixpanel doesn't require explicit session initialization
+      ]);
+      
+      console.log(`Analytics session initialized for user ${userId}`);
+    } catch (error) {
+      console.error('Error initializing analytics session:', error);
+      // Don't throw - analytics failure shouldn't break the app
+    }
   }
 }
 

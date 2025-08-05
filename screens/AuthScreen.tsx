@@ -3,16 +3,27 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Platform } 
 import { Ionicons } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
+import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../App';
+
+type AuthScreenRouteProp = RouteProp<RootStackParamList, 'Auth'>;
+type AuthScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Auth'>;
 
 export default function AuthScreen() {
-  const [isLogin, setIsLogin] = useState(true);
+  const route = useRoute<AuthScreenRouteProp>();
+  const navigation = useNavigation<AuthScreenNavigationProp>();
+  const [isLogin, setIsLogin] = useState(!route.params?.defaultToSignUp);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login, register, loginWithGoogle, loginWithApple } = useAuth();
+  const { isDarkMode } = useTheme();
 
   useEffect(() => {
     checkAppleAuthAvailability();
@@ -73,12 +84,12 @@ export default function AuthScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isDarkMode && styles.containerDark]}>
       <View style={styles.content}>
-        <Text style={styles.title}>
+        <Text style={[styles.title, isDarkMode && styles.titleDark]}>
           {isLogin ? 'Welcome Back' : 'Create Account'}
         </Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.subtitle, isDarkMode && styles.subtitleDark]}>
           {isLogin ? 'Sign in to continue' : 'Join ParrotSpeak today'}
         </Text>
 
@@ -86,15 +97,17 @@ export default function AuthScreen() {
           {!isLogin && (
             <>
               <TextInput
-                style={styles.input}
+                style={[styles.input, isDarkMode && styles.inputDark]}
                 placeholder="First Name"
+                placeholderTextColor={isDarkMode ? '#999' : '#666'}
                 value={firstName}
                 onChangeText={setFirstName}
                 autoCapitalize="words"
               />
               <TextInput
-                style={styles.input}
+                style={[styles.input, isDarkMode && styles.inputDark]}
                 placeholder="Last Name (optional)"
+                placeholderTextColor={isDarkMode ? '#999' : '#666'}
                 value={lastName}
                 onChangeText={setLastName}
                 autoCapitalize="words"
@@ -103,21 +116,40 @@ export default function AuthScreen() {
           )}
           
           <TextInput
-            style={styles.input}
+            style={[styles.input, isDarkMode && styles.inputDark]}
             placeholder="Email"
+            placeholderTextColor={isDarkMode ? '#999' : '#666'}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
             keyboardType="email-address"
           />
           
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={[styles.passwordInput, isDarkMode && styles.inputDark]}
+              placeholder="Password"
+              placeholderTextColor={isDarkMode ? '#999' : '#666'}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+            />
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              onPress={() => setShowPassword(!showPassword)}
+              testID="password-toggle"
+              accessible={true}
+              accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+              accessibilityRole="button"
+            >
+              <Ionicons 
+                name={showPassword ? "eye-off" : "eye"} 
+                size={24} 
+                color={isDarkMode ? '#999' : '#666'}
+                testID="password-toggle-icon"
+              />
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity 
             style={[styles.submitButton, loading && styles.submitButtonDisabled]}
@@ -162,7 +194,10 @@ export default function AuthScreen() {
 
           <TouchableOpacity 
             style={styles.switchButton}
-            onPress={() => setIsLogin(!isLogin)}
+            onPress={() => {
+              setIsLogin(!isLogin);
+              setShowPassword(false); // Reset password visibility when switching modes
+            }}
           >
             <Text style={styles.switchButtonText}>
               {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
@@ -173,12 +208,11 @@ export default function AuthScreen() {
           {isLogin && (
             <TouchableOpacity 
               style={styles.forgotPasswordButton}
-              onPress={() => {
-                // Navigate to password reset screen
-                Alert.alert('Password Reset', 'Password reset feature will be available soon.');
-              }}
+              onPress={() => navigation.navigate('PasswordReset')}
             >
-              <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
+              <Text style={[styles.forgotPasswordText, isDarkMode && styles.forgotPasswordTextDark]}>
+                Forgot your password?
+              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -192,6 +226,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  containerDark: {
+    backgroundColor: '#1a1a1a',
+  },
   content: {
     flex: 1,
     padding: 20,
@@ -204,11 +241,17 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: '#1a1a1a',
   },
+  titleDark: {
+    color: '#fff',
+  },
   subtitle: {
     fontSize: 16,
     textAlign: 'center',
     color: '#666',
     marginBottom: 40,
+  },
+  subtitleDark: {
+    color: '#999',
   },
   form: {
     gap: 16,
@@ -221,6 +264,34 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     backgroundColor: '#f8f9fa',
+    color: '#1a1a1a',
+  },
+  inputDark: {
+    backgroundColor: '#2a2a2a',
+    borderColor: '#333',
+    color: '#fff',
+  },
+  passwordContainer: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  passwordInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingRight: 50,
+    fontSize: 16,
+    backgroundColor: '#f8f9fa',
+    color: '#1a1a1a',
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 12,
+    padding: 8,
   },
   submitButton: {
     backgroundColor: '#3366FF',
@@ -300,5 +371,8 @@ const styles = StyleSheet.create({
     color: '#3366FF',
     fontSize: 14,
     fontWeight: '500',
+  },
+  forgotPasswordTextDark: {
+    color: '#5B8FFF',
   },
 });

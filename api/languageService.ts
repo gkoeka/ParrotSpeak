@@ -1,6 +1,8 @@
 import { Language } from '../types';
 import { API_BASE_URL } from '../api/config';
 import { mobileFetch } from '../utils/networkUtils';
+import { translationCache } from '../utils/translationCache';
+import { authenticatedFetch } from '../utils/apiHelpers';
 
 // Headers for mobile API requests
 const requestHeaders = {
@@ -146,10 +148,8 @@ export async function recognizeSpeech(
   languageCode: string
 ): Promise<string> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/transcribe`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/transcribe`, {
       method: 'POST',
-      headers: jsonHeaders,
-      credentials: 'include', // Include cookies for session-based auth
       body: JSON.stringify({
         audio: audioBase64,
         language: languageCode
@@ -174,7 +174,24 @@ export async function translateText(
   sourceLanguage: string,
   targetLanguage: string
 ): Promise<{ translation: string; originalText: string }> {
+  const startTime = Date.now();
+  
   try {
+    // Check cache first
+    const cacheKey = { text, sourceLanguage, targetLanguage };
+    const cachedTranslation = await translationCache.get(cacheKey);
+    
+    if (cachedTranslation) {
+      const cacheTime = Date.now() - startTime;
+      console.log(`⚡ Translation from cache in ${cacheTime}ms: "${text}" → "${cachedTranslation}"`);
+      return {
+        translation: cachedTranslation,
+        originalText: text,
+      };
+    }
+    
+    console.log(`🌍 Translating "${text}" from ${sourceLanguage} to ${targetLanguage}`);
+    
     const response = await mobileFetch(`${API_BASE_URL}/api/translate`, {
       method: 'POST',
       headers: jsonHeaders,
@@ -189,7 +206,14 @@ export async function translateText(
       throw new Error(`Translation failed: ${response.statusText}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    const totalTime = Date.now() - startTime;
+    console.log(`✅ Translation successful in ${totalTime}ms:`, data.translation);
+    
+    // Cache the translation
+    await translationCache.set(cacheKey, data.translation);
+    
+    return data;
   } catch (error) {
     console.error('Error translating text:', error);
     throw error;

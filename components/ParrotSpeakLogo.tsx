@@ -1,13 +1,26 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
+import { useTheme } from '../contexts/ThemeContext';
 
-export default function ParrotSpeakLogo() {
+interface ParrotSpeakLogoProps {
+  showText?: boolean;
+}
+
+export default function ParrotSpeakLogo({ showText = true }: ParrotSpeakLogoProps) {
+  const { isDarkMode } = useTheme();
+  
   return (
     <View style={styles.container}>
       <View style={styles.iconContainer}>
-        <Text style={styles.icon}>🦜</Text>
+        <Image
+          source={require('../assets/parrotspeak-logo.png')}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
       </View>
-      <Text style={styles.text}>ParrotSpeak</Text>
+      {showText && (
+        <Text style={[styles.text, isDarkMode && styles.textDark]}>ParrotSpeak</Text>
+      )}
     </View>
   );
 }
@@ -20,12 +33,16 @@ const styles = StyleSheet.create({
   iconContainer: {
     marginRight: 8,
   },
-  icon: {
-    fontSize: 24,
+  logoImage: {
+    width: 32,
+    height: 32,
   },
   text: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#3366FF',
+  },
+  textDark: {
+    color: '#5B8FFF',
   },
 });

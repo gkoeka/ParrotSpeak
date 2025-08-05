@@ -7,6 +7,7 @@ import helmet from "helmet";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import { jwtAuthMiddleware } from "./middleware/jwt-auth";
 
 // ES module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -42,6 +43,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Security middleware
   app.use(generalLimiter);
   app.use(slowDownMiddleware);
+  
+  // JWT Authentication middleware - runs before session auth
+  app.use(jwtAuthMiddleware);
 
   app.use(helmet({
     contentSecurityPolicy: {
@@ -129,6 +133,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(404).send('Mobile UI test page not found');
   });
 
+  // Spanish dialect comprehensive test page
+  app.get('/test-spanish-comprehensive.html', (req: Request, res: Response) => {
+    const testPath = path.join(process.cwd(), 'test-spanish-comprehensive.html');
+    if (fs.existsSync(testPath)) {
+      return res.sendFile(testPath);
+    }
+    res.status(404).send('Spanish dialect test page not found');
+  });
+
   // Test script for playback controls
   app.get('/verify-playback-test.js', (req: Request, res: Response) => {
     const scriptPath = path.join(process.cwd(), 'verify-playback-test.js');
@@ -137,6 +150,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.sendFile(scriptPath);
     }
     res.status(404).send('Test script not found');
+  });
+
+  // IAP validation endpoint
+  app.post('/api/validate-purchase', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { platform, productId, purchaseToken, transactionId, transactionDate } = req.body;
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ error: 'User not authenticated' });
+      }
+
+      // Map product IDs to subscription tiers and durations
+      const productMapping: Record<string, { tier: string; duration: number; unit: 'days' | 'months' | 'years' }> = {
+        'com.parrotspeak.monthly': { tier: 'premium', duration: 1, unit: 'months' },
+        'com.parrotspeak.yearly': { tier: 'premium', duration: 1, unit: 'years' },
+        'com.parrotspeak.week_pass': { tier: 'traveler', duration: 7, unit: 'days' },
+        'com.parrotspeak.month_pass': { tier: 'traveler', duration: 30, unit: 'days' },
+        'com.parrotspeak.three_month_pass': { tier: 'traveler', duration: 90, unit: 'days' },
+        'com.parrotspeak.six_month_pass': { tier: 'traveler', duration: 180, unit: 'days' }
+      };
+
+      const product = productMapping[productId];
+      if (!product) {
+        return res.status(400).json({ error: 'Invalid product ID' });
+      }
+
+      // Calculate expiration date
+      const now = new Date();
+      const expiresAt = new Date(now);
+      
+      if (product.unit === 'days') {
+        expiresAt.setDate(expiresAt.getDate() + product.duration);
+      } else if (product.unit === 'months') {
+        expiresAt.setMonth(expiresAt.getMonth() + product.duration);
+      } else if (product.unit === 'years') {
+        expiresAt.setFullYear(expiresAt.getFullYear() + product.duration);
+      }
+
+      // Update user subscription in database
+      await storage.updateUserSubscription(userId, {
+        subscriptionStatus: 'active',
+        subscriptionTier: product.tier,
+        subscriptionExpiresAt: expiresAt,
+        stripeCustomerId: `${platform}_${transactionId}`, // Store platform purchase ID
+        stripeSubscriptionId: transactionId
+      });
+
+      // Get updated user data
+      const updatedUser = await storage.getUser(userId);
+      
+      res.json({ 
+        success: true, 
+        user: updatedUser,
+        subscription: {
+          status: 'active',
+          tier: product.tier,
+          expiresAt: expiresAt
+        }
+      });
+    } catch (error) {
+      console.error('Purchase validation error:', error);
+      res.status(500).json({ error: 'Failed to validate purchase' });
+    }
   });
 
   // API Routes
@@ -184,13 +261,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/conversations/:id', async (req: Request, res: Response) => {
+  app.get('/api/conversations/:id', requireAuth, async (req: Request, res: Response) => {
     try {
+      const userId = req.user?.id;
       const conversation = await storage.getConversation(req.params.id);
       if (!conversation) {
         return res.status(404).json({ message: 'Conversation not found' });
       }
-      res.json(conversation);
+      
+      // Group messages by pairs (user message + translation response)
+      const pairedMessages: any[] = [];
+      const processedMessages = conversation.messages || [];
+      
+      for (let i = 0; i < processedMessages.length; i++) {
+        const msg = processedMessages[i];
+        
+        // If it's a user message, look for the next message which should be the translation
+        if (msg.isUser) {
+          const nextMsg = processedMessages[i + 1];
+          
+          // If there's a translation message right after
+          if (nextMsg && !nextMsg.isUser) {
+            pairedMessages.push({
+              id: msg.id,
+              originalText: msg.text || '',
+              translatedText: nextMsg.text || '',
+              fromLanguage: msg.sourceLanguage,
+              toLanguage: msg.targetLanguage,
+              createdAt: msg.createdAt,
+              isUser: true
+            });
+            i++; // Skip the translation message since we've processed it
+          } else {
+            // User message without translation
+            pairedMessages.push({
+              id: msg.id,
+              originalText: msg.text || '',
+              translatedText: '', // No translation yet
+              fromLanguage: msg.sourceLanguage,
+              toLanguage: msg.targetLanguage,
+              createdAt: msg.createdAt,
+              isUser: true
+            });
+          }
+        } else {
+          // This is a standalone translation/system message
+          pairedMessages.push({
+            id: msg.id,
+            originalText: '',
+            translatedText: msg.text || '',
+            fromLanguage: msg.sourceLanguage,
+            toLanguage: msg.targetLanguage,
+            createdAt: msg.createdAt,
+            isUser: false
+          });
+        }
+      }
+      
+      const transformedConversation = {
+        ...conversation,
+        messages: pairedMessages
+      };
+      
+      res.json(transformedConversation);
     } catch (error) {
       console.error('Get conversation error:', error);
       res.status(500).json({ message: 'Failed to retrieve conversation' });
@@ -327,6 +460,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Analytics consent routes
+  app.get('/api/analytics/consent', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { analyticsConsent } = await import('./services/analytics-consent');
+      const consentStatus = await analyticsConsent.getUserConsentStatus(req.user!.id);
+      
+      if (!consentStatus) {
+        return res.json({
+          analyticsEnabled: true, // Default for new users
+          consentDate: null,
+          lastUpdated: new Date().toISOString()
+        });
+      }
+      
+      res.json({
+        analyticsEnabled: consentStatus.analyticsEnabled,
+        consentDate: consentStatus.consentDate?.toISOString() || null,
+        lastUpdated: consentStatus.lastUpdated.toISOString()
+      });
+    } catch (error) {
+      console.error('Error getting analytics consent:', error);
+      res.status(500).json({ message: 'Failed to get analytics preferences' });
+    }
+  });
+
+  app.post('/api/analytics/consent', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { enabled } = req.body;
+      
+      if (typeof enabled !== 'boolean') {
+        return res.status(400).json({ message: 'Invalid enabled value - must be boolean' });
+      }
+      
+      const { analytics } = await import('./services/analytics');
+      
+      // Use the comprehensive opt-in/opt-out methods
+      if (enabled) {
+        await analytics.handleOptIn(req.user!.id);
+      } else {
+        await analytics.handleOptOut(req.user!.id);
+      }
+      
+      res.json({ 
+        success: true, 
+        analyticsEnabled: enabled,
+        message: enabled ? 'Analytics enabled' : 'Analytics disabled'
+      });
+    } catch (error) {
+      console.error('Error updating analytics consent:', error);
+      res.status(500).json({ message: 'Failed to update analytics preferences' });
+    }
+  });
+
   // IAP routes
   app.use('/api/iap', iapRoutes);
 
@@ -401,7 +587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Authentication routes
   app.post('/api/auth/login', (req: Request, res: Response, next: NextFunction) => {
-    passport.authenticate('local', (err: any, user: any, info: any) => {
+    passport.authenticate('local', async (err: any, user: any, info: any) => {
       if (err) {
         return res.status(500).json({ message: 'Authentication error' });
       }
@@ -409,11 +595,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: info?.message || 'Invalid credentials' });
       }
       
+      // Generate JWT token for mobile persistence
+      const { generateToken } = await import('./utils/jwt');
+      const token = generateToken(user);
+      
       req.logIn(user, (err) => {
         if (err) {
           return res.status(500).json({ message: 'Login failed' });
         }
         res.json({ 
+          token, // Include JWT token in response
           user: { 
             id: user.id, 
             email: user.email, 
@@ -472,16 +663,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Log the user in (remove password for security)
       const { password: _, ...sessionUser } = newUser;
+      
+      // Generate JWT token for mobile persistence
+      const { generateToken } = await import('./utils/jwt');
+      const token = generateToken(sessionUser);
+      
       req.logIn(sessionUser as Express.User, (err) => {
         if (err) {
           return res.status(500).json({ message: 'Registration successful but login failed' });
         }
         res.status(201).json({ 
+          token, // Include JWT token in response
           user: { 
             id: newUser.id, 
             email: newUser.email, 
             firstName: newUser.firstName,
-            lastName: newUser.lastName
+            lastName: newUser.lastName,
+            subscriptionStatus: newUser.subscriptionStatus,
+            subscriptionTier: newUser.subscriptionTier
           } 
         });
       });
@@ -531,9 +730,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         oauthId: user.id
       };
 
+      // Generate JWT token for mobile persistence
+      const { generateToken } = await import('./utils/jwt');
+      const token = generateToken(userData as any);
+      
       // For demo purposes, return success with user data
       res.json({ 
         success: true, 
+        token, // Include JWT token
         user: userData,
         message: 'Google authentication successful' 
       });
@@ -563,9 +767,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         oauthId: user || identityToken
       };
 
+      // Generate JWT token for mobile persistence
+      const { generateToken } = await import('./utils/jwt');
+      const token = generateToken(userData as any);
+      
       // For demo purposes, return success with user data
       res.json({ 
         success: true, 
+        token, // Include JWT token
         user: userData,
         message: 'Apple authentication successful' 
       });
@@ -584,14 +793,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Email is required' });
       }
 
-      // TODO: Send actual password reset email via SendGrid
-      // For demo purposes, just return success
-      console.log(`Password reset requested for: ${email}`);
+      const { createPasswordResetToken } = await import('./services/auth');
+      const originUrl = `${req.protocol}://${req.get('host')}`;
+      const result = await createPasswordResetToken(email, originUrl);
       
-      res.json({ 
-        success: true, 
-        message: 'Password reset email sent if account exists' 
-      });
+      if (result.success) {
+        res.json({ 
+          success: true, 
+          message: result.message 
+        });
+      } else {
+        res.status(400).json({ error: result.message });
+      }
     } catch (error) {
       console.error('Password reset request error:', error);
       res.status(500).json({ error: 'Failed to process password reset request' });
@@ -606,14 +819,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: 'Token and new password are required' });
       }
 
-      // TODO: Verify reset token and update password in database
-      // For demo purposes, just return success
-      console.log(`Password reset completed with token: ${token}`);
+      // Validate password strength
+      if (newPassword.length < 8) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters long' });
+      }
+
+      const { resetPassword } = await import('./services/auth');
+      const result = await resetPassword(token, newPassword);
       
-      res.json({ 
-        success: true, 
-        message: 'Password reset successful' 
-      });
+      if (result.success) {
+        res.json({ 
+          success: true, 
+          message: result.message 
+        });
+      } else {
+        res.status(400).json({ error: result.message });
+      }
     } catch (error) {
       console.error('Password reset error:', error);
       res.status(500).json({ error: 'Failed to reset password' });
@@ -760,6 +981,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Speech-to-text transcription endpoint
   app.post('/api/transcribe', requireAuth, requireSubscription, async (req: Request, res: Response) => {
+    const startTime = Date.now();
     try {
       const { audio, language } = req.body;
       
@@ -767,22 +989,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Audio data is required' });
       }
       
-      // Import OpenAI service
+      // Import the working transcription service
       const { transcribeAudio } = await import('./services/openai');
       
       // Convert Base64 audio data to buffer
       const audioBuffer = Buffer.from(audio, 'base64');
       
-      // Transcribe the audio using OpenAI Whisper
+      // Log audio size for monitoring
+      console.log(`📊 Audio size: ${(audioBuffer.length / 1024).toFixed(2)}KB`);
+      
+      // Use the working transcription method that handles file I/O properly
       const transcription = await transcribeAudio(audioBuffer, language);
       
-      console.log('Transcription successful:', transcription);
+      const processingTime = Date.now() - startTime;
+      console.log(`✅ Transcription successful in ${processingTime}ms:`, transcription.substring(0, 50) + '...');
+      
+      // Add performance headers
+      res.set('X-Processing-Time', processingTime.toString());
       
       // Return the transcribed text
       res.json({ text: transcription });
       
     } catch (error) {
-      console.error('Speech recognition error:', error);
+      const processingTime = Date.now() - startTime;
+      console.error(`❌ Speech recognition error after ${processingTime}ms:`, error);
       
       // Format a more user-friendly error message
       let errorMessage = 'Speech recognition failed';
@@ -812,6 +1042,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Text translation endpoint
   app.post('/api/translate', requireAuth, requireSubscription, async (req: Request, res: Response) => {
+    const startTime = Date.now();
     try {
       const { text, sourceLanguage, targetLanguage } = req.body;
       
@@ -824,10 +1055,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Import translation service
       const { translateText } = await import('./services/translation');
       
+      // Log text length for monitoring
+      console.log(`📊 Translating ${text.length} characters from ${sourceLanguage} to ${targetLanguage}`);
+      
       // Translate the text using OpenAI GPT-4
       const translationResult = await translateText(text, sourceLanguage, targetLanguage);
       
-      console.log('Translation successful:', translationResult.translation.substring(0, 50) + '...');
+      const processingTime = Date.now() - startTime;
+      console.log(`✅ Translation successful in ${processingTime}ms:`, translationResult.translation.substring(0, 50) + '...');
+      
+      // Add performance headers
+      res.set('X-Processing-Time', processingTime.toString());
       
       // Return the translation in expected format
       res.json({
@@ -836,7 +1074,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
     } catch (error) {
-      console.error('Translation error:', error);
+      const processingTime = Date.now() - startTime;
+      console.error(`❌ Translation error after ${processingTime}ms:`, error);
       
       // Format user-friendly error message
       let errorMessage = 'Translation failed';
@@ -857,6 +1096,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.status(500).json({ message: errorMessage });
+    }
+  });
+  
+  // Performance test endpoint (no auth required for benchmarking)
+  app.post('/api/performance-test', async (req: Request, res: Response) => {
+    const startTime = Date.now();
+    try {
+      const { type, text, sourceLanguage, targetLanguage, audio, language } = req.body;
+      
+      if (type === 'text') {
+        if (!text || !sourceLanguage || !targetLanguage) {
+          return res.status(400).json({ 
+            message: 'Text, source language, and target language are required' 
+          });
+        }
+        
+        // Import translation service
+        const { translateText } = await import('./services/translation');
+        
+        // Translate the text
+        const translationResult = await translateText(text, sourceLanguage, targetLanguage);
+        
+        const processingTime = Date.now() - startTime;
+        
+        // Add performance headers
+        res.set('X-Processing-Time', processingTime.toString());
+        
+        // Return the translation
+        res.json({
+          type: 'text',
+          translation: translationResult.translation,
+          originalText: translationResult.originalText,
+          processingTime
+        });
+        
+      } else if (type === 'audio') {
+        if (!audio) {
+          return res.status(400).json({ message: 'Audio data is required' });
+        }
+        
+        // Import optimized audio service
+        const { transcribeAudioOptimized } = await import('./services/optimizedAudio');
+        
+        // Convert Base64 audio data to buffer
+        const audioBuffer = Buffer.from(audio, 'base64');
+        
+        // Transcribe
+        const transcription = await transcribeAudioOptimized(audioBuffer, language);
+        
+        const processingTime = Date.now() - startTime;
+        
+        // Add performance headers
+        res.set('X-Processing-Time', processingTime.toString());
+        
+        // Return the transcription
+        res.json({
+          type: 'audio',
+          text: transcription,
+          processingTime
+        });
+      } else {
+        return res.status(400).json({ message: 'Invalid test type' });
+      }
+      
+    } catch (error) {
+      const processingTime = Date.now() - startTime;
+      console.error(`Performance test error after ${processingTime}ms:`, error);
+      res.status(500).json({ 
+        message: 'Performance test failed',
+        processingTime 
+      });
     }
   });
 
