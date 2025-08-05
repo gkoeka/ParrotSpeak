@@ -53,6 +53,7 @@ ParrotSpeak is built as a mobile-first TypeScript application with a clean API b
 - **Version Compatibility**: React and React Native versions must be kept in sync. Currently using React 19.0.0 to match React Native 0.79.5 requirements for Expo SDK 53. Always update both packages together to maintain compatibility.
 - **Profile Management**: Restored Sign Out, Delete Account, and GDPR Export functionality with proper API integration, confirmation dialogs, and loading states. Uses API_BASE_URL configuration for all backend communication.
 - **Subscription Verification (Feb 2, 2025)**: Completed comprehensive testing of subscription enforcement. All subscription types (lifetime, monthly, expired, free) are properly validated. Authentication endpoints use `/api/auth/*` prefix. Translation requires active subscription via `/api/conversations/:id/messages` endpoint. Test accounts seeded with different subscription statuses for verification.
+- **Flag Display Enhancement (Feb 5, 2025)**: Implemented consistent flag emoji display for all language selections. Both source and target languages now show appropriate country flags in conversation screens and message history. Includes comprehensive flag mapping for all 67 supported languages, with special handling for Spanish dialects (es-ES shows 🇪🇸, es-419 shows 🇲🇽, generic es defaults to 🇲🇽). Flags appear in language selectors, conversation headers, and message language pairs.
 
 ## External Dependencies
 

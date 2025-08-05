@@ -10,6 +10,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { API_BASE_URL } from '../api/config';
+import { getSupportedLanguages } from '../constants/languageConfiguration';
 
 import LanguageSelector from '../components/LanguageSelectorMobile';
 import PerformanceIndicator from '../components/PerformanceMonitor';
@@ -39,6 +40,44 @@ export default function ConversationScreen() {
 
   // Check subscription status
   const hasActiveSubscription = user?.subscriptionStatus === 'active' || user?.subscriptionTier === 'lifetime';
+
+  // Get all supported languages for flag display
+  const allLanguages = getSupportedLanguages();
+
+  // Enhanced flag mapping for all languages
+  const getFlagEmoji = (code: string) => {
+    const flagMap: { [key: string]: string } = {
+      'en': '🇺🇸', 'es-ES': '🇪🇸', 'es-419': '🇲🇽', 'fr': '🇫🇷', 'de': '🇩🇪',
+      'it': '🇮🇹', 'pt-BR': '🇧🇷', 'pt': '🇵🇹', 'ru': '🇷🇺', 'zh': '🇨🇳',
+      'ja': '🇯🇵', 'ko': '🇰🇷', 'ar': '🇸🇦', 'hi': '🇮🇳', 'nl': '🇳🇱',
+      'sv': '🇸🇪', 'no': '🇳🇴', 'da': '🇩🇰', 'fi': '🇫🇮', 'pl': '🇵🇱',
+      'tr': '🇹🇷', 'he': '🇮🇱', 'th': '🇹🇭', 'vi': '🇻🇳', 'uk': '🇺🇦',
+      'cs': '🇨🇿', 'sk': '🇸🇰', 'hu': '🇭🇺', 'ro': '🇷🇴', 'bg': '🇧🇬',
+      'hr': '🇭🇷', 'sr': '🇷🇸', 'sl': '🇸🇮', 'et': '🇪🇪', 'lv': '🇱🇻',
+      'lt': '🇱🇹', 'mt': '🇲🇹', 'ga': '🇮🇪', 'cy': '🏴󠁧󠁢󠁷󠁬󠁳󞁿', 'is': '🇮🇸',
+      'mk': '🇲🇰', 'sq': '🇦🇱', 'eu': '🏴󠁥󠁳󠁰󠁶󞁿', 'ca': '🏴󠁥󠁳󠁣󠁴󞁿', 'gl': '🏴󠁥󠁳󠁧󠁡󞁿',
+      'af': '🇿🇦', 'sw': '🇰🇪', 'zu': '🇿🇦', 'xh': '🇿🇦', 'yo': '🇳🇬',
+      'ig': '🇳🇬', 'ha': '🇳🇬', 'am': '🇪🇹', 'or': '🇮🇳', 'as': '🇮🇳',
+      'bn': '🇧🇩', 'gu': '🇮🇳', 'kn': '🇮🇳', 'ml': '🇮🇳', 'mr': '🇮🇳',
+      'ne': '🇳🇵', 'pa': '🇮🇳', 'si': '🇱🇰', 'ta': '🇮🇳', 'te': '🇮🇳',
+      'ur': '🇵🇰', 'sher': '🇳🇵', 'dz': '🇧🇹'
+    };
+    
+    // Handle 'es' specifically to determine the correct flag
+    if (code === 'es') {
+      return '🇲🇽'; // Default to Mexico flag for generic Spanish
+    }
+    
+    return flagMap[code] || '🌍';
+  };
+
+  const getLanguageDisplay = (code: string) => {
+    const language = allLanguages.find(lang => lang.code === code);
+    if (!language) return code;
+    
+    const flag = getFlagEmoji(code);
+    return { flag, name: language.name, code };
+  };
 
   // Load conversation data if viewing from history
   useEffect(() => {
@@ -196,7 +235,7 @@ export default function ConversationScreen() {
                   ]}>{message.translation}</Text>
                 </View>
                 <Text style={styles.languagePair}>
-                  {message.fromLanguage} → {message.toLanguage}
+                  {getFlagEmoji(message.fromLanguage)} {message.fromLanguage} → {getFlagEmoji(message.toLanguage)} {message.toLanguage}
                 </Text>
               </View>
             );
