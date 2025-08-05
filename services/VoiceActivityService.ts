@@ -332,7 +332,7 @@ export class VoiceActivityService {
    * Handle silence timeout for speech end detection
    * Phase 1 - Implement silence timeout detection
    */
-  private onSilenceTimeout(): void {
+  private async onSilenceTimeout(): Promise<void> {
     const now = new Date();
     const silenceDuration = this.config.maxSilenceDuration;
     
@@ -340,7 +340,7 @@ export class VoiceActivityService {
     
     // End current speech if active
     if (this.isSpeechActive) {
-      this.onSpeechEnded();
+      await this.onSpeechEnded();
     }
     
     // Notify callbacks of silence detection
