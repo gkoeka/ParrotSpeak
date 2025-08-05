@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Screens
 import HomeScreen from '../screens/HomeScreen';
@@ -23,20 +24,20 @@ import PerformanceTestScreen from '../screens/PerformanceTestScreen';
 
 // Tab types
 export type TabParamList = {
-  HomeTab: undefined;
-  ConversationsTab: undefined;
+  ChatTab: undefined;
+  HistoryTab: undefined;
+  FeedbackTab: undefined;
   SettingsTab: undefined;
-  PricingTab: undefined;
 };
 
 // Stack types for each tab
-export type HomeStackParamList = {
+export type ChatStackParamList = {
   Home: undefined;
   Conversation: { id?: string };
   Analytics: undefined;
 };
 
-export type ConversationsStackParamList = {
+export type HistoryStackParamList = {
   ConversationsList: undefined;
   Conversation: { id?: string };
 };
@@ -45,54 +46,54 @@ export type SettingsStackParamList = {
   Settings: undefined;
   Profile: undefined;
   SubscriptionPlans: undefined;
-  Feedback: undefined;
+  Pricing: undefined;
+  Checkout: { plan: string; amount: number; interval: string };
   HelpCenter: undefined;
   PrivacyPolicy: undefined;
   TermsConditions: undefined;
   PerformanceTest: undefined;
 };
 
-export type PricingStackParamList = {
-  Pricing: undefined;
-  Checkout: { plan: string; amount: number; interval: string };
+export type FeedbackStackParamList = {
+  Feedback: undefined;
 };
 
 const Tab = createBottomTabNavigator<TabParamList>();
-const HomeStack = createStackNavigator<HomeStackParamList>();
-const ConversationsStack = createStackNavigator<ConversationsStackParamList>();
+const ChatStack = createStackNavigator<ChatStackParamList>();
+const HistoryStack = createStackNavigator<HistoryStackParamList>();
 const SettingsStack = createStackNavigator<SettingsStackParamList>();
-const PricingStack = createStackNavigator<PricingStackParamList>();
+const FeedbackStack = createStackNavigator<FeedbackStackParamList>();
 
-// Home Stack Navigator
-function HomeStackNavigator() {
+// Chat Stack Navigator
+function ChatStackNavigator() {
   return (
-    <HomeStack.Navigator 
+    <ChatStack.Navigator 
       screenOptions={{ 
         headerShown: false,
         gestureEnabled: true,
         gestureDirection: 'horizontal',
       }}
     >
-      <HomeStack.Screen name="Home" component={HomeScreen} />
-      <HomeStack.Screen name="Conversation" component={ConversationScreen} />
-      <HomeStack.Screen name="Analytics" component={AnalyticsScreen} />
-    </HomeStack.Navigator>
+      <ChatStack.Screen name="Home" component={HomeScreen} />
+      <ChatStack.Screen name="Conversation" component={ConversationScreen} />
+      <ChatStack.Screen name="Analytics" component={AnalyticsScreen} />
+    </ChatStack.Navigator>
   );
 }
 
-// Conversations Stack Navigator
-function ConversationsStackNavigator() {
+// History Stack Navigator
+function HistoryStackNavigator() {
   return (
-    <ConversationsStack.Navigator 
+    <HistoryStack.Navigator 
       screenOptions={{ 
         headerShown: false,
         gestureEnabled: true,
         gestureDirection: 'horizontal',
       }}
     >
-      <ConversationsStack.Screen name="ConversationsList" component={ConversationsListScreen} />
-      <ConversationsStack.Screen name="Conversation" component={ConversationScreen} />
-    </ConversationsStack.Navigator>
+      <HistoryStack.Screen name="ConversationsList" component={ConversationsListScreen} />
+      <HistoryStack.Screen name="Conversation" component={ConversationScreen} />
+    </HistoryStack.Navigator>
   );
 }
 
@@ -109,7 +110,8 @@ function SettingsStackNavigator() {
       <SettingsStack.Screen name="Settings" component={SettingsScreen} />
       <SettingsStack.Screen name="Profile" component={ProfileScreen} />
       <SettingsStack.Screen name="SubscriptionPlans" component={SubscriptionPlansScreen} />
-      <SettingsStack.Screen name="Feedback" component={FeedbackScreen} />
+      <SettingsStack.Screen name="Pricing" component={PricingScreen} />
+      <SettingsStack.Screen name="Checkout" component={CheckoutScreen} />
       <SettingsStack.Screen name="HelpCenter" component={HelpCenterScreen} />
       <SettingsStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
       <SettingsStack.Screen name="TermsConditions" component={TermsConditionsScreen} />
@@ -118,25 +120,25 @@ function SettingsStackNavigator() {
   );
 }
 
-// Pricing Stack Navigator
-function PricingStackNavigator() {
+// Feedback Stack Navigator
+function FeedbackStackNavigator() {
   return (
-    <PricingStack.Navigator 
+    <FeedbackStack.Navigator 
       screenOptions={{ 
         headerShown: false,
         gestureEnabled: true,
         gestureDirection: 'horizontal',
       }}
     >
-      <PricingStack.Screen name="Pricing" component={PricingScreen} />
-      <PricingStack.Screen name="Checkout" component={CheckoutScreen} />
-    </PricingStack.Navigator>
+      <FeedbackStack.Screen name="Feedback" component={FeedbackScreen} />
+    </FeedbackStack.Navigator>
   );
 }
 
 // Main Tab Navigator
 export default function MainTabNavigator() {
   const { isDarkMode } = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
@@ -145,14 +147,14 @@ export default function MainTabNavigator() {
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap;
 
-          if (route.name === 'HomeTab') {
-            iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'ConversationsTab') {
+          if (route.name === 'ChatTab') {
             iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
+          } else if (route.name === 'HistoryTab') {
+            iconName = focused ? 'time' : 'time-outline';
+          } else if (route.name === 'FeedbackTab') {
+            iconName = focused ? 'mail' : 'mail-outline';
           } else if (route.name === 'SettingsTab') {
             iconName = focused ? 'settings' : 'settings-outline';
-          } else if (route.name === 'PricingTab') {
-            iconName = focused ? 'pricetag' : 'pricetag-outline';
           } else {
             iconName = 'help-circle-outline';
           }
@@ -165,9 +167,11 @@ export default function MainTabNavigator() {
           backgroundColor: isDarkMode ? '#1a1a1a' : '#fff',
           borderTopColor: isDarkMode ? '#333' : '#e0e0e0',
           borderTopWidth: 1,
-          paddingBottom: Platform.OS === 'ios' ? 20 : 10,
           paddingTop: 10,
-          height: Platform.OS === 'ios' ? 85 : 65,
+          paddingBottom: Platform.OS === 'android' ? insets.bottom : 0,
+          height: Platform.OS === 'ios' 
+            ? 49 + insets.bottom // iOS standard tab bar height + safe area
+            : 56 + insets.bottom, // Android standard + safe area
           elevation: 8, // Android shadow
           shadowColor: '#000', // iOS shadow
           shadowOffset: { width: 0, height: -2 },
@@ -186,19 +190,19 @@ export default function MainTabNavigator() {
       })}
     >
       <Tab.Screen 
-        name="HomeTab" 
-        component={HomeStackNavigator}
-        options={{ tabBarLabel: 'Home' }}
+        name="ChatTab" 
+        component={ChatStackNavigator}
+        options={{ tabBarLabel: 'Chat' }}
       />
       <Tab.Screen 
-        name="ConversationsTab" 
-        component={ConversationsStackNavigator}
-        options={{ tabBarLabel: 'Conversations' }}
+        name="HistoryTab" 
+        component={HistoryStackNavigator}
+        options={{ tabBarLabel: 'History' }}
       />
       <Tab.Screen 
-        name="PricingTab" 
-        component={PricingStackNavigator}
-        options={{ tabBarLabel: 'Pricing' }}
+        name="FeedbackTab" 
+        component={FeedbackStackNavigator}
+        options={{ tabBarLabel: 'Feedback' }}
       />
       <Tab.Screen 
         name="SettingsTab" 
