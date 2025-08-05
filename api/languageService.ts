@@ -2,6 +2,7 @@ import { Language } from '../types';
 import { API_BASE_URL } from '../api/config';
 import { mobileFetch } from '../utils/networkUtils';
 import { translationCache } from '../utils/translationCache';
+import { authenticatedFetch } from '../utils/apiHelpers';
 
 // Headers for mobile API requests
 const requestHeaders = {
@@ -147,10 +148,8 @@ export async function recognizeSpeech(
   languageCode: string
 ): Promise<string> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/transcribe`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/transcribe`, {
       method: 'POST',
-      headers: jsonHeaders,
-      credentials: 'include', // Include cookies for session-based auth
       body: JSON.stringify({
         audio: audioBase64,
         language: languageCode

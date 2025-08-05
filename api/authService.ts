@@ -57,7 +57,6 @@ async function safeFetch(
 export async function logout(): Promise<boolean> {
   const response = await safeFetch(`${API_BASE_URL}/api/auth/logout`, {
     method: "POST",
-    headers: requestHeaders,
   });
   
   // Clear stored auth token on logout regardless of server response
@@ -76,9 +75,7 @@ export async function logout(): Promise<boolean> {
  * Get current user information
  */
 export async function getCurrentUser(): Promise<any | null> {
-  const response = await safeFetch(`${API_BASE_URL}/api/auth/user`, {
-    headers: requestHeaders,
-  });
+  const response = await safeFetch(`${API_BASE_URL}/api/auth/user`);
   if (!response) return null; // network error, treat as unauthenticated
 
   if (!response.ok) {
@@ -90,7 +87,8 @@ export async function getCurrentUser(): Promise<any | null> {
   }
 
   try {
-    return await response.json();
+    const data = await response.json();
+    return data.user || data; // Handle both { user: {...} } and direct user object responses
   } catch (e) {
     console.error("Error parsing user JSON:", e);
     return null;
@@ -106,7 +104,6 @@ export async function login(credentials: {
 }): Promise<any | null> {
   const response = await safeFetch(`${API_BASE_URL}/api/auth/login`, {
     method: "POST",
-    headers: requestHeaders,
     body: JSON.stringify(credentials),
   });
   if (!response) return null;
@@ -137,7 +134,6 @@ export async function register(credentials: {
 }): Promise<any | null> {
   const response = await safeFetch(`${API_BASE_URL}/api/auth/register`, {
     method: "POST",
-    headers: requestHeaders,
     body: JSON.stringify(credentials),
   });
   if (!response) return null;
@@ -161,11 +157,15 @@ export async function loginWithGoogle(): Promise<any | null> {
   try {
     const response = await safeFetch(`${API_BASE_URL}/api/auth/google/mobile`, {
       method: "POST",
-      headers: requestHeaders,
     });
     if (!response) return null;
     if (!response.ok) return null;
-    return await response.json();
+    const data = await response.json();
+    // Store auth token if provided by server
+    if (data.token) {
+      await SecureStorage.setAuthToken(data.token);
+    }
+    return data;
   } catch (e) {
     console.error("Error with Google login:", e);
     return null;
@@ -175,12 +175,16 @@ export async function loginWithGoogle(): Promise<any | null> {
 export async function loginWithApple(): Promise<any | null> {
   try {
     const response = await safeFetch(`${API_BASE_URL}/api/auth/apple/mobile`, {
-      method: "POST", 
-      headers: requestHeaders,
+      method: "POST",
     });
     if (!response) return null;
     if (!response.ok) return null;
-    return await response.json();
+    const data = await response.json();
+    // Store auth token if provided by server
+    if (data.token) {
+      await SecureStorage.setAuthToken(data.token);
+    }
+    return data;
   } catch (e) {
     console.error("Error with Apple login:", e);
     return null;
@@ -194,7 +198,6 @@ export async function validateSession(): Promise<any | null> {
 export async function requestPasswordReset(email: string): Promise<boolean> {
   const response = await safeFetch(`${API_BASE_URL}/api/auth/request-reset`, {
     method: "POST",
-    headers: requestHeaders,
     body: JSON.stringify({ email }),
   });
   if (!response) return false;
@@ -204,7 +207,6 @@ export async function requestPasswordReset(email: string): Promise<boolean> {
 export async function resetPassword(token: string, newPassword: string): Promise<boolean> {
   const response = await safeFetch(`${API_BASE_URL}/api/auth/reset-password`, {
     method: "POST",
-    headers: requestHeaders,
     body: JSON.stringify({ token, newPassword }),
   });
   if (!response) return false;

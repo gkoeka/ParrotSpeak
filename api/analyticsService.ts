@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../api/config';
+import { authenticatedFetch } from '../utils/apiHelpers';
 
 /**
  * Submit translation quality feedback
@@ -14,11 +15,8 @@ export async function submitTranslationFeedback(
   userFeedback?: string
 ): Promise<any> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/analytics/translation-feedback`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/analytics/translation-feedback`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({
         messageId,
         qualityScore,
@@ -47,7 +45,7 @@ export async function getTranslationQualityMetrics(): Promise<{
   feedbackByType: Record<string, number>;
 }> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/analytics/translation-quality`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/analytics/translation-quality`);
 
     if (!response.ok) {
       throw new Error(`Error fetching translation quality: ${response.status}`);
@@ -76,7 +74,7 @@ export async function getUsageStatistics(
       url += `?startDate=${startDate}&endDate=${endDate}`;
     }
 
-    const response = await fetch(url);
+    const response = await authenticatedFetch(url);
 
     if (!response.ok) {
       throw new Error(`Error fetching usage statistics: ${response.status}`);
@@ -96,7 +94,7 @@ export async function getUsageStatistics(
 export async function getTopLanguagePairs(limit?: number): Promise<any[]> {
   try {
     const url = `${API_BASE_URL}/api/analytics/top-languages${limit ? `?limit=${limit}` : ''}`;
-    const response = await fetch(url);
+    const response = await authenticatedFetch(url);
 
     if (!response.ok) {
       throw new Error(`Error fetching top language pairs: ${response.status}`);
@@ -115,7 +113,7 @@ export async function getTopLanguagePairs(limit?: number): Promise<any[]> {
  */
 export async function getConversationPatterns(conversationId: string): Promise<any[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/analytics/conversation-patterns/${conversationId}`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/analytics/conversation-patterns/${conversationId}`);
 
     if (!response.ok) {
       throw new Error(`Error fetching conversation patterns: ${response.status}`);
@@ -144,11 +142,8 @@ export async function recordConversationPattern(
   endMessageId?: string
 ): Promise<any> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/analytics/conversation-patterns`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/analytics/conversation-patterns`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({
         conversationId,
         patternType,

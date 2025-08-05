@@ -1,4 +1,5 @@
 import { API_BASE_URL, ENDPOINTS, getHeaders } from './config';
+import { authenticatedFetch } from '../utils/apiHelpers';
 
 /**
  * Submit user feedback
@@ -13,9 +14,8 @@ export async function submitFeedback(
   email?: string
 ): Promise<{ success: boolean; message: string }> {
   try {
-    const response = await fetch(`${API_BASE_URL}${ENDPOINTS.FEEDBACK}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}${ENDPOINTS.FEEDBACK}`, {
       method: 'POST',
-      headers: getHeaders(true),
       body: JSON.stringify({
         feedback,
         category,

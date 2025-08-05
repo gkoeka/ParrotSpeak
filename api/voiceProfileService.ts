@@ -1,10 +1,11 @@
 import { API_BASE_URL } from '../api/config';
 import { VoiceProfile } from './speechService';
+import { authenticatedFetch } from '../utils/apiHelpers';
 
 // Fetch all voice profiles
 export async function fetchVoiceProfiles(): Promise<VoiceProfile[]> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/voice-profiles`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/voice-profiles`);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch voice profiles: ${response.status}`);
@@ -20,7 +21,7 @@ export async function fetchVoiceProfiles(): Promise<VoiceProfile[]> {
 // Fetch a specific voice profile by ID
 export async function fetchVoiceProfile(id: string): Promise<VoiceProfile | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/voice-profiles/${id}`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/voice-profiles/${id}`);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch voice profile: ${response.status}`);
@@ -36,11 +37,8 @@ export async function fetchVoiceProfile(id: string): Promise<VoiceProfile | null
 // Create a new voice profile
 export async function createVoiceProfile(profile: Omit<VoiceProfile, 'id'>): Promise<VoiceProfile | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/voice-profiles`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/voice-profiles`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(profile),
     });
     
@@ -58,11 +56,8 @@ export async function createVoiceProfile(profile: Omit<VoiceProfile, 'id'>): Pro
 // Update an existing voice profile
 export async function updateVoiceProfile(id: string, updates: Partial<VoiceProfile>): Promise<VoiceProfile | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/voice-profiles/${id}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/voice-profiles/${id}`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(updates),
     });
     
@@ -80,7 +75,7 @@ export async function updateVoiceProfile(id: string, updates: Partial<VoiceProfi
 // Delete a voice profile
 export async function deleteVoiceProfile(id: string): Promise<boolean> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/voice-profiles/${id}`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/voice-profiles/${id}`, {
       method: 'DELETE',
     });
     
@@ -102,7 +97,7 @@ export async function fetchSpeechSettings(): Promise<{
   defaultProfileId?: string;
 } | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/speech-settings`);
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/speech-settings`);
     
     if (!response.ok) {
       throw new Error(`Failed to fetch speech settings: ${response.status}`);
@@ -122,11 +117,8 @@ export async function updateSpeechSettings(updates: Partial<{
   defaultProfileId?: string;
 }>): Promise<boolean> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/speech-settings`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/speech-settings`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(updates),
     });
     
