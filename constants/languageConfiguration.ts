@@ -1,6 +1,48 @@
 // Enhanced language configuration with speech synthesis support
 // Based on dual architecture language support with mobile-optimized features
 
+// Comprehensive flag mapping for all supported languages
+export const getFlagEmoji = (code: string): string => {
+  if (!code) return '🌍';
+  
+  // Handle language codes with country suffixes (e.g., en-US, de-DE)
+  const baseCode = code.split('-')[0].toLowerCase();
+  
+  const flagMap: { [key: string]: string } = {
+    'en': '🇺🇸', 'es': '🇪🇸', 'fr': '🇫🇷', 'de': '🇩🇪',
+    'it': '🇮🇹', 'pt': '🇵🇹', 'ru': '🇷🇺', 'zh': '🇨🇳',
+    'ja': '🇯🇵', 'ko': '🇰🇷', 'ar': '🇸🇦', 'hi': '🇮🇳', 'nl': '🇳🇱',
+    'sv': '🇸🇪', 'no': '🇳🇴', 'da': '🇩🇰', 'fi': '🇫🇮', 'pl': '🇵🇱',
+    'tr': '🇹🇷', 'he': '🇮🇱', 'th': '🇹🇭', 'vi': '🇻🇳', 'uk': '🇺🇦',
+    'cs': '🇨🇿', 'sk': '🇸🇰', 'hu': '🇭🇺', 'ro': '🇷🇴', 'bg': '🇧🇬',
+    'hr': '🇭🇷', 'sr': '🇷🇸', 'sl': '🇸🇮', 'et': '🇪🇪', 'lv': '🇱🇻',
+    'lt': '🇱🇹', 'mt': '🇲🇹', 'ga': '🇮🇪', 'cy': '🏴󠁧󠁢󠁷󠁬󠁳󞁿', 'is': '🇮🇸',
+    'mk': '🇲🇰', 'sq': '🇦🇱', 'eu': '🏴󠁥󠁳󠁰󠁶󞁿', 'ca': '🏴󠁥󠁳󠁣󠁴󞁿', 'gl': '🏴󠁥󠁳󠁧󠁡󞁿',
+    'af': '🇿🇦', 'sw': '🇰🇪', 'zu': '🇿🇦', 'xh': '🇿🇦', 'yo': '🇳🇬',
+    'ig': '🇳🇬', 'ha': '🇳🇬', 'am': '🇪🇹', 'or': '🇮🇳', 'as': '🇮🇳',
+    'bn': '🇧🇩', 'gu': '🇮🇳', 'kn': '🇮🇳', 'ml': '🇮🇳', 'mr': '🇮🇳',
+    'ne': '🇳🇵', 'pa': '🇮🇳', 'si': '🇱🇰', 'ta': '🇮🇳', 'te': '🇮🇳',
+    'ur': '🇵🇰', 'fil': '🇵🇭', 'yue': '🇭🇰', 'kk': '🇰🇿', 'uz': '🇺🇿',
+    'az': '🇦🇿', 'id': '🇮🇩', 'ms': '🇲🇾', 'sher': '🇳🇵', 'dz': '🇧🇹', 
+    'hy': '🇦🇲', 'ka': '🇬🇪', 'mn': '🇲🇳'
+  };
+  
+  // Special handling for specific language-country combinations
+  if (code === 'es-ES') return '🇪🇸'; // Spain Spanish
+  if (code === 'es-419' || code === 'es-MX') return '🇲🇽'; // Latin American Spanish
+  if (code === 'pt-BR') return '🇧🇷'; // Brazilian Portuguese
+  if (code === 'pt-PT') return '🇵🇹'; // European Portuguese
+  if (code === 'zh-CN') return '🇨🇳'; // Simplified Chinese
+  if (code === 'zh-TW') return '🇹🇼'; // Traditional Chinese
+  
+  // Handle generic Spanish
+  if (baseCode === 'es') {
+    return '🇲🇽'; // Default to Mexico flag for generic Spanish
+  }
+  
+  return flagMap[baseCode] || '🌍';
+};
+
 export interface LanguageConfiguration {
   code: string;
   name: string;

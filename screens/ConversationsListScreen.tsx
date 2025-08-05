@@ -35,10 +35,15 @@ export default function ConversationsListScreen() {
       setIsLoading(true);
       setError(null);
       
+      // Import SecureStorage to get the auth token
+      const { SecureStorage } = await import('../utils/secureStorage');
+      const token = await SecureStorage.getAuthToken();
+      
       const response = await fetch(`${API_BASE_URL}/api/conversations`, {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
         },
       });
 
@@ -49,15 +54,44 @@ export default function ConversationsListScreen() {
       const data = await response.json();
       
       // Transform the data to match the expected format
-      const formattedConversations = data.map((conv: any) => ({
-        id: conv.id,
-        title: conv.title || `Conversation ${conv.id.slice(0, 8)}`,
-        sourceLanguage: conv.sourceLanguage || 'en',
-        targetLanguage: conv.targetLanguage || 'es',
-        languages: `${getFlagEmoji(conv.sourceLanguage || 'en')} ${conv.sourceLanguage || 'Unknown'} → ${getFlagEmoji(conv.targetLanguage || 'es')} ${conv.targetLanguage || 'Unknown'}`,
-        lastActivity: formatTimeAgo(new Date(conv.updatedAt || conv.createdAt)),
-        messageCount: conv.messageCount || 0,
-      }));
+      const formattedConversations = data.map((conv: any) => {
+        const sourceCode = conv.sourceLanguage || 'en';
+        const targetCode = conv.targetLanguage || 'es';
+        
+        // Extract base language names from codes (e.g., 'en-US' -> 'English')
+        const getLanguageName = (code: string) => {
+          const baseCode = code.split('-')[0].toLowerCase();
+          const languageNames: { [key: string]: string } = {
+            'en': 'English', 'es': 'Spanish', 'fr': 'French', 'de': 'German',
+            'it': 'Italian', 'pt': 'Portuguese', 'ru': 'Russian', 'zh': 'Chinese',
+            'ja': 'Japanese', 'ko': 'Korean', 'ar': 'Arabic', 'hi': 'Hindi',
+            'nl': 'Dutch', 'sv': 'Swedish', 'no': 'Norwegian', 'da': 'Danish',
+            'fi': 'Finnish', 'pl': 'Polish', 'tr': 'Turkish', 'he': 'Hebrew',
+            'th': 'Thai', 'vi': 'Vietnamese', 'uk': 'Ukrainian', 'cs': 'Czech',
+            'sk': 'Slovak', 'hu': 'Hungarian', 'ro': 'Romanian', 'bg': 'Bulgarian',
+            'hr': 'Croatian', 'sr': 'Serbian', 'sl': 'Slovenian', 'et': 'Estonian',
+            'lv': 'Latvian', 'lt': 'Lithuanian', 'mt': 'Maltese', 'ga': 'Irish',
+            'cy': 'Welsh', 'is': 'Icelandic', 'mk': 'Macedonian', 'sq': 'Albanian',
+            'eu': 'Basque', 'ca': 'Catalan', 'gl': 'Galician', 'af': 'Afrikaans',
+            'sw': 'Swahili', 'zu': 'Zulu', 'xh': 'Xhosa', 'yo': 'Yoruba',
+            'ig': 'Igbo', 'ha': 'Hausa', 'am': 'Amharic', 'or': 'Odia',
+            'as': 'Assamese', 'bn': 'Bengali', 'gu': 'Gujarati', 'kn': 'Kannada',
+            'ml': 'Malayalam', 'mr': 'Marathi', 'ne': 'Nepali', 'pa': 'Punjabi',
+            'si': 'Sinhala', 'ta': 'Tamil', 'te': 'Telugu', 'ur': 'Urdu'
+          };
+          return languageNames[baseCode] || code;
+        };
+        
+        return {
+          id: conv.id,
+          title: conv.title || `Conversation ${conv.id.slice(0, 8)}`,
+          sourceLanguage: sourceCode,
+          targetLanguage: targetCode,
+          languages: `${getFlagEmoji(sourceCode)} ${getLanguageName(sourceCode)} → ${getFlagEmoji(targetCode)} ${getLanguageName(targetCode)}`,
+          lastActivity: formatTimeAgo(new Date(conv.updatedAt || conv.createdAt)),
+          messageCount: conv.messageCount || 0,
+        };
+      });
       
       setConversations(formattedConversations);
     } catch (err) {
