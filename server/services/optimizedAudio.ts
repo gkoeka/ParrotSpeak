@@ -51,29 +51,26 @@ export async function transcribeAudioOptimized(
       return languageMap[lang.toLowerCase()] || lang.split('-')[0];
     };
 
-    // Create a readable stream from buffer (no file I/O)
-    const audioStream = Readable.from(audioBuffer);
-    
-    // Create form data for multipart upload
-    const formData = new FormData();
-    formData.append('file', audioStream, {
+    // Create form data with the buffer
+    const form = new FormData();
+    form.append('file', audioBuffer, {
       filename: 'audio.m4a',
-      contentType: 'audio/m4a',
+      contentType: 'audio/m4a'
     });
-    formData.append('model', 'whisper-1');
+    form.append('model', 'whisper-1');
     if (language) {
-      formData.append('language', convertLanguageCode(language) || '');
+      form.append('language', convertLanguageCode(language) || '');
     }
-    formData.append('response_format', 'text');
+    form.append('response_format', 'text');
 
-    // Direct API call with streaming
+    // Make direct API call
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        ...formData.getHeaders()
+        ...form.getHeaders()
       },
-      body: formData as any
+      body: form
     });
 
     if (!response.ok) {
