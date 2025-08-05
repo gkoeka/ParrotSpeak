@@ -3,6 +3,8 @@ import { View, Text, ScrollView, Switch, Alert, ActivityIndicator, StyleSheet } 
 import Header from '../components/Header';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
+import { API_CONFIG } from '../api/config';
+import { authenticatedFetch } from '../utils/apiHelpers';
 
 interface AnalyticsConsentStatus {
   analyticsEnabled: boolean;
@@ -25,9 +27,7 @@ export function AnalyticsPrivacyScreen() {
 
   const loadAnalyticsPreference = async () => {
     try {
-      const response = await fetch('/api/analytics/consent', {
-        credentials: 'include'
-      });
+      const response = await authenticatedFetch(`${API_CONFIG.baseURL}/api/analytics/consent`);
       
       if (response.ok) {
         const data = await response.json();
@@ -49,12 +49,8 @@ export function AnalyticsPrivacyScreen() {
     setSaving(true);
     
     try {
-      const response = await fetch('/api/analytics/consent', {
+      const response = await authenticatedFetch(`${API_CONFIG.baseURL}/api/analytics/consent`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
         body: JSON.stringify({ enabled })
       });
 
