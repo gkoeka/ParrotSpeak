@@ -86,14 +86,28 @@ export default function ConversationsListScreen() {
           return languageNames[baseCode] || code;
         };
         
+        // Generate a better title based on the conversation details
+        const sourceName = getLanguageName(sourceCode);
+        const targetName = getLanguageName(targetCode);
+        const messageDate = new Date(conv.updatedAt || conv.createdAt);
+        
+        // Create a more descriptive title
+        let conversationTitle = conv.title;
+        if (!conversationTitle || conversationTitle.startsWith('Chat:')) {
+          // Format: "Spanish to English" or just use the first message preview if available
+          conversationTitle = `${sourceName} to ${targetName}`;
+        }
+        
         return {
           id: conv.id,
-          title: conv.title || `Conversation ${conv.id.slice(0, 8)}`,
+          title: conversationTitle,
           sourceLanguage: sourceCode,
           targetLanguage: targetCode,
-          languages: `${getFlagEmoji(sourceCode)} ${getLanguageName(sourceCode)} → ${getFlagEmoji(targetCode)} ${getLanguageName(targetCode)}`,
-          lastActivity: formatTimeAgo(new Date(conv.updatedAt || conv.createdAt)),
+          languages: `${getFlagEmoji(sourceCode)} ${sourceName} → ${getFlagEmoji(targetCode)} ${targetName}`,
+          lastActivity: formatTimeAgo(messageDate),
           messageCount: conv.messageCount || 0,
+          preview: conv.firstMessage || null, // Add message preview if available
+          date: messageDate,
         };
       });
       
@@ -132,12 +146,32 @@ export default function ConversationsListScreen() {
       style={[styles.conversationCard, isDarkMode && styles.conversationCardDark]}
       onPress={() => navigation.navigate('Conversation', { id: item.id })}
     >
-      <View style={styles.conversationHeader}>
-        <Text style={[styles.conversationTitle, isDarkMode && styles.conversationTitleDark]}>{item.title}</Text>
-        <Text style={[styles.lastActivity, isDarkMode && styles.lastActivityDark]}>{item.lastActivity}</Text>
+      <View style={styles.conversationContent}>
+        <View style={[styles.languageFlags, isDarkMode && styles.languageFlagsDark]}>
+          <Text style={styles.flagEmoji}>{getFlagEmoji(item.sourceLanguage)}</Text>
+          <Ionicons name="arrow-forward" size={16} color={isDarkMode ? '#999' : '#666'} />
+          <Text style={styles.flagEmoji}>{getFlagEmoji(item.targetLanguage)}</Text>
+        </View>
+        
+        <View style={styles.conversationDetails}>
+          <Text style={[styles.conversationTitle, isDarkMode && styles.conversationTitleDark]}>
+            {item.title}
+          </Text>
+          
+          <View style={styles.metaRow}>
+            <View style={styles.messageCountBadge}>
+              <Ionicons name="chatbubbles-outline" size={14} color={isDarkMode ? '#999' : '#666'} />
+              <Text style={[styles.messageCountText, isDarkMode && styles.messageCountTextDark]}>
+                {item.messageCount} {item.messageCount === 1 ? 'message' : 'messages'}
+              </Text>
+            </View>
+            
+            <Text style={[styles.lastActivity, isDarkMode && styles.lastActivityDark]}>
+              {item.lastActivity}
+            </Text>
+          </View>
+        </View>
       </View>
-      <Text style={[styles.languages, isDarkMode && styles.languagesDark]}>{item.languages}</Text>
-      <Text style={[styles.messageCount, isDarkMode && styles.messageCountDark]}>{item.messageCount} messages</Text>
     </TouchableOpacity>
   );
 
@@ -185,7 +219,7 @@ export default function ConversationsListScreen() {
       <Header />
       
       <View style={styles.content}>
-        <Text style={[styles.title, isDarkMode && styles.titleDark]}>My Conversations</Text>
+        <Text style={[styles.title, isDarkMode && styles.titleDark]}>History</Text>
         
         {isLoading ? (
           <View style={styles.loadingContainer}>
@@ -292,45 +326,70 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#e9ecef',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
   },
   conversationCardDark: {
     backgroundColor: '#2a2a2a',
     borderColor: '#333',
   },
-  conversationHeader: {
+  conversationContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    gap: 16,
+  },
+  languageFlags: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  languageFlagsDark: {
+    backgroundColor: '#333',
+  },
+  flagEmoji: {
+    fontSize: 24,
+  },
+  conversationDetails: {
+    flex: 1,
   },
   conversationTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1a1a1a',
+    marginBottom: 4,
   },
   conversationTitleDark: {
     color: '#fff',
   },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  messageCountBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  messageCountText: {
+    fontSize: 13,
+    color: '#666',
+  },
+  messageCountTextDark: {
+    color: '#999',
+  },
   lastActivity: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#666',
   },
   lastActivityDark: {
-    color: '#999',
-  },
-  languages: {
-    fontSize: 14,
-    color: '#3366FF',
-    marginBottom: 4,
-  },
-  languagesDark: {
-    color: '#5c8cff',
-  },
-  messageCount: {
-    fontSize: 12,
-    color: '#666',
-  },
-  messageCountDark: {
     color: '#999',
   },
   // Subscription required styles
