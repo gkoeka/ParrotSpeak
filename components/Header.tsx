@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../contexts/ThemeContext';
 import ParrotSpeakLogo from './ParrotSpeakLogo';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function Header() {
   const navigation = useNavigation();
@@ -25,15 +26,8 @@ export default function Header() {
           </Text>
         </View>
         
-        {/* Right section with settings */}
-        <View style={styles.rightSection}>
-          <TouchableOpacity 
-            style={styles.menuButton}
-            onPress={() => navigation.navigate('Settings' as never)}
-          >
-            <Text style={styles.menuIcon}>⚙️</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Right section placeholder for balance */}
+        <View style={styles.rightSection} />
       </View>
     </View>
   );

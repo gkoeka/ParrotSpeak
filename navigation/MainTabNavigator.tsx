@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { Platform } from 'react-native';
 
 // Screens
 import HomeScreen from '../screens/HomeScreen';
@@ -65,7 +66,13 @@ const PricingStack = createStackNavigator<PricingStackParamList>();
 // Home Stack Navigator
 function HomeStackNavigator() {
   return (
-    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
+    <HomeStack.Navigator 
+      screenOptions={{ 
+        headerShown: false,
+        gestureEnabled: true,
+        gestureDirection: 'horizontal',
+      }}
+    >
       <HomeStack.Screen name="Home" component={HomeScreen} />
       <HomeStack.Screen name="Conversation" component={ConversationScreen} />
       <HomeStack.Screen name="Analytics" component={AnalyticsScreen} />
@@ -76,7 +83,13 @@ function HomeStackNavigator() {
 // Conversations Stack Navigator
 function ConversationsStackNavigator() {
   return (
-    <ConversationsStack.Navigator screenOptions={{ headerShown: false }}>
+    <ConversationsStack.Navigator 
+      screenOptions={{ 
+        headerShown: false,
+        gestureEnabled: true,
+        gestureDirection: 'horizontal',
+      }}
+    >
       <ConversationsStack.Screen name="ConversationsList" component={ConversationsListScreen} />
       <ConversationsStack.Screen name="Conversation" component={ConversationScreen} />
     </ConversationsStack.Navigator>
@@ -86,7 +99,13 @@ function ConversationsStackNavigator() {
 // Settings Stack Navigator
 function SettingsStackNavigator() {
   return (
-    <SettingsStack.Navigator screenOptions={{ headerShown: false }}>
+    <SettingsStack.Navigator 
+      screenOptions={{ 
+        headerShown: false,
+        gestureEnabled: true,
+        gestureDirection: 'horizontal',
+      }}
+    >
       <SettingsStack.Screen name="Settings" component={SettingsScreen} />
       <SettingsStack.Screen name="Profile" component={ProfileScreen} />
       <SettingsStack.Screen name="SubscriptionPlans" component={SubscriptionPlansScreen} />
@@ -102,7 +121,13 @@ function SettingsStackNavigator() {
 // Pricing Stack Navigator
 function PricingStackNavigator() {
   return (
-    <PricingStack.Navigator screenOptions={{ headerShown: false }}>
+    <PricingStack.Navigator 
+      screenOptions={{ 
+        headerShown: false,
+        gestureEnabled: true,
+        gestureDirection: 'horizontal',
+      }}
+    >
       <PricingStack.Screen name="Pricing" component={PricingScreen} />
       <PricingStack.Screen name="Checkout" component={CheckoutScreen} />
     </PricingStack.Navigator>
@@ -139,13 +164,24 @@ export default function MainTabNavigator() {
         tabBarStyle: {
           backgroundColor: isDarkMode ? '#1a1a1a' : '#fff',
           borderTopColor: isDarkMode ? '#333' : '#e0e0e0',
-          paddingBottom: 5,
-          paddingTop: 5,
-          height: 60,
+          borderTopWidth: 1,
+          paddingBottom: Platform.OS === 'ios' ? 20 : 10,
+          paddingTop: 10,
+          height: Platform.OS === 'ios' ? 85 : 65,
+          elevation: 8, // Android shadow
+          shadowColor: '#000', // iOS shadow
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 3,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
-          marginTop: -5,
+          fontSize: 11,
+          fontWeight: '500',
+          marginTop: 2,
+          marginBottom: Platform.OS === 'ios' ? 0 : 5,
+        },
+        tabBarIconStyle: {
+          marginTop: 5,
         },
       })}
     >

@@ -1,12 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { CompositeNavigationProp } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../App';
+import { TabParamList } from '../navigation/MainTabNavigator';
+import { HomeStackParamList } from '../navigation/MainTabNavigator';
 import Header from '../components/Header';
 import { useTheme } from '../contexts/ThemeContext';
 
-type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
+type HomeScreenNavigationProp = CompositeNavigationProp<
+  StackNavigationProp<HomeStackParamList, 'Home'>,
+  BottomTabNavigationProp<TabParamList>
+>;
 
 export default function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
@@ -36,7 +42,7 @@ export default function HomeScreen() {
         <View style={styles.featuresGrid}>
           <TouchableOpacity 
             style={[styles.featureCard, isDarkMode && styles.featureCardDark]}
-            onPress={() => navigation.navigate('ConversationsList')}
+            onPress={() => navigation.navigate('ConversationsTab')}
           >
             <Text style={[styles.featureTitle, isDarkMode && styles.featureTitleDark]}>My Conversations</Text>
             <Text style={[styles.featureDescription, isDarkMode && styles.featureDescriptionDark]}>View past conversations</Text>

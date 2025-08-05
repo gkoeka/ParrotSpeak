@@ -10,6 +10,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 
+// Tab Navigator
+import MainTabNavigator from "./navigation/MainTabNavigator";
+
 
 
 // Screens
@@ -35,17 +38,19 @@ import SplashScreen from "./screens/SplashScreen";
 // Define the stack navigator params
 export type RootStackParamList = {
   Welcome: undefined;
+  MainTabs: undefined;
+  Auth: { defaultToSignUp?: boolean };
+  PasswordReset: { token?: string };
+  // Legacy routes for deep linking
   Home: undefined;
   Conversation: { id?: string };
   ConversationsList: undefined;
   Analytics: undefined;
   Settings: undefined;
-  Auth: { defaultToSignUp?: boolean };
   Profile: undefined;
   SubscriptionPlans: undefined;
   Pricing: undefined;
   Checkout: { plan: string; amount: number; interval: string };
-  PasswordReset: { token?: string };
   Feedback: undefined;
   HelpCenter: undefined;
   PrivacyPolicy: undefined;
@@ -83,7 +88,7 @@ function AuthNavigator() {
   }
 
   const getInitialRoute = () => {
-    if (user) return "Home";
+    if (user) return "MainTabs";
     if (isFirstLaunch) return "Welcome";
     return "Auth";
   };
@@ -96,29 +101,8 @@ function AuthNavigator() {
       }}
     >
       {user ? (
-        // Authenticated screens
-        <>
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="Conversation" component={ConversationScreen} />
-          <Stack.Screen
-            name="ConversationsList"
-            component={ConversationsListScreen}
-          />
-          <Stack.Screen name="Analytics" component={AnalyticsScreen} />
-          <Stack.Screen name="Settings" component={SettingsScreen} />
-          <Stack.Screen name="Profile" component={ProfileScreen} />
-          <Stack.Screen
-            name="SubscriptionPlans"
-            component={SubscriptionPlansScreen}
-          />
-          <Stack.Screen name="Pricing" component={PricingScreen} />
-          <Stack.Screen name="Checkout" component={CheckoutScreen} />
-          <Stack.Screen name="Feedback" component={FeedbackScreen} />
-          <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
-          <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
-          <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} />
-          <Stack.Screen name="PerformanceTest" component={PerformanceTestScreen} />
-        </>
+        // Authenticated screens - Use Tab Navigator
+        <Stack.Screen name="MainTabs" component={MainTabNavigator} />
       ) : (
         // Auth screens
         <>
