@@ -23,7 +23,7 @@ export default function WelcomeScreen() {
         {/* Logo */}
         <View style={styles.logoContainer}>
           <Image
-            source={require('../assets/logo.png')}
+            source={require('../assets/parrotspeak-logo.png')}
             style={styles.logo}
             resizeMode="contain"
           />

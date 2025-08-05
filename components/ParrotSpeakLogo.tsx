@@ -1,11 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 
 export default function ParrotSpeakLogo() {
   return (
     <View style={styles.container}>
       <View style={styles.iconContainer}>
-        <Text style={styles.icon}>🦜</Text>
+        <Image
+          source={require('../assets/parrotspeak-logo.png')}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
       </View>
       <Text style={styles.text}>ParrotSpeak</Text>
     </View>
@@ -20,8 +24,9 @@ const styles = StyleSheet.create({
   iconContainer: {
     marginRight: 8,
   },
-  icon: {
-    fontSize: 24,
+  logoImage: {
+    width: 32,
+    height: 32,
   },
   text: {
     fontSize: 18,
