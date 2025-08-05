@@ -9,8 +9,7 @@ import { ActivityIndicator, View } from "react-native";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
-// Auth debugging (remove after testing)
-import { enableAuthDebugging } from "./utils/authDebugger";
+
 
 // Screens
 import HomeScreen from "./screens/HomeScreen";
@@ -105,11 +104,6 @@ function AuthNavigator() {
 }
 
 export default function App() {
-  useEffect(() => {
-    // Enable auth debugging (remove after testing)
-    enableAuthDebugging();
-  }, []);
-
   return (
     <SafeAreaProvider>
       <StatusBar barStyle="dark-content" />
