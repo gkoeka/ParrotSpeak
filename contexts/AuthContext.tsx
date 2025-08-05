@@ -8,6 +8,9 @@ interface User {
   subscriptionStatus?: string;
   subscriptionTier?: string;
   subscriptionExpiresAt?: Date | null;
+  previewExpiresAt?: Date | null;
+  hasUsedPreview?: boolean;
+  previewStartedAt?: Date | null;
 }
 
 interface AuthContextType {
@@ -57,7 +60,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
           name: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.email,
           subscriptionStatus: userData.subscriptionStatus || 'free',
           subscriptionTier: userData.subscriptionTier,
-          subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null
+          subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null,
+          previewExpiresAt: userData.previewExpiresAt ? new Date(userData.previewExpiresAt) : null,
+          hasUsedPreview: userData.hasUsedPreview || false,
+          previewStartedAt: userData.previewStartedAt ? new Date(userData.previewStartedAt) : null
         };
         setUser(userInfo);
         // Update stored user data
@@ -95,7 +101,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
           name: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.email,
           subscriptionStatus: userData.subscriptionStatus || 'free',
           subscriptionTier: userData.subscriptionTier,
-          subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null
+          subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null,
+          previewExpiresAt: userData.previewExpiresAt ? new Date(userData.previewExpiresAt) : null,
+          hasUsedPreview: userData.hasUsedPreview || false,
+          previewStartedAt: userData.previewStartedAt ? new Date(userData.previewStartedAt) : null
         };
         setUser(userInfo);
         // Store user data for persistence
@@ -125,7 +134,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
           name: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.email,
           subscriptionStatus: userData.subscriptionStatus || 'free',
           subscriptionTier: userData.subscriptionTier,
-          subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null
+          subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null,
+          previewExpiresAt: userData.previewExpiresAt ? new Date(userData.previewExpiresAt) : null,
+          hasUsedPreview: userData.hasUsedPreview || false,
+          previewStartedAt: userData.previewStartedAt ? new Date(userData.previewStartedAt) : null
         };
         setUser(userInfo);
         // Store user data for persistence
@@ -152,7 +164,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
           name: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.email,
           subscriptionStatus: userData.subscriptionStatus || 'free',
           subscriptionTier: userData.subscriptionTier,
-          subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null
+          subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null,
+          previewExpiresAt: userData.previewExpiresAt ? new Date(userData.previewExpiresAt) : null,
+          hasUsedPreview: userData.hasUsedPreview || false,
+          previewStartedAt: userData.previewStartedAt ? new Date(userData.previewStartedAt) : null
         };
         setUser(userInfo);
         await SecureStorage.setUserData(userInfo);
@@ -176,7 +191,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
           name: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.email,
           subscriptionStatus: userData.subscriptionStatus || 'free',
           subscriptionTier: userData.subscriptionTier,
-          subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null
+          subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null,
+          previewExpiresAt: userData.previewExpiresAt ? new Date(userData.previewExpiresAt) : null,
+          hasUsedPreview: userData.hasUsedPreview || false,
+          previewStartedAt: userData.previewStartedAt ? new Date(userData.previewStartedAt) : null
         };
         setUser(userInfo);
         await SecureStorage.setUserData(userInfo);

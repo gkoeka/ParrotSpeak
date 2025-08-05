@@ -44,6 +44,10 @@ export const users = pgTable("users", {
   // Analytics consent fields
   analyticsEnabled: boolean("analytics_enabled").default(true),
   analyticsConsentDate: timestamp("analytics_consent_date"),
+  // Preview access fields
+  previewExpiresAt: timestamp("preview_expires_at"),
+  hasUsedPreview: boolean("has_used_preview").default(false),
+  previewStartedAt: timestamp("preview_started_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
