@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { API_BASE_URL } from '../api/config';
 import { getSupportedLanguages } from '../constants/languageConfiguration';
+import { LanguagePreferencesStorage } from '../utils/languagePreferences';
 
 import LanguageSelector from '../components/LanguageSelectorMobile';
 import PerformanceIndicator from '../components/PerformanceMonitor';
@@ -37,6 +38,7 @@ export default function ConversationScreen() {
   const [targetLanguage, setTargetLanguage] = useState('es');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
 
   // Check subscription status
   const hasActiveSubscription = user?.subscriptionStatus === 'active' || user?.subscriptionTier === 'lifetime';
@@ -78,6 +80,40 @@ export default function ConversationScreen() {
     const flag = getFlagEmoji(code);
     return { flag, name: language.name, code };
   };
+
+  // Load language preferences on mount for new conversations
+  useEffect(() => {
+    const loadLanguagePreferences = async () => {
+      // Only load preferences for new conversations (no conversationId)
+      if (!conversationId && !preferencesLoaded) {
+        const preferences = await LanguagePreferencesStorage.getLanguagePreferences();
+        if (preferences) {
+          setSourceLanguage(preferences.sourceLanguage);
+          setTargetLanguage(preferences.targetLanguage);
+        } else {
+          // Use defaults if no preferences exist
+          const defaults = LanguagePreferencesStorage.getDefaultLanguages();
+          setSourceLanguage(defaults.sourceLanguage);
+          setTargetLanguage(defaults.targetLanguage);
+        }
+        setPreferencesLoaded(true);
+      }
+    };
+
+    loadLanguagePreferences();
+  }, [conversationId, preferencesLoaded]);
+
+  // Save language preferences when they change (only for new conversations)
+  useEffect(() => {
+    const savePreferences = async () => {
+      // Only save preferences if it's a new conversation and preferences have been loaded
+      if (!conversationId && preferencesLoaded) {
+        await LanguagePreferencesStorage.saveLanguagePreferences(sourceLanguage, targetLanguage);
+      }
+    };
+
+    savePreferences();
+  }, [sourceLanguage, targetLanguage, conversationId, preferencesLoaded]);
 
   // Load conversation data if viewing from history
   useEffect(() => {
