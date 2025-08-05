@@ -166,10 +166,20 @@ export const storage = {
   
   async getConversations(userId?: number) {
     const whereClause = userId ? eq(conversations.userId, userId) : undefined;
-    return db.query.conversations.findMany({
+    const conversationList = await db.query.conversations.findMany({
       where: whereClause,
-      orderBy: [desc(conversations.updatedAt)]
+      orderBy: [desc(conversations.updatedAt)],
+      with: {
+        messages: true
+      }
     });
+    
+    // Transform conversations to include message count
+    return conversationList.map(conv => ({
+      ...conv,
+      messageCount: conv.messages.length,
+      messages: undefined // Don't send all messages in the list view
+    }));
   },
   
   async getConversation(id: string) {

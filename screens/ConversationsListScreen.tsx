@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
 import Header from '../components/Header';
@@ -30,6 +30,15 @@ export default function ConversationsListScreen() {
       loadConversations();
     }
   }, [hasActiveSubscription]);
+
+  // Refresh conversations when returning to this screen
+  useFocusEffect(
+    useCallback(() => {
+      if (hasActiveSubscription) {
+        loadConversations();
+      }
+    }, [hasActiveSubscription])
+  );
 
   const loadConversations = async () => {
     try {
