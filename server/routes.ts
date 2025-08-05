@@ -460,6 +460,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Analytics consent routes
+  app.get('/api/analytics/consent', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { analyticsConsent } = await import('./services/analytics-consent');
+      const consentStatus = await analyticsConsent.getUserConsentStatus(req.user!.id);
+      
+      if (!consentStatus) {
+        return res.json({
+          analyticsEnabled: true, // Default for new users
+          consentDate: null,
+          lastUpdated: new Date().toISOString()
+        });
+      }
+      
+      res.json({
+        analyticsEnabled: consentStatus.analyticsEnabled,
+        consentDate: consentStatus.consentDate?.toISOString() || null,
+        lastUpdated: consentStatus.lastUpdated.toISOString()
+      });
+    } catch (error) {
+      console.error('Error getting analytics consent:', error);
+      res.status(500).json({ message: 'Failed to get analytics preferences' });
+    }
+  });
+
+  app.post('/api/analytics/consent', requireAuth, async (req: Request, res: Response) => {
+    try {
+      const { enabled } = req.body;
+      
+      if (typeof enabled !== 'boolean') {
+        return res.status(400).json({ message: 'Invalid enabled value - must be boolean' });
+      }
+      
+      const { analytics } = await import('./services/analytics');
+      
+      // Use the comprehensive opt-in/opt-out methods
+      if (enabled) {
+        await analytics.handleOptIn(req.user!.id);
+      } else {
+        await analytics.handleOptOut(req.user!.id);
+      }
+      
+      res.json({ 
+        success: true, 
+        analyticsEnabled: enabled,
+        message: enabled ? 'Analytics enabled' : 'Analytics disabled'
+      });
+    } catch (error) {
+      console.error('Error updating analytics consent:', error);
+      res.status(500).json({ message: 'Failed to update analytics preferences' });
+    }
+  });
+
   // IAP routes
   app.use('/api/iap', iapRoutes);
 

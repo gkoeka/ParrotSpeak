@@ -40,14 +40,7 @@ export default function SettingsScreen() {
       subtitle: 'Manage your plan',
       isStack: true
     },
-    { 
-      title: 'Analytics', 
-      screen: 'ChatTab',
-      icon: 'stats-chart-outline',
-      subtitle: 'View your usage stats',
-      isTab: true,
-      params: { screen: 'Analytics' }
-    },
+
   ];
 
   const preferenceOptions = [
@@ -69,11 +62,24 @@ export default function SettingsScreen() {
       value: autoPlayEnabled,
       onValueChange: setAutoPlayEnabled,
     },
-    {
-      title: 'Usage Analytics',
-      icon: 'analytics-outline',
-      value: analyticsEnabled,
-      onValueChange: setAnalyticsEnabled,
+
+  ];
+
+  const analyticsOptions = [
+    { 
+      title: 'Analytics Dashboard', 
+      screen: 'ChatTab',
+      icon: 'bar-chart-outline',
+      subtitle: 'View your usage stats',
+      isTab: true,
+      params: { screen: 'Analytics' }
+    },
+    { 
+      title: 'Privacy Controls', 
+      screen: 'AnalyticsPrivacy',
+      icon: 'shield-checkmark-outline',
+      subtitle: 'Manage data collection',
+      isStack: true
     },
   ];
 
@@ -169,6 +175,44 @@ export default function SettingsScreen() {
                   ios_backgroundColor="#e0e0e0"
                 />
               </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Analytics Section */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, isDarkMode && styles.sectionTitleDark]}>ANALYTICS</Text>
+          <View style={[styles.sectionContent, isDarkMode && styles.sectionContentDark]}>
+            {analyticsOptions.map((option, index) => (
+              <TouchableOpacity
+                key={option.title}
+                style={[
+                  styles.optionItem,
+                  index === analyticsOptions.length - 1 && styles.lastOptionItem
+                ]}
+                onPress={() => {
+                  if (option.isTab) {
+                    if (option.params) {
+                      navigation.navigate(option.screen as keyof TabParamList, option.params);
+                    } else {
+                      navigation.navigate(option.screen as keyof TabParamList);
+                    }
+                  } else {
+                    navigation.navigate(option.screen as keyof SettingsStackParamList);
+                  }
+                }}
+              >
+                <View style={styles.optionLeft}>
+                  <View style={[styles.iconContainer, isDarkMode && styles.iconContainerDark]}>
+                    <Ionicons name={option.icon as any} size={24} color={isDarkMode ? '#fff' : '#3366FF'} />
+                  </View>
+                  <View style={styles.optionTextContainer}>
+                    <Text style={[styles.optionText, isDarkMode && styles.optionTextDark]}>{option.title}</Text>
+                    <Text style={[styles.optionSubtitle, isDarkMode && styles.optionSubtitleDark]}>{option.subtitle}</Text>
+                  </View>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#666' : '#ccc'} />
+              </TouchableOpacity>
             ))}
           </View>
         </View>

@@ -21,6 +21,7 @@ import HelpCenterScreen from '../screens/HelpCenterScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 import TermsConditionsScreen from '../screens/TermsConditionsScreen';
 import PerformanceTestScreen from '../screens/PerformanceTestScreen';
+import { AnalyticsPrivacyScreen } from '../screens/AnalyticsPrivacyScreen';
 
 // Tab types
 export type TabParamList = {
@@ -52,6 +53,7 @@ export type SettingsStackParamList = {
   PrivacyPolicy: undefined;
   TermsConditions: undefined;
   PerformanceTest: undefined;
+  AnalyticsPrivacy: undefined;
 };
 
 export type FeedbackStackParamList = {
@@ -117,6 +119,7 @@ function SettingsStackNavigator() {
       <SettingsStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
       <SettingsStack.Screen name="TermsConditions" component={TermsConditionsScreen} />
       <SettingsStack.Screen name="PerformanceTest" component={PerformanceTestScreen} />
+      <SettingsStack.Screen name="AnalyticsPrivacy" component={AnalyticsPrivacyScreen} />
     </SettingsStack.Navigator>
   );
 }
