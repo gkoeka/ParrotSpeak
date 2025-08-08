@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput } from 'reac
 import { Ionicons } from '@expo/vector-icons';
 
 import { startRecording, stopRecording, processRecording, speakText } from '../api/speechService';
-import { startEnhancedRecording, stopEnhancedRecording } from '../api/enhancedRecording';
 import { translateText } from '../api/languageService';
 import { getLanguageByCode } from '../constants/languageConfiguration';
 import { performanceMonitor } from '../utils/performanceMonitor';
@@ -72,7 +71,7 @@ export default function VoiceInputControls({
   const isSourceSpeechSupported = sourceLanguageConfig?.speechSupported ?? true;
   const isTargetSpeechSupported = targetLanguageConfig?.speechSupported ?? true;
 
-  // Phase 2: Initialize VoiceActivityService when NOT in conversation mode
+  // Phase 1: Initialize VoiceActivityService for chunking and 2-second rule
   useEffect(() => {
     // Only initialize standalone VAD if not using conversation mode
     if (state.conversationModeEnabled) {
@@ -82,25 +81,41 @@ export default function VoiceInputControls({
     
     const initializeVAD = async () => {
       try {
-        console.log('🎤 VoiceInputControls: Initializing standalone VoiceActivityService...');
+        console.log('🎤 VoiceInputControls: Initializing Phase 1 VoiceActivityService...');
         
         const vadService = new VoiceActivityService();
         voiceActivityServiceRef.current = vadService;
         
-        // Set up callbacks for VAD events
+        // Set up callbacks for Phase 1 VAD events
         const callbacks: VoiceActivityCallbacks = {
           onSpeechStart: () => {
             console.log('🗣️ VoiceInputControls: Speech start detected');
             actions.setMicrophoneActive(true);
+            // Reset silence timer when speech is detected
+            if (voiceActivityServiceRef.current) {
+              voiceActivityServiceRef.current.resetSilenceTimer();
+            }
           },
-          onSpeechEnd: (chunk: AudioChunk) => {
-            console.log('🔇 VoiceInputControls: Speech end detected, chunk:', chunk);
-            actions.setMicrophoneActive(false);
-            // TODO: Phase 2 - Process chunk for translation
+          onSpeechEnd: async (chunk: AudioChunk) => {
+            console.log('📦 VoiceInputControls: Chunk received:', {
+              duration: `${chunk.duration}ms`,
+              uri: chunk.uri.substring(chunk.uri.length - 20)
+            });
+            
+            // Phase 1: Process chunk for automatic translation
+            if (isRecording && chunk.duration > 500) { // Only process meaningful chunks
+              console.log('🔄 Processing chunk for translation...');
+              await processAudioChunk(chunk);
+            }
           },
           onSilenceDetected: (duration: number) => {
             console.log(`⏰ VoiceInputControls: Silence detected (${duration}ms)`);
-            // TODO: Phase 2 - Handle speaker switching
+            
+            // Phase 1: Auto-stop after 2 seconds of silence
+            if (duration >= 2000 && isRecording) {
+              console.log('⏹️ Auto-stopping after 2 seconds of silence');
+              handleStopRecording();
+            }
           },
           onError: (error: Error) => {
             console.error('❌ VoiceInputControls: VAD error:', error);
@@ -111,7 +126,7 @@ export default function VoiceInputControls({
         await vadService.initialize(callbacks);
         actions.setMicPermission(true);
         setVadInitialized(true);
-        console.log('✅ VoiceInputControls: VoiceActivityService initialized');
+        console.log('✅ VoiceInputControls: Phase 1 VAD initialized with chunking');
         
       } catch (error) {
         console.error('❌ VoiceInputControls: Failed to initialize VAD:', error);
@@ -125,11 +140,11 @@ export default function VoiceInputControls({
     // Cleanup on unmount
     return () => {
       if (voiceActivityServiceRef.current) {
-        voiceActivityServiceRef.current.dispose();
+        voiceActivityServiceRef.current.stopListening().catch(console.error);
         voiceActivityServiceRef.current = null;
       }
     };
-  }, [state.isAlwaysListeningEnabled, actions]);
+  }, [state.conversationModeEnabled, actions]);
 
   // Phase 1: Handle VoiceActivityService start/stop
   const handleVADToggle = async () => {
@@ -156,33 +171,28 @@ export default function VoiceInputControls({
 
   const handleStartRecording = async () => {
     try {
-      setIsRecording(true);
-      console.log('Starting enhanced recording with silence detection...');
-      
-      // Use enhanced recording with real-time silence detection
-      const result = await startEnhancedRecording({
-        onSilenceDetected: (duration: number) => {
-          // Auto-stop after 2 seconds of silence
-          if (duration >= 2000 && isRecording) {
-            console.log('⏰ 2-second silence detected, auto-processing...');
-            handleStopRecording();
-          }
-        },
-        onAudioLevel: (level: number) => {
-          // Optional: Update UI with audio level indicator
-          if (level > 10) {
-            console.log(`🎤 Audio level: ${level.toFixed(0)}%`);
-          }
-        },
-        onSpeechDetected: () => {
-          console.log('🗣️ Speech detected, resetting silence timer');
-        },
-        silenceThreshold: -40, // dB level for silence
-        silenceDuration: 2000, // 2 seconds
-      });
-      
-      recordingRef.current = result;
-      console.log('Enhanced recording started:', result.uri);
+      // Phase 1: Use VoiceActivityService for recording with chunks
+      if (voiceActivityServiceRef.current && vadInitialized) {
+        setIsRecording(true);
+        console.log('🎤 Starting Phase 1 VAD recording with 2-second rule...');
+        
+        // Start the VAD service listening
+        await voiceActivityServiceRef.current.startListening();
+        actions.setListening(true);
+        
+        // Reset silence timer to start fresh
+        voiceActivityServiceRef.current.resetSilenceTimer();
+        
+        console.log('✅ Phase 1 recording started - will auto-stop after 2 seconds of silence');
+      } else {
+        // Fallback to regular recording if VAD not initialized
+        setIsRecording(true);
+        console.log('Starting regular recording (VAD not available)...');
+        
+        const result = await startRecording();
+        recordingRef.current = result;
+        console.log('Recording started:', result.uri);
+      }
       
     } catch (error) {
       console.error('Error starting recording:', error);
@@ -194,20 +204,44 @@ export default function VoiceInputControls({
   const handleStopRecording = async () => {
     try {
       setIsRecording(false);
-      setIsProcessing(true);
-      console.log('Stopping enhanced recording...');
       
-      // Use enhanced recording stop method
-      const result = await stopEnhancedRecording();
-      console.log('Enhanced recording stopped:', result.uri);
-      
-      // Process the recording
-      await processAudio(result.uri);
+      // Phase 1: Stop VAD service if it's running
+      if (voiceActivityServiceRef.current && state.isListening) {
+        console.log('🛑 Stopping Phase 1 VAD recording...');
+        await voiceActivityServiceRef.current.stopListening();
+        actions.setListening(false);
+        console.log('✅ Phase 1 recording stopped');
+      } else if (recordingRef.current) {
+        // Fallback to regular recording stop
+        setIsProcessing(true);
+        console.log('Stopping regular recording...');
+        
+        const result = await stopRecording();
+        console.log('Recording stopped:', result.uri);
+        
+        // Process the recording
+        await processAudio(result.uri);
+      }
       
     } catch (error) {
       console.error('Error stopping recording:', error);
       setIsProcessing(false);
       Alert.alert('Error', 'Failed to process recording');
+    }
+  };
+  
+  // Process audio chunk from VAD
+  const processAudioChunk = async (chunk: AudioChunk) => {
+    try {
+      setIsProcessing(true);
+      console.log('📋 Processing audio chunk:', chunk.uri);
+      
+      // Process the chunk for transcription and translation
+      await processAudio(chunk.uri);
+      
+    } catch (error) {
+      console.error('Error processing chunk:', error);
+      setIsProcessing(false);
     }
   };
 

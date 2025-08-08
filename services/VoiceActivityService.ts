@@ -15,6 +15,7 @@ const SILENCE_THRESHOLD_DB = -50;
 const MIN_SPEECH_DURATION_MS = 500;
 const MAX_SILENCE_DURATION_MS = 2000;
 const CHUNK_DURATION_MS = 2000;
+const MONITOR_INTERVAL_MS = 100; // Check audio status every 100ms
 
 export interface AudioChunk {
   uri: string;
@@ -51,6 +52,10 @@ export class VoiceActivityService {
 
   private audioAnalysisInterval: NodeJS.Timeout | null = null;
   private chunkStartTime: Date | null = null;
+  private chunkTimer: NodeJS.Timeout | null = null;
+  private currentChunkUri: string | null = null;
+  private silenceStartTime: Date | null = null;
+  private chunkCount: number = 0;
 
   constructor(config?: Partial<VoiceActivityConfig>) {
     this.config = {
@@ -109,11 +114,57 @@ export class VoiceActivityService {
 
     try {
       console.log('🎤 VoiceActivityService: Starting continuous listening...');
+      console.log('📊 VAD Config:', {
+        silenceThreshold: `${this.config.silenceThreshold}dB`,
+        maxSilenceDuration: `${this.config.maxSilenceDuration}ms`,
+        chunkDuration: `${this.config.chunkSize}ms`
+      });
       
-      // Create new recording instance
+      // Start recording first chunk
+      await this.startNewChunk();
+      
+      this.isListening = true;
+      this.chunkCount = 0;
+      console.log('✅ VoiceActivityService: Mic started');
+
+      // Begin chunk rotation timer for 2-second chunks
+      this.startChunkRotation();
+      
+      // Begin silence detection timer
+      this.startSilenceDetection();
+      
+    } catch (error) {
+      console.error('❌ VoiceActivityService: Failed to start listening:', error);
+      this.isListening = false;
+      this.callbacks?.onError(error instanceof Error ? error : new Error('Failed to start listening'));
+      throw error;
+    }
+  }
+  
+  /**
+   * Start a new recording chunk
+   * Phase 1 - Create new 2-second audio chunks
+   */
+  private async startNewChunk(): Promise<void> {
+    try {
+      // Stop current recording if exists
+      if (this.recording) {
+        const uri = this.recording.getURI();
+        await this.recording.stopAndUnloadAsync();
+        
+        // Save the chunk if it has content
+        if (uri && this.chunkStartTime) {
+          const duration = Date.now() - this.chunkStartTime.getTime();
+          if (duration > 100) { // Only save chunks longer than 100ms
+            await this.emitChunk(uri, duration);
+          }
+        }
+      }
+      
+      // Create new recording
       this.recording = new Audio.Recording();
       
-      // Configure recording options for VAD with proper Expo AV constants
+      // Configure recording options for chunks
       const recordingOptions = {
         android: {
           extension: '.m4a',
@@ -139,23 +190,111 @@ export class VoiceActivityService {
           bitsPerSecond: 128000,
         },
       };
-
-      // Start recording
+      
       await this.recording.prepareToRecordAsync(recordingOptions);
       await this.recording.startAsync();
       
-      this.isListening = true;
       this.chunkStartTime = new Date();
-      console.log('✅ VoiceActivityService: Mic started');
-
-      // Begin audio level monitoring for VAD
-      this.startAudioAnalysis();
+      this.currentChunkUri = this.recording.getURI() || null;
       
     } catch (error) {
-      console.error('❌ VoiceActivityService: Failed to start listening:', error);
-      this.isListening = false;
-      this.callbacks?.onError(error instanceof Error ? error : new Error('Failed to start listening'));
+      console.error('❌ VoiceActivityService: Error starting new chunk:', error);
       throw error;
+    }
+  }
+  
+  /**
+   * Start chunk rotation timer
+   * Phase 1 - Rotate chunks every 2 seconds
+   */
+  private startChunkRotation(): void {
+    // Clear existing timer
+    if (this.chunkTimer) {
+      clearInterval(this.chunkTimer);
+    }
+    
+    // Rotate chunks every CHUNK_DURATION_MS (2 seconds)
+    this.chunkTimer = setInterval(async () => {
+      if (this.isListening) {
+        console.log('🔄 VoiceActivityService: Rotating chunk after 2 seconds');
+        await this.startNewChunk();
+      }
+    }, this.config.chunkSize);
+  }
+  
+  /**
+   * Start silence detection timer
+   * Phase 1 - Detect 2 seconds of silence
+   */
+  private startSilenceDetection(): void {
+    // Use a simple timer-based approach for silence detection
+    // Reset on any user interaction with the recording
+    if (!this.silenceStartTime) {
+      this.silenceStartTime = new Date();
+    }
+    
+    // Check for silence timeout every 100ms
+    if (this.audioAnalysisInterval) {
+      clearInterval(this.audioAnalysisInterval);
+    }
+    
+    this.audioAnalysisInterval = setInterval(() => {
+      if (!this.isListening || !this.silenceStartTime) return;
+      
+      const silenceDuration = Date.now() - this.silenceStartTime.getTime();
+      
+      // Check if we've hit the 2-second silence threshold
+      if (silenceDuration >= this.config.maxSilenceDuration) {
+        console.log(`⏰ VoiceActivityService: Silence timeout reached (${silenceDuration}ms)`);
+        
+        // Emit the current chunk and notify silence detected
+        if (this.callbacks?.onSilenceDetected) {
+          this.callbacks.onSilenceDetected(silenceDuration);
+        }
+        
+        // Reset silence timer
+        this.silenceStartTime = new Date();
+      }
+    }, MONITOR_INTERVAL_MS);
+  }
+  
+  /**
+   * Emit audio chunk with metadata
+   * Phase 1 - Emit ~2s chunks with metadata
+   */
+  private async emitChunk(uri: string, duration: number): Promise<void> {
+    this.chunkCount++;
+    
+    const chunk: AudioChunk = {
+      uri,
+      duration,
+      timestamp: new Date(),
+      silenceDuration: this.silenceStartTime ? Date.now() - this.silenceStartTime.getTime() : 0,
+      confidenceScore: 0.8 // Placeholder for Phase 1
+    };
+    
+    console.log(`📦 VoiceActivityService: Chunk #${this.chunkCount} emitted:`, {
+      duration: `${duration}ms`,
+      uri: uri.substring(uri.length - 20),
+      timestamp: chunk.timestamp.toISOString()
+    });
+    
+    // Call the speech end callback with the chunk
+    if (this.callbacks?.onSpeechEnd) {
+      this.callbacks.onSpeechEnd(chunk);
+    }
+  }
+  
+  /**
+   * Reset silence timer on speech detection
+   * Phase 1 - Reset when speech is detected
+   */
+  public resetSilenceTimer(): void {
+    console.log('🗣️ VoiceActivityService: Speech detected, resetting silence timer');
+    this.silenceStartTime = new Date();
+    
+    if (this.callbacks?.onSpeechStart) {
+      this.callbacks.onSpeechStart();
     }
   }
 
@@ -172,18 +311,35 @@ export class VoiceActivityService {
     try {
       console.log('🛑 VoiceActivityService: Stopping listening...');
       
-      // Clear timers
-      this.clearTimers();
+      // Clear all timers
+      if (this.silenceTimer) {
+        clearTimeout(this.silenceTimer);
+        this.silenceTimer = null;
+      }
       
-      // Stop audio analysis
+      if (this.chunkTimer) {
+        clearInterval(this.chunkTimer);
+        this.chunkTimer = null;
+      }
+      
       if (this.audioAnalysisInterval) {
         clearInterval(this.audioAnalysisInterval);
         this.audioAnalysisInterval = null;
       }
 
-      // Stop and clean up recording
+      // Stop and emit final chunk
       if (this.recording) {
+        const uri = this.recording.getURI();
         await this.recording.stopAndUnloadAsync();
+        
+        // Emit final chunk if it has content
+        if (uri && this.chunkStartTime) {
+          const duration = Date.now() - this.chunkStartTime.getTime();
+          if (duration > 100) {
+            await this.emitChunk(uri, duration);
+          }
+        }
+        
         this.recording = null;
       }
 
@@ -193,8 +349,11 @@ export class VoiceActivityService {
       this.speechStartTime = null;
       this.chunkStartTime = null;
       this.lastSpeechTime = null;
+      this.silenceStartTime = null;
+      this.chunkCount = 0;
 
       console.log('✅ VoiceActivityService: Mic stopped');
+      console.log(`📊 Total chunks created: ${this.chunkCount}`);
       
     } catch (error) {
       console.error('❌ VoiceActivityService: Error stopping listening:', error);
