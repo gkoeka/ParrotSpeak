@@ -10,6 +10,9 @@ import VoiceActivityService, { AudioChunk } from './VoiceActivityService';
 import { speechService } from './speechService';
 import * as Speech from 'expo-speech';
 
+// Re-export AudioChunk for other modules
+export { AudioChunk } from './VoiceActivityService';
+
 export enum ConversationState {
   IDLE = 'idle',
   LISTENING_SOURCE = 'listening_source',

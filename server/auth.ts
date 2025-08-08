@@ -5,7 +5,7 @@ import { Express, Request } from "express";
 import session from "express-session";
 import { db } from "../db";
 import { users } from "@shared/schema";
-import { verifyPassword, findOrCreateGoogleUser, getUserById } from "./services/auth";
+import { verifyPassword, findOrCreateGoogleUser, getUserById } from "./services/auth.js";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "../db";
 import { eq } from "drizzle-orm";
@@ -185,7 +185,7 @@ export async function requireSubscription(req: Request, res: any, next: any) {
     }
     
     // Check subscription status with fresh data from database
-    const { hasValidAccess } = await import("../services/auth");
+    const { hasValidAccess } = await import("./services/auth.js");
     
     if (!hasValidAccess(freshUser)) {
       return res.status(403).json({ message: 'Active subscription or preview access required' });
