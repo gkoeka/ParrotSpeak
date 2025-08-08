@@ -243,15 +243,23 @@ export default function VoiceInputControls({
         
         console.log('🎤 Starting Phase 1 VAD recording with 2-second rule...');
         
-        // Start the VAD service listening
-        await voiceActivityServiceRef.current.startListening();
-        actions.setListening(true);
-        
-        // Reset silence timer to start fresh
-        voiceActivityServiceRef.current.resetSilenceTimer();
-        
-        // Start a simple timer-based silence detection as backup
-        startSilenceDetectionTimer();
+        try {
+          // Start the VAD service listening
+          await voiceActivityServiceRef.current.startListening();
+          actions.setListening(true);
+          
+          // Reset silence timer to start fresh
+          voiceActivityServiceRef.current.resetSilenceTimer();
+          
+          // Start a simple timer-based silence detection as backup
+          startSilenceDetectionTimer();
+        } catch (vadError) {
+          console.error('❌ VAD start failed, falling back to regular recording:', vadError);
+          // Fall back to regular recording
+          setIsRecording(false);
+          isRecordingRef.current = false;
+          throw vadError;
+        }
         
         console.log('✅ Phase 1 recording started - will auto-stop after 2 seconds of silence');
       } else {
@@ -262,7 +270,7 @@ export default function VoiceInputControls({
         
         const result = await startRecording();
         recordingRef.current = result;
-        console.log('Recording started:', result.uri);
+        console.log('Recording started with URI:', result.uri);
       }
       
     } catch (error) {
@@ -300,6 +308,7 @@ export default function VoiceInputControls({
         
         const result = await stopRecording();
         console.log('Recording stopped:', result.uri);
+        recordingRef.current = null; // Clear the ref after stopping
         
         // Process the recording
         await processAudio(result.uri);

@@ -150,6 +150,7 @@ export class VoiceActivityService {
       // Stop current recording if exists
       if (this.recording) {
         const uri = this.recording.getURI();
+        console.log('🔄 Stopping current chunk recording...');
         await this.recording.stopAndUnloadAsync();
         
         // Save the chunk if it has content
@@ -159,9 +160,11 @@ export class VoiceActivityService {
             await this.emitChunk(uri, duration);
           }
         }
+        this.recording = null; // Clear the recording instance
       }
       
-      // Create new recording
+      // Create new recording - use separate instance to avoid conflicts
+      console.log('🎤 Creating new chunk recording...');
       this.recording = new Audio.Recording();
       
       // Configure recording options for chunks
@@ -196,6 +199,7 @@ export class VoiceActivityService {
       
       this.chunkStartTime = new Date();
       this.currentChunkUri = this.recording.getURI() || null;
+      console.log(`✅ Chunk #${this.chunkCount + 1} recording started`);
       
     } catch (error) {
       console.error('❌ VoiceActivityService: Error starting new chunk:', error);
@@ -343,6 +347,14 @@ export class VoiceActivityService {
         this.recording = null;
       }
 
+      // Reset audio mode to stop recording
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        playThroughEarpieceAndroid: false,
+        staysActiveInBackground: false,
+      });
+      
       // Reset state
       this.isListening = false;
       this.isSpeechActive = false;
@@ -352,7 +364,7 @@ export class VoiceActivityService {
       this.silenceStartTime = null;
       this.chunkCount = 0;
 
-      console.log('✅ VoiceActivityService: Mic stopped');
+      console.log('✅ VoiceActivityService: Mic stopped and audio mode reset');
       console.log(`📊 Total chunks created: ${this.chunkCount}`);
       
     } catch (error) {
