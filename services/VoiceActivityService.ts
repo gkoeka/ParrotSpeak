@@ -155,16 +155,23 @@ export class VoiceActivityService {
     try {
       // Stop current recording if exists
       if (this.recording) {
-        const uri = this.recording.getURI();
-        console.log('🔄 Stopping current chunk recording...');
-        await this.recording.stopAndUnloadAsync();
-        
-        // Save the chunk if it has content
-        if (uri && this.chunkStartTime) {
-          const duration = Date.now() - this.chunkStartTime.getTime();
-          if (duration > 100) { // Only save chunks longer than 100ms
-            await this.emitChunk(uri, duration);
+        try {
+          const status = await this.recording.getStatusAsync();
+          if (status.isRecording) {
+            const uri = this.recording.getURI();
+            console.log('🔄 Stopping current chunk recording...');
+            await this.recording.stopAndUnloadAsync();
+            
+            // Save the chunk if it has content
+            if (uri && this.chunkStartTime) {
+              const duration = Date.now() - this.chunkStartTime.getTime();
+              if (duration > 100) { // Only save chunks longer than 100ms
+                await this.emitChunk(uri, duration);
+              }
+            }
           }
+        } catch (stopError) {
+          console.log('⚠️ Recording already stopped or not prepared');
         }
         this.recording = null; // Clear the recording instance
       }
@@ -343,15 +350,22 @@ export class VoiceActivityService {
 
       // Stop and emit final chunk
       if (this.recording) {
-        const uri = this.recording.getURI();
-        await this.recording.stopAndUnloadAsync();
-        
-        // Emit final chunk if it has content
-        if (uri && this.chunkStartTime) {
-          const duration = Date.now() - this.chunkStartTime.getTime();
-          if (duration > 100) {
-            await this.emitChunk(uri, duration);
+        try {
+          const status = await this.recording.getStatusAsync();
+          if (status.isRecording) {
+            const uri = this.recording.getURI();
+            await this.recording.stopAndUnloadAsync();
+            
+            // Emit final chunk if it has content
+            if (uri && this.chunkStartTime) {
+              const duration = Date.now() - this.chunkStartTime.getTime();
+              if (duration > 100) {
+                await this.emitChunk(uri, duration);
+              }
+            }
           }
+        } catch (stopError) {
+          console.log('⚠️ Recording already stopped or not prepared');
         }
         
         this.recording = null;
