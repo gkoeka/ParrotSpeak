@@ -130,6 +130,8 @@ export default function VoiceInputControls({
     const initializeVAD = async () => {
       try {
         console.log('🎤 VoiceInputControls: Initializing Phase 1 VoiceActivityService for Conversation Mode...');
+        console.log('   conversationModeEnabled:', state.conversationModeEnabled);
+        console.log('   Current vadInitialized:', vadInitialized);
         
         const vadService = new VoiceActivityService();
         voiceActivityServiceRef.current = vadService;
@@ -184,11 +186,14 @@ export default function VoiceInputControls({
         actions.setMicPermission(true);
         setVadInitialized(true);
         console.log('✅ VoiceInputControls: Phase 1 VAD initialized with chunking');
+        console.log('   vadInitialized set to true');
         
       } catch (error) {
         console.error('❌ VoiceInputControls: Failed to initialize VAD:', error);
+        console.error('   Error details:', error instanceof Error ? error.message : error);
         actions.setError(error instanceof Error ? error.message : 'Failed to initialize voice detection');
         actions.setMicPermission(false);
+        setVadInitialized(false);
       }
     };
 
@@ -229,6 +234,10 @@ export default function VoiceInputControls({
 
   const handleStartRecording = async () => {
     try {
+      console.log('📱 handleStartRecording called');
+      console.log('   vadInitialized:', vadInitialized);
+      console.log('   voiceActivityServiceRef.current:', !!voiceActivityServiceRef.current);
+      
       // Phase 1: Use VoiceActivityService for recording with chunks
       if (voiceActivityServiceRef.current && vadInitialized) {
         setIsRecording(true);
