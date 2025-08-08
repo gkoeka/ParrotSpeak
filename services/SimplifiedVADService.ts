@@ -104,6 +104,20 @@ export class SimplifiedVADService {
       this.setState(RecordingState.RECORDING);
       console.log('🎤 Starting utterance recording...');
       
+      // CRITICAL: Clean up any existing recording first
+      if (this.recording) {
+        console.log('⚠️ Cleaning up existing recording before starting new one');
+        try {
+          const status = await this.recording.getStatusAsync();
+          if (status.isRecording) {
+            await this.recording.stopAndUnloadAsync();
+          }
+        } catch (e) {
+          console.log('Previous recording cleanup error (safe to ignore):', e);
+        }
+        this.recording = null;
+      }
+      
       // Set audio mode
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
@@ -312,9 +326,28 @@ export class SimplifiedVADService {
   public async cleanup(): Promise<void> {
     console.log('🧹 Cleaning up VAD service...');
     
-    // Stop any active recording
-    if (this.state === RecordingState.RECORDING) {
-      await this.stopUtterance();
+    // Clear all timers first
+    if (this.silenceTimer) {
+      clearTimeout(this.silenceTimer);
+      this.silenceTimer = null;
+    }
+    
+    if (this.maxDurationTimer) {
+      clearTimeout(this.maxDurationTimer);
+      this.maxDurationTimer = null;
+    }
+    
+    // Force cleanup any recording (even if not in RECORDING state)
+    if (this.recording) {
+      try {
+        const status = await this.recording.getStatusAsync();
+        if (status.isRecording) {
+          await this.recording.stopAndUnloadAsync();
+        }
+      } catch (e) {
+        // Ignore errors during cleanup
+      }
+      this.recording = null;
     }
     
     // Clear all file cleanup timers
