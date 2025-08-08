@@ -121,15 +121,15 @@ export default function VoiceInputControls({
 
   // Phase 1: Initialize VoiceActivityService for chunking and 2-second rule
   useEffect(() => {
-    // Only initialize standalone VAD if not using conversation mode
-    if (state.conversationModeEnabled) {
-      console.log('🔇 VoiceInputControls: Skipping standalone VAD - Conversation Mode is active');
+    // Initialize VAD for conversation mode with 2-second rule
+    if (!state.conversationModeEnabled) {
+      console.log('🔇 VoiceInputControls: Conversation Mode disabled, VAD not needed');
       return;
     }
     
     const initializeVAD = async () => {
       try {
-        console.log('🎤 VoiceInputControls: Initializing Phase 1 VoiceActivityService...');
+        console.log('🎤 VoiceInputControls: Initializing Phase 1 VoiceActivityService for Conversation Mode...');
         
         const vadService = new VoiceActivityService();
         voiceActivityServiceRef.current = vadService;
@@ -192,6 +192,7 @@ export default function VoiceInputControls({
       }
     };
 
+    console.log('🚀 Starting VAD initialization because conversationModeEnabled =', state.conversationModeEnabled);
     initializeVAD();
 
     // Cleanup on unmount
