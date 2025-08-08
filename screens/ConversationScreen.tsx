@@ -15,6 +15,7 @@ import { LanguagePreferencesStorage } from '../utils/languagePreferences';
 
 import LanguageSelector from '../components/LanguageSelectorMobile';
 import PerformanceIndicator from '../components/PerformanceMonitor';
+import ConversationModeIndicator from '../components/ConversationModeIndicator';
 
 type ConversationNavigationProp = StackNavigationProp<RootStackParamList, 'Conversation'>;
 
@@ -279,6 +280,9 @@ export default function ConversationScreen() {
           })
         )}
       </ScrollView>
+      
+      {/* Conversation Mode indicator */}
+      <ConversationModeIndicator />
       
       <View style={styles.controlsContainer}>
         <VoiceInputControls 

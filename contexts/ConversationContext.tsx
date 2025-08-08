@@ -8,6 +8,7 @@
 
 import React, { createContext, useContext, useReducer, useCallback, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AppState, AppStateStatus } from 'react-native';
 import AlwaysListeningService, { 
   ConversationState, 
   SpeakerRole, 
@@ -15,12 +16,25 @@ import AlwaysListeningService, {
   ConversationTurn,
   AudioChunk
 } from '../services/AlwaysListeningService';
+import { 
+  ConversationSessionService, 
+  SessionState, 
+  SessionCallbacks 
+} from '../services/ConversationSessionService';
+
+// Export SessionState from here for easy access by components
+export { SessionState } from '../services/ConversationSessionService';
 
 export interface ConversationUIState {
   // Conversation mode state (formerly "Always Listening")
   conversationModeEnabled: boolean;  // Persistent preference from settings
   isAlwaysListeningEnabled: boolean; // Deprecated - kept for compatibility
   isAlwaysListeningActive: boolean;
+  
+  // Session state for tap-to-arm lifecycle
+  sessionState: SessionState;
+  sessionStartTime: Date | null;
+  sessionUtteranceCount: number;
   
   // Current conversation state
   conversationState: ConversationState;
@@ -75,7 +89,11 @@ export interface ConversationActions {
   enableAlwaysListening: () => void;
   disableAlwaysListening: () => void;
   setConversationModeEnabled: (enabled: boolean) => Promise<void>;
-
+  
+  // Session lifecycle controls (tap-to-arm)
+  startConversationSession: () => Promise<void>;
+  endConversationSession: (reason?: string) => Promise<void>;
+  setSessionState: (state: SessionState) => void;
   
   // Phase 1: VoiceActivityService controls
   startListening: () => Promise<void>;
@@ -140,6 +158,10 @@ type ConversationActionType =
   | { type: 'ENABLE_ALWAYS_LISTENING' }
   | { type: 'DISABLE_ALWAYS_LISTENING' }
   | { type: 'SET_CONVERSATION_MODE_ENABLED'; payload: boolean }
+  | { type: 'SET_SESSION_STATE'; payload: SessionState }
+  | { type: 'SET_SESSION_START_TIME'; payload: Date | null }
+  | { type: 'INCREMENT_SESSION_UTTERANCE_COUNT' }
+  | { type: 'RESET_SESSION_STATS' }
   | { type: 'SET_LISTENING'; payload: boolean }
   | { type: 'SET_MIC_PERMISSION'; payload: boolean }
   | { type: 'SET_CONVERSATION_STATE'; payload: ConversationState }
@@ -170,6 +192,9 @@ const initialState: ConversationUIState = {
   conversationModeEnabled: true,  // Default to true for new installs
   isAlwaysListeningEnabled: false,
   isAlwaysListeningActive: false,
+  sessionState: SessionState.DISARMED,
+  sessionStartTime: null,
+  sessionUtteranceCount: 0,
   conversationState: ConversationState.IDLE,
   currentSpeaker: SpeakerRole.SOURCE,
   isListening: false,
@@ -230,6 +255,7 @@ function conversationReducer(
         // If disabling, also stop the active session
         ...(action.payload === false && {
           isAlwaysListeningActive: false,
+          sessionState: SessionState.DISARMED,
           conversationState: ConversationState.IDLE,
           isListening: false,
           isMicrophoneActive: false,
@@ -237,6 +263,18 @@ function conversationReducer(
           audioLevel: 0,
         }),
       };
+      
+    case 'SET_SESSION_STATE':
+      return { ...state, sessionState: action.payload };
+      
+    case 'SET_SESSION_START_TIME':
+      return { ...state, sessionStartTime: action.payload };
+      
+    case 'INCREMENT_SESSION_UTTERANCE_COUNT':
+      return { ...state, sessionUtteranceCount: state.sessionUtteranceCount + 1 };
+      
+    case 'RESET_SESSION_STATS':
+      return { ...state, sessionStartTime: null, sessionUtteranceCount: 0 };
 
     case 'SET_LISTENING':
       // Phase 1 - Update VoiceActivityService listening state
@@ -419,6 +457,7 @@ const ConversationContext = createContext<ConversationContextType | undefined>(u
 export function ConversationProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(conversationReducer, initialState);
   const alwaysListeningServiceRef = useRef<AlwaysListeningService | null>(null);
+  const sessionServiceRef = useRef<ConversationSessionService | null>(null);
   
   // Load conversation mode preference on mount
   useEffect(() => {
@@ -569,7 +608,76 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
       // If enabling, we don't start the service - it will be started manually when needed
     }, [state.sourceLanguage, state.targetLanguage]),
 
-
+    // Session lifecycle controls
+    startConversationSession: useCallback(async () => {
+      console.log('🚀 Starting Conversation Mode session...');
+      
+      if (!state.conversationModeEnabled) {
+        console.log('⚠️ Conversation Mode is disabled in settings');
+        return;
+      }
+      
+      // Initialize session service if needed
+      if (!sessionServiceRef.current) {
+        sessionServiceRef.current = new ConversationSessionService();
+        
+        const callbacks: SessionCallbacks = {
+          onSessionStart: () => {
+            dispatch({ type: 'SET_SESSION_START_TIME', payload: new Date() });
+            dispatch({ type: 'RESET_SESSION_STATS' });
+            console.log('✅ Session started');
+          },
+          onSessionEnd: () => {
+            dispatch({ type: 'SET_SESSION_STATE', payload: SessionState.DISARMED });
+            dispatch({ type: 'RESET_SESSION_STATS' });
+            console.log('✅ Session ended');
+          },
+          onRecordingStart: () => {
+            dispatch({ type: 'SET_MICROPHONE_ACTIVE', payload: true });
+          },
+          onRecordingStop: () => {
+            dispatch({ type: 'SET_MICROPHONE_ACTIVE', payload: false });
+          },
+          onUtteranceReady: async (uri: string, duration: number) => {
+            dispatch({ type: 'INCREMENT_SESSION_UTTERANCE_COUNT' });
+            // This will be handled by VoiceInputControls
+            console.log(`📦 Utterance ready: ${duration}ms`);
+          },
+          onProcessingStart: () => {
+            dispatch({ type: 'SET_AUDIO_PROCESSING', payload: true });
+          },
+          onProcessingComplete: () => {
+            dispatch({ type: 'SET_AUDIO_PROCESSING', payload: false });
+          },
+          onStateChange: (newState: SessionState) => {
+            dispatch({ type: 'SET_SESSION_STATE', payload: newState });
+          },
+          onError: (error: Error) => {
+            dispatch({ type: 'SET_ERROR', payload: error.message });
+          },
+          onAutoDisarm: (reason: string) => {
+            console.log(`⏰ Session auto-disarmed: ${reason}`);
+          }
+        };
+        
+        await sessionServiceRef.current.initialize(callbacks);
+      }
+      
+      // Start the session
+      await sessionServiceRef.current.startSession();
+    }, [state.conversationModeEnabled]),
+    
+    endConversationSession: useCallback(async (reason?: string) => {
+      console.log(`🛑 Ending session${reason ? ` (${reason})` : ''}...`);
+      
+      if (sessionServiceRef.current) {
+        await sessionServiceRef.current.endSession(reason || 'user');
+      }
+    }, []),
+    
+    setSessionState: useCallback((sessionState: SessionState) => {
+      dispatch({ type: 'SET_SESSION_STATE', payload: sessionState });
+    }, []),
 
     // Phase 1: VoiceActivityService controls
     startListening: useCallback(async () => {
@@ -692,6 +800,26 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     // Service state changes are handled via callbacks in enableAlwaysListening/disableAlwaysListening
   }, [state.isAlwaysListeningEnabled]);
+  
+  // Handle app state changes (background/foreground)
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      console.log(`📱 App state changed: ${nextAppState}`);
+      
+      if (nextAppState === 'background' || nextAppState === 'inactive') {
+        // End session when app goes to background
+        if (sessionServiceRef.current?.isArmed()) {
+          sessionServiceRef.current.onAppBackground();
+        }
+      }
+    };
+    
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   const contextValue: ConversationContextType = {
     state,

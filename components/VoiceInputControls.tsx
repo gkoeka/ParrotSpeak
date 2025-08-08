@@ -7,8 +7,8 @@ import { translateText } from '../api/languageService';
 import { getLanguageByCode } from '../constants/languageConfiguration';
 import { performanceMonitor } from '../utils/performanceMonitor';
 import AlwaysListeningToggle from './AlwaysListeningToggle';
-// Migrating to turn-based VAD to fix Expo's single-recording constraint
-import { SimplifiedVADService, type SimplifiedVADCallbacks, type UtteranceChunk, RecordingState } from '../services/SimplifiedVADService';
+// Session-based Conversation Mode (tap-to-arm lifecycle)
+import { ConversationSessionService, SessionState } from '../services/ConversationSessionService';
 import { useConversation } from '../contexts/ConversationContext';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -44,10 +44,9 @@ export default function VoiceInputControls({
   const [textInput, setTextInput] = useState('');
   const [showTextInput, setShowTextInput] = useState(false);
   
-  // Turn-based VAD service integration
-  const vadServiceRef = useRef<SimplifiedVADService | null>(null);
-  const [vadInitialized, setVadInitialized] = useState(false);
-  const [recordingState, setRecordingState] = useState<RecordingState>(RecordingState.IDLE);
+  // Session-based service integration
+  const sessionServiceRef = useRef<ConversationSessionService | null>(null);
+  const [sessionInitialized, setSessionInitialized] = useState(false);
   
   // Remove duplicate timers - VAD service handles all timing
   const recordingRef = useRef<any>(null);
@@ -78,94 +77,120 @@ export default function VoiceInputControls({
   
   // Handle touch events to reset silence timer during recording
   const handleRecordingTouch = () => {
-    if (isRecordingRef.current && vadServiceRef.current) {
+    if (isRecordingRef.current && sessionServiceRef.current) {
       console.log('👆 User speaking - resetting silence timer');
-      vadServiceRef.current.onSpeechDetected();
+      sessionServiceRef.current.onSpeechDetected();
     }
   };
 
-  // Initialize Turn-based VAD Service for conversation mode
+  // Initialize Conversation Session Service
   useEffect(() => {
     if (!state.conversationModeEnabled) {
-      console.log('🔇 Conversation Mode disabled, VAD not needed');
+      console.log('🔇 Conversation Mode disabled in settings');
       return;
     }
     
-    const initializeVAD = async () => {
+    const initializeSession = async () => {
       try {
-        console.log('🎤 Initializing Turn-based VAD Service...');
+        console.log('🎤 Initializing Conversation Session Service...');
         
-        const vadService = new SimplifiedVADService();
-        vadServiceRef.current = vadService;
+        const service = new ConversationSessionService();
+        sessionServiceRef.current = service;
         
-        // Set up callbacks for turn-based VAD events
-        const callbacks: SimplifiedVADCallbacks = {
-          onRecordingStart: () => {
-            console.log('🗣️ Utterance recording started');
+        // Set up callbacks for session events
+        const callbacks = {
+          onSessionStart: () => {
+            console.log('🚀 Session started');
             actions.setMicrophoneActive(true);
           },
-          onUtteranceComplete: async (chunk: UtteranceChunk) => {
-            console.log('📦 Utterance complete:', {
-              duration: `${chunk.duration}ms`,
-              uri: chunk.uri.substring(chunk.uri.length - 20)
+          onSessionEnd: () => {
+            console.log('🛑 Session ended');
+            actions.setMicrophoneActive(false);
+            setIsRecording(false);
+            isRecordingRef.current = false;
+          },
+          onRecordingStart: () => {
+            console.log('🗣️ Recording started');
+            actions.setMicrophoneActive(true);
+          },
+          onRecordingStop: () => {
+            console.log('🔇 Recording stopped');
+            actions.setMicrophoneActive(false);
+          },
+          onUtteranceReady: async (uri: string, duration: number) => {
+            console.log('📦 Utterance ready:', {
+              duration: `${duration}ms`,
+              uri: uri.substring(uri.length - 20)
             });
             
             // Process utterance for translation
-            if (chunk.duration > 500) { // Only process meaningful utterances
+            if (duration > 500) { // Only process meaningful utterances
               console.log('🔄 Processing utterance for translation...');
-              await processUtterance(chunk);
+              await processUtteranceFromUri(uri, duration);
+            }
+            
+            // Mark processing complete to return to ARMED_IDLE
+            if (sessionServiceRef.current) {
+              await sessionServiceRef.current.onProcessingComplete();
             }
           },
-          onSilenceDetected: () => {
-            console.log('🔇 Silence detected - utterance ending');
-            actions.setMicrophoneActive(false);
+          onProcessingStart: () => {
+            console.log('⚙️ Processing started');
+            setIsProcessing(true);
+          },
+          onProcessingComplete: () => {
+            console.log('✅ Processing complete');
+            setIsProcessing(false);
+          },
+          onStateChange: (newState: SessionState) => {
+            console.log(`📊 Session state: ${newState}`);
+            actions.setSessionState(newState);
           },
           onError: (error: Error) => {
-            console.error('❌ VAD error:', error);
+            console.error('❌ Session error:', error);
             actions.setError(error.message);
           },
-          onStateChange: (state: RecordingState) => {
-            setRecordingState(state);
-            console.log(`📊 Recording state changed to: ${state}`);
+          onAutoDisarm: (reason: string) => {
+            console.log(`⏰ Session auto-disarmed: ${reason}`);
           }
         };
         
-        await vadService.initialize(callbacks);
+        await service.initialize(callbacks);
         actions.setMicPermission(true);
-        setVadInitialized(true);
-        console.log('✅ Turn-based VAD initialized');
+        setSessionInitialized(true);
+        console.log('✅ Session service initialized');
         
       } catch (error) {
-        console.error('❌ Failed to initialize VAD:', error);
-        actions.setError(error instanceof Error ? error.message : 'Failed to initialize voice detection');
+        console.error('❌ Failed to initialize session:', error);
+        actions.setError(error instanceof Error ? error.message : 'Failed to initialize conversation mode');
         actions.setMicPermission(false);
-        setVadInitialized(false);
+        setSessionInitialized(false);
       }
     };
 
-    console.log('🚀 Starting VAD initialization');
-    initializeVAD();
+    console.log('🚀 Starting session initialization');
+    initializeSession();
 
     // Cleanup on unmount
     return () => {
-      if (vadServiceRef.current) {
-        console.log('✅ VAD cleanup');
-        vadServiceRef.current.cleanup();
-        vadServiceRef.current = null;
+      if (sessionServiceRef.current) {
+        console.log('✅ Session cleanup');
+        sessionServiceRef.current.endSession('unmount');
+        sessionServiceRef.current = null;
       }
     };
   }, [state.conversationModeEnabled, actions]);
 
 
 
-  // Process an utterance chunk
-  const processUtterance = async (chunk: UtteranceChunk) => {
+  // Process an utterance from URI
+  const processUtteranceFromUri = async (uri: string, duration: number) => {
     try {
       setIsProcessing(true);
-      console.log('🎯 Processing utterance:', chunk.uri);
+      console.log('🎯 Processing utterance:', uri);
       
       // Process the audio file for transcription
-      const transcription = await processRecording(chunk.uri, sourceLanguage);
+      const transcription = await processRecording(uri, sourceLanguage);
       console.log('📝 Transcription:', transcription);
       
       // Translate the text
@@ -205,42 +230,41 @@ export default function VoiceInputControls({
   const handleStartRecording = async () => {
     try {
       console.log('📱 handleStartRecording called');
-      console.log('   vadInitialized:', vadInitialized);
-      console.log('   vadServiceRef.current:', !!vadServiceRef.current);
-      console.log('   recordingState:', recordingState);
+      console.log('   sessionInitialized:', sessionInitialized);
+      console.log('   sessionServiceRef.current:', !!sessionServiceRef.current);
+      console.log('   sessionState:', state.sessionState);
       
-      // Check if we should use VAD or regular recording
-      const useVAD = vadServiceRef.current && vadInitialized && state.conversationModeEnabled;
-      console.log('📊 Recording mode:', useVAD ? 'VAD (Conversation Mode)' : 'Regular');
+      // Check if we should use session-based recording or regular recording
+      const useSession = sessionServiceRef.current && sessionInitialized && state.conversationModeEnabled;
+      console.log('📊 Recording mode:', useSession ? 'Session (Conversation Mode)' : 'Regular');
       
-      if (useVAD) {
-        // Use Turn-based VAD for recording
-        if (recordingState !== RecordingState.IDLE) {
-          console.log('⚠️ Cannot start: already in state', recordingState);
-          return;
+      if (useSession) {
+        // Session-based recording
+        const currentState = sessionServiceRef.current.getState();
+        
+        if (currentState === SessionState.DISARMED) {
+          // Start a new session
+          console.log('🚀 Starting new Conversation Mode session...');
+          await sessionServiceRef.current.startSession();
+          // Session is now ARMED_IDLE, ready for recording
         }
         
-        setIsRecording(true);
-        isRecordingRef.current = true;
-        
-        console.log('🎤 Starting turn-based utterance recording...');
-        
-        try {
-          // Start a single utterance recording
-          await vadServiceRef.current.startUtterance();
+        if (currentState === SessionState.ARMED_IDLE || sessionServiceRef.current.getState() === SessionState.ARMED_IDLE) {
+          // Start recording
+          console.log('🎤 Starting recording in session...');
+          setIsRecording(true);
+          isRecordingRef.current = true;
+          await sessionServiceRef.current.startRecording();
           actions.setListening(true);
-          console.log('✅ Utterance recording started - will auto-stop after 1.8s of silence');
-        } catch (vadError) {
-          console.error('❌ VAD start failed:', vadError);
-          setIsRecording(false);
-          isRecordingRef.current = false;
-          throw vadError;
+          console.log('✅ Utterance recording started - will auto-stop after 2s of silence');
+        } else {
+          console.log(`⚠️ Cannot start recording in state: ${currentState}`);
         }
       } else {
-        // Fallback to regular recording if VAD not initialized or conversation mode disabled
+        // Fallback to regular recording if session not initialized or conversation mode disabled
         setIsRecording(true);
         isRecordingRef.current = true;
-        console.log('Starting regular recording (Conversation Mode disabled or VAD not available)...');
+        console.log('Starting regular recording (Conversation Mode disabled or session not available)...');
         
         const result = await startRecording();
         recordingRef.current = result;
@@ -263,12 +287,12 @@ export default function VoiceInputControls({
       setIsRecording(false);
       isRecordingRef.current = false;
       
-      // Use Turn-based VAD service if available
-      if (vadServiceRef.current && state.isListening) {
-        console.log('🛑 Stopping turn-based utterance recording...');
-        await vadServiceRef.current.stopUtterance();
+      // Use session service if available
+      if (sessionServiceRef.current && state.sessionState === SessionState.RECORDING) {
+        console.log('🛑 Stopping session recording (forced)...');
+        // Session will handle the stop automatically, we just update UI
         actions.setListening(false);
-        console.log('✅ Utterance recording stopped');
+        console.log('✅ Recording stop requested');
       } else if (recordingRef.current) {
         // Fallback to regular recording stop
         setIsProcessing(true);
