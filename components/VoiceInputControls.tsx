@@ -209,8 +209,12 @@ export default function VoiceInputControls({
       console.log('   vadServiceRef.current:', !!vadServiceRef.current);
       console.log('   recordingState:', recordingState);
       
-      // Use Turn-based VAD for recording
-      if (vadServiceRef.current && vadInitialized) {
+      // Check if we should use VAD or regular recording
+      const useVAD = vadServiceRef.current && vadInitialized && state.conversationModeEnabled;
+      console.log('📊 Recording mode:', useVAD ? 'VAD (Conversation Mode)' : 'Regular');
+      
+      if (useVAD) {
+        // Use Turn-based VAD for recording
         if (recordingState !== RecordingState.IDLE) {
           console.log('⚠️ Cannot start: already in state', recordingState);
           return;
@@ -233,10 +237,10 @@ export default function VoiceInputControls({
           throw vadError;
         }
       } else {
-        // Fallback to regular recording if VAD not initialized
+        // Fallback to regular recording if VAD not initialized or conversation mode disabled
         setIsRecording(true);
         isRecordingRef.current = true;
-        console.log('Starting regular recording (VAD not available)...');
+        console.log('Starting regular recording (Conversation Mode disabled or VAD not available)...');
         
         const result = await startRecording();
         recordingRef.current = result;

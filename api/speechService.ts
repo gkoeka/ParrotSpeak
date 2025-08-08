@@ -212,6 +212,20 @@ export async function startRecording(): Promise<{ uri: string }> {
       throw new Error('Audio recording permission not granted');
     }
     
+    // CRITICAL: Clean up any existing recording first
+    if (recording) {
+      console.log('⚠️ [speechService] Cleaning up existing recording before starting new one');
+      try {
+        const status = await recording.getStatusAsync();
+        if (status.isRecording) {
+          await recording.stopAndUnloadAsync();
+        }
+      } catch (e) {
+        console.log('[speechService] Previous recording cleanup error (safe to ignore):', e);
+      }
+      recording = null;
+    }
+    
     // Configure audio mode for recording
     await Audio.setAudioModeAsync({
       allowsRecordingIOS: true,
