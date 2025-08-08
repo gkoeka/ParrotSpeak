@@ -74,7 +74,7 @@ export default function VoiceInputControls({
   const isTargetSpeechSupported = targetLanguageConfig?.speechSupported ?? true;
   
   // Use a ref to store the handleStopRecording function to avoid circular dependency
-  const handleStopRecordingRef = useRef<() => Promise<void>>();
+  const handleStopRecordingRef = useRef<() => Promise<void>>(() => Promise.resolve());
   
   // Handle touch events to reset silence timer during recording
   const handleRecordingTouch = () => {
@@ -164,16 +164,35 @@ export default function VoiceInputControls({
       setIsProcessing(true);
       console.log('🎯 Processing utterance:', chunk.uri);
       
-      // Process the audio file for transcription and translation
-      await processRecording(chunk.uri, sourceLanguage, targetLanguage, async (message) => {
-        console.log('📝 Utterance processed:', message);
-        onMessage(message);
-        
-        // Speak the translation if target language supports speech
-        if (isTargetSpeechSupported && message.translation) {
-          await speakText(message.translation, targetLanguage);
-        }
-      });
+      // Process the audio file for transcription
+      const transcription = await processRecording(chunk.uri, sourceLanguage);
+      console.log('📝 Transcription:', transcription);
+      
+      // Translate the text
+      const translationResult = await translateText(
+        transcription,
+        sourceLanguage,
+        targetLanguage
+      );
+      console.log('🌐 Translation:', translationResult);
+      
+      // Create message object
+      const message = {
+        id: Date.now().toString(),
+        text: transcription,
+        translation: translationResult.translation,
+        fromLanguage: sourceLanguage,
+        toLanguage: targetLanguage,
+        timestamp: new Date()
+      };
+      
+      // Add to conversation
+      onMessage(message);
+      
+      // Speak the translation if target language supports speech
+      if (isTargetSpeechSupported && translationResult.translation) {
+        await speakText(translationResult.translation, targetLanguage);
+      }
       
     } catch (error) {
       console.error('❌ Error processing utterance:', error);
