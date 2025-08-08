@@ -51,6 +51,10 @@ export default function VoiceInputControls({
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const recordingRef = useRef<any>(null);
   
+  // Use ref to avoid stale closure issue with isRecording
+  const isRecordingRef = useRef<boolean>(false);
+  const lastSpeechTimeRef = useRef<number>(Date.now());
+  
   // Check if source or target language supports speech
   // Handle language codes that might be passed with regional variants
   const normalizeLanguageCode = (code: string) => {
@@ -70,6 +74,50 @@ export default function VoiceInputControls({
   const targetLanguageConfig = normalizeLanguageCode(targetLanguage);
   const isSourceSpeechSupported = sourceLanguageConfig?.speechSupported ?? true;
   const isTargetSpeechSupported = targetLanguageConfig?.speechSupported ?? true;
+  
+  // Forward declare functions that need to reference each other
+  const startSilenceDetectionTimer = () => {
+    // Clear any existing timer
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+    }
+    
+    // Set a 2-second timer that will auto-stop if not reset
+    silenceTimerRef.current = setTimeout(() => {
+      if (isRecordingRef.current) {
+        console.log('⏰ Backup timer: 2 seconds of silence detected, auto-stopping...');
+        setIsRecording(false);
+        isRecordingRef.current = false;
+        
+        // Stop VAD if running
+        if (voiceActivityServiceRef.current && state.isListening) {
+          voiceActivityServiceRef.current.stopListening().then(() => {
+            console.log('✅ VAD stopped after silence timeout');
+            actions.setListening(false);
+          }).catch(console.error);
+        }
+      }
+    }, 2000);
+  };
+  
+  const resetSilenceTimer = () => {
+    console.log('🗣️ Resetting silence timer due to user interaction');
+    lastSpeechTimeRef.current = Date.now();
+    startSilenceDetectionTimer(); // Restart the timer
+  };
+  
+  // Handle touch events to reset silence timer
+  const handleRecordingTouch = () => {
+    if (isRecordingRef.current) {
+      console.log('👆 User interaction detected during recording');
+      resetSilenceTimer();
+      
+      // Also reset VAD silence timer
+      if (voiceActivityServiceRef.current) {
+        voiceActivityServiceRef.current.resetSilenceTimer();
+      }
+    }
+  };
 
   // Phase 1: Initialize VoiceActivityService for chunking and 2-second rule
   useEffect(() => {
@@ -91,30 +139,39 @@ export default function VoiceInputControls({
           onSpeechStart: () => {
             console.log('🗣️ VoiceInputControls: Speech start detected');
             actions.setMicrophoneActive(true);
-            // Reset silence timer when speech is detected
-            if (voiceActivityServiceRef.current) {
-              voiceActivityServiceRef.current.resetSilenceTimer();
-            }
+            // Update last speech time
+            lastSpeechTimeRef.current = Date.now();
           },
           onSpeechEnd: async (chunk: AudioChunk) => {
             console.log('📦 VoiceInputControls: Chunk received:', {
               duration: `${chunk.duration}ms`,
-              uri: chunk.uri.substring(chunk.uri.length - 20)
+              uri: chunk.uri.substring(chunk.uri.length - 20),
+              isRecording: isRecordingRef.current
             });
             
             // Phase 1: Process chunk for automatic translation
-            if (isRecording && chunk.duration > 500) { // Only process meaningful chunks
+            if (isRecordingRef.current && chunk.duration > 500) { // Only process meaningful chunks
               console.log('🔄 Processing chunk for translation...');
               await processAudioChunk(chunk);
             }
           },
           onSilenceDetected: (duration: number) => {
-            console.log(`⏰ VoiceInputControls: Silence detected (${duration}ms)`);
+            console.log(`⏰ VoiceInputControls: Silence detected (${duration}ms), isRecording: ${isRecordingRef.current}`);
             
             // Phase 1: Auto-stop after 2 seconds of silence
-            if (duration >= 2000 && isRecording) {
+            if (duration >= 2000 && isRecordingRef.current) {
               console.log('⏹️ Auto-stopping after 2 seconds of silence');
-              handleStopRecording();
+              // Use the actual function directly to avoid closure issues
+              setIsRecording(false);
+              isRecordingRef.current = false;
+              
+              // Stop VAD and process final audio
+              if (voiceActivityServiceRef.current) {
+                voiceActivityServiceRef.current.stopListening().then(() => {
+                  console.log('✅ VAD stopped after silence timeout');
+                  actions.setListening(false);
+                }).catch(console.error);
+              }
             }
           },
           onError: (error: Error) => {
@@ -174,6 +231,9 @@ export default function VoiceInputControls({
       // Phase 1: Use VoiceActivityService for recording with chunks
       if (voiceActivityServiceRef.current && vadInitialized) {
         setIsRecording(true);
+        isRecordingRef.current = true; // Update ref for callbacks
+        lastSpeechTimeRef.current = Date.now(); // Reset speech time
+        
         console.log('🎤 Starting Phase 1 VAD recording with 2-second rule...');
         
         // Start the VAD service listening
@@ -183,10 +243,14 @@ export default function VoiceInputControls({
         // Reset silence timer to start fresh
         voiceActivityServiceRef.current.resetSilenceTimer();
         
+        // Start a simple timer-based silence detection as backup
+        startSilenceDetectionTimer();
+        
         console.log('✅ Phase 1 recording started - will auto-stop after 2 seconds of silence');
       } else {
         // Fallback to regular recording if VAD not initialized
         setIsRecording(true);
+        isRecordingRef.current = true;
         console.log('Starting regular recording (VAD not available)...');
         
         const result = await startRecording();
@@ -197,13 +261,35 @@ export default function VoiceInputControls({
     } catch (error) {
       console.error('Error starting recording:', error);
       setIsRecording(false);
+      isRecordingRef.current = false;
       Alert.alert('Error', 'Failed to start recording. Please check microphone permissions.');
     }
+  };
+
+  // Update the timer callback to properly call handleStopRecording
+  const updateSilenceTimer = () => {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+    }
+    
+    silenceTimerRef.current = setTimeout(() => {
+      if (isRecordingRef.current) {
+        console.log('⏰ Backup timer: 2 seconds of silence detected, auto-stopping...');
+        handleStopRecording();
+      }
+    }, 2000);
   };
 
   const handleStopRecording = async () => {
     try {
       setIsRecording(false);
+      isRecordingRef.current = false; // Update ref immediately
+      
+      // Clear silence timer
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = null;
+      }
       
       // Phase 1: Stop VAD service if it's running
       if (voiceActivityServiceRef.current && state.isListening) {
@@ -491,6 +577,7 @@ export default function VoiceInputControls({
           !isSourceSpeechSupported && styles.recordButtonDisabled
         ]}
         onPress={isRecording ? handleStopRecording : handleStartRecording}
+        onPressIn={handleRecordingTouch}
         disabled={isProcessing || !isSourceSpeechSupported}
       >
         <Text style={styles.recordIcon}>
