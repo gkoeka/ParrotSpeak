@@ -6,12 +6,20 @@
  * the high-level conversation flow, language detection, and speaker transitions.
  */
 
-import VoiceActivityService, { AudioChunk } from './VoiceActivityService';
+// Temporarily commented out - migrated to SimplifiedVADService
+// import VoiceActivityService, { AudioChunk } from './VoiceActivityService';
 import { speechService } from './speechService';
 import * as Speech from 'expo-speech';
 
+// Temporary AudioChunk type definition (was from VoiceActivityService)
+export interface AudioChunk {
+  uri: string;
+  duration: number;
+  timestamp: Date;
+}
+
 // Re-export AudioChunk for other modules
-export { AudioChunk } from './VoiceActivityService';
+// export { AudioChunk } from './VoiceActivityService';
 
 export enum ConversationState {
   IDLE = 'idle',
@@ -72,7 +80,8 @@ export interface AlwaysListeningCallbacks {
 }
 
 export class AlwaysListeningService {
-  private voiceActivityService: VoiceActivityService;
+  // private voiceActivityService: VoiceActivityService; // Temporarily disabled - using SimplifiedVADService
+  private voiceActivityService: any; // Placeholder type
   private currentState: ConversationState = ConversationState.IDLE;
   private currentSpeaker: SpeakerRole = SpeakerRole.SOURCE;
   private config: ConversationFlowConfig;
@@ -99,7 +108,8 @@ export class AlwaysListeningService {
     this.initializeSpeakerInfo();
     
     // Create voice activity service
-    this.voiceActivityService = new VoiceActivityService();
+    // this.voiceActivityService = new VoiceActivityService(); // Temporarily disabled
+    this.voiceActivityService = null; // Will be replaced with SimplifiedVADService integration
   }
 
   /**
