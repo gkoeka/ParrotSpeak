@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput } from 'reac
 import { Ionicons } from '@expo/vector-icons';
 
 import { startRecording, stopRecording, processRecording, speakText } from '../api/speechService';
+import { startEnhancedRecording, stopEnhancedRecording } from '../api/enhancedRecording';
 import { translateText } from '../api/languageService';
 import { getLanguageByCode } from '../constants/languageConfiguration';
 import { performanceMonitor } from '../utils/performanceMonitor';
@@ -46,6 +47,10 @@ export default function VoiceInputControls({
   // Phase 1: VoiceActivityService integration
   const voiceActivityServiceRef = useRef<VoiceActivityService | null>(null);
   const [vadInitialized, setVadInitialized] = useState(false);
+  
+  // Auto-processing timer for 2-second silence rule
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const recordingRef = useRef<any>(null);
   
   // Check if source or target language supports speech
   // Handle language codes that might be passed with regional variants
@@ -152,10 +157,32 @@ export default function VoiceInputControls({
   const handleStartRecording = async () => {
     try {
       setIsRecording(true);
-      console.log('Starting recording...');
+      console.log('Starting enhanced recording with silence detection...');
       
-      const result = await startRecording();
-      console.log('Recording started:', result.uri);
+      // Use enhanced recording with real-time silence detection
+      const result = await startEnhancedRecording({
+        onSilenceDetected: (duration: number) => {
+          // Auto-stop after 2 seconds of silence
+          if (duration >= 2000 && isRecording) {
+            console.log('⏰ 2-second silence detected, auto-processing...');
+            handleStopRecording();
+          }
+        },
+        onAudioLevel: (level: number) => {
+          // Optional: Update UI with audio level indicator
+          if (level > 10) {
+            console.log(`🎤 Audio level: ${level.toFixed(0)}%`);
+          }
+        },
+        onSpeechDetected: () => {
+          console.log('🗣️ Speech detected, resetting silence timer');
+        },
+        silenceThreshold: -40, // dB level for silence
+        silenceDuration: 2000, // 2 seconds
+      });
+      
+      recordingRef.current = result;
+      console.log('Enhanced recording started:', result.uri);
       
     } catch (error) {
       console.error('Error starting recording:', error);
@@ -168,10 +195,11 @@ export default function VoiceInputControls({
     try {
       setIsRecording(false);
       setIsProcessing(true);
-      console.log('Stopping recording...');
+      console.log('Stopping enhanced recording...');
       
-      const result = await stopRecording();
-      console.log('Recording stopped:', result.uri);
+      // Use enhanced recording stop method
+      const result = await stopEnhancedRecording();
+      console.log('Enhanced recording stopped:', result.uri);
       
       // Process the recording
       await processAudio(result.uri);
