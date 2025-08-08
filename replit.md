@@ -49,7 +49,7 @@ ParrotSpeak is built as a mobile-first TypeScript application with a clean API b
 - **Profile Management**: Sign Out, Delete Account, and GDPR Export functionality with API integration, confirmation dialogs, and loading states.
 - **Welcome Screen**: First-time launch detection and welcome screen flow for new users.
 - **3-Day Preview Access System**: Provides 3 days of full app functionality for new users before requiring subscription, with automatic setup, status display, expiry warnings, and abuse prevention.
-- **Conversation Mode Implementation**: Multi-phase implementation (formerly "Always Listening") focusing on speaker switching logic, 7-state conversation state machine, automatic speaker switching with configurable silence threshold, conversation turn tracking, real audio processing pipeline, OpenAI Whisper API for transcription, and expo-speech for text-to-speech. Toggle now located in Settings screen with AsyncStorage persistence, defaults to enabled for new users.
+- **Conversation Mode Implementation**: Multi-phase implementation (formerly "Always Listening") focusing on speaker switching logic, 7-state conversation state machine, automatic speaker switching with configurable silence threshold, conversation turn tracking, real audio processing pipeline, OpenAI Whisper API for transcription, and expo-speech for text-to-speech. Toggle now located in Settings screen with AsyncStorage persistence, defaults to enabled for new users. Conversation Mode runs in background only when manually triggered, not automatically when enabled. Chat screen appears normal without overlay when Conversation Mode is enabled but not active.
 
 ## External Dependencies
 

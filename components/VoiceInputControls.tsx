@@ -336,78 +336,80 @@ export default function VoiceInputControls({
 
   return (
     <View style={styles.container}>
-      {/* Voice Activity Detection Controls (used when Conversation Mode is disabled) */}
-      <View style={styles.vadContainer}>
-        <Text style={[styles.vadTitle, { color: isDarkMode ? '#ffffff' : '#000000' }]}>
-          {state.conversationModeEnabled ? 'Conversation Mode Active' : 'Voice Activity Detection'}
-        </Text>
-        
-        <TouchableOpacity
-          style={[
-            styles.vadButton,
-            state.isListening && styles.vadButtonActive,
-            !vadInitialized && styles.vadButtonDisabled,
-            { backgroundColor: state.isListening ? '#ff4444' : '#3366FF' }
-          ]}
-          onPress={handleVADToggle}
-          disabled={!vadInitialized}
-        >
-          <Ionicons 
-            name={state.isListening ? 'stop' : 'mic'} 
-            size={24} 
-            color="#ffffff" 
-          />
-          <Text style={styles.vadButtonText}>
-            {!vadInitialized ? 'Initializing...' : state.isListening ? 'Stop Listening' : 'Start Listening'}
+      {/* Voice Activity Detection Controls - Hidden when Conversation Mode is enabled */}
+      {!state.conversationModeEnabled && (
+        <View style={styles.vadContainer}>
+          <Text style={[styles.vadTitle, { color: isDarkMode ? '#ffffff' : '#000000' }]}>
+            Voice Activity Detection
           </Text>
-        </TouchableOpacity>
-
-        {/* Mic activity indicator */}
-        {state.isListening && (
-          <View style={[
-            styles.micIndicator,
-            state.isMicrophoneActive && styles.micIndicatorActive
-          ]}>
+          
+          <TouchableOpacity
+            style={[
+              styles.vadButton,
+              state.isListening && styles.vadButtonActive,
+              !vadInitialized && styles.vadButtonDisabled,
+              { backgroundColor: state.isListening ? '#ff4444' : '#3366FF' }
+            ]}
+            onPress={handleVADToggle}
+            disabled={!vadInitialized}
+          >
             <Ionicons 
-              name={state.isMicrophoneActive ? 'mic' : 'mic-outline'} 
+              name={state.isListening ? 'stop' : 'mic'} 
+              size={24} 
+              color="#ffffff" 
+            />
+            <Text style={styles.vadButtonText}>
+              {!vadInitialized ? 'Initializing...' : state.isListening ? 'Stop Listening' : 'Start Listening'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Mic activity indicator */}
+          {state.isListening && (
+            <View style={[
+              styles.micIndicator,
+              state.isMicrophoneActive && styles.micIndicatorActive
+            ]}>
+              <Ionicons 
+                name={state.isMicrophoneActive ? 'mic' : 'mic-outline'} 
+                size={16} 
+                color={state.isMicrophoneActive ? '#00ff00' : '#666666'} 
+              />
+              <Text style={[
+                styles.micIndicatorText,
+                { color: state.isMicrophoneActive ? '#00ff00' : '#666666' }
+              ]}>
+                {state.isMicrophoneActive ? 'Speech Detected' : 'Listening...'}
+              </Text>
+            </View>
+          )}
+
+          {/* Permission status */}
+          <View style={styles.permissionStatus}>
+            <Ionicons 
+              name={state.micPermissionGranted ? 'checkmark-circle' : 'close-circle'} 
               size={16} 
-              color={state.isMicrophoneActive ? '#00ff00' : '#666666'} 
+              color={state.micPermissionGranted ? '#00ff00' : '#ff4444'} 
             />
             <Text style={[
-              styles.micIndicatorText,
-              { color: state.isMicrophoneActive ? '#00ff00' : '#666666' }
+              styles.permissionText,
+              { color: state.micPermissionGranted ? '#00ff00' : '#ff4444' }
             ]}>
-              {state.isMicrophoneActive ? 'Speech Detected' : 'Listening...'}
+              Microphone {state.micPermissionGranted ? 'Granted' : 'Denied'}
             </Text>
           </View>
-        )}
 
-        {/* Permission status */}
-        <View style={styles.permissionStatus}>
-          <Ionicons 
-            name={state.micPermissionGranted ? 'checkmark-circle' : 'close-circle'} 
-            size={16} 
-            color={state.micPermissionGranted ? '#00ff00' : '#ff4444'} 
-          />
-          <Text style={[
-            styles.permissionText,
-            { color: state.micPermissionGranted ? '#00ff00' : '#ff4444' }
-          ]}>
-            Microphone {state.micPermissionGranted ? 'Granted' : 'Denied'}
-          </Text>
+          {/* Error display */}
+          {state.error && (
+            <View style={styles.errorContainer}>
+              <Ionicons name="warning" size={16} color="#ff4444" />
+              <Text style={styles.errorText}>{state.error}</Text>
+              <TouchableOpacity onPress={actions.clearError}>
+                <Ionicons name="close" size={16} color="#ff4444" />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
-
-        {/* Error display */}
-        {state.error && (
-          <View style={styles.errorContainer}>
-            <Ionicons name="warning" size={16} color="#ff4444" />
-            <Text style={styles.errorText}>{state.error}</Text>
-            <TouchableOpacity onPress={actions.clearError}>
-              <Ionicons name="close" size={16} color="#ff4444" />
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
+      )}
       
       {/* Text-only warning if either language doesn't support speech */}
       {(!isSourceSpeechSupported || !isTargetSpeechSupported) && (

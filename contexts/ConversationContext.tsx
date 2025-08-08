@@ -557,93 +557,16 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
       // Update state
       dispatch({ type: 'SET_CONVERSATION_MODE_ENABLED', payload: enabled });
       
-      // Start or stop the service based on the new setting
-      if (enabled) {
-        // Initialize and start the service if not already running
-        if (!alwaysListeningServiceRef.current) {
-          console.log('🔧 ConversationContext: Creating AlwaysListeningService instance...');
-          const service = new AlwaysListeningService();
-          
-          // Set up callbacks (reuse the same callback setup from enableAlwaysListening)
-          const callbacks: AlwaysListeningCallbacks = {
-            onStateChange: (newState: ConversationState, speaker: SpeakerRole) => {
-              console.log(`📡 ConversationContext: State change → ${newState} (Speaker: ${speaker})`);
-              dispatch({ type: 'SET_CONVERSATION_STATE', payload: newState });
-              dispatch({ type: 'SET_SPEAKER', payload: speaker });
-            },
-            onSpeakerSwitch: (from: SpeakerRole, to: SpeakerRole) => {
-              console.log(`🔄 ConversationContext: Speaker switch: ${from} → ${to}`);
-              dispatch({ type: 'SET_SPEAKER', payload: to });
-            },
-            onLanguageDetected: (language: string, confidence: number) => {
-              console.log(`🌐 ConversationContext: Language detected: ${language} (confidence: ${confidence})`);
-              dispatch({ type: 'SET_DETECTED_LANGUAGE', payload: { language, confidence } });
-            },
-            onConversationTurn: (turn: ConversationTurn) => {
-              console.log(`💬 ConversationContext: Conversation turn:`, {
-                speaker: turn.speaker,
-                transcription: turn.transcription?.substring(0, 50) + '...',
-                translation: turn.translation?.substring(0, 50) + '...',
-                language: turn.detectedLanguage
-              });
-            },
-            onError: (error: Error, context: string) => {
-              if (context === 'api_key_missing') {
-                console.error('❌ ConversationContext: Missing mic input - OpenAI API key required');
-              } else if (context === 'whisper_api_error') {
-                console.error('❌ ConversationContext: Whisper API failure:', error.message);
-              } else if (context === 'audio_file_error') {
-                console.error('❌ ConversationContext: Audio file issues:', error.message);
-              } else if (context === 'translation_timeout') {
-                console.error('❌ ConversationContext: Translation API timeout');
-              } else if (context === 'tts_error') {
-                console.error('❌ ConversationContext: TTS errors:', error.message);
-              } else {
-                console.error(`❌ ConversationContext: Error in ${context}:`, error.message);
-              }
-              dispatch({ type: 'SET_ERROR', payload: error.message });
-            },
-            onTranscriptionStart: () => {
-              console.log('🎯 ConversationContext: Transcription started');
-              dispatch({ type: 'SET_TRANSCRIPTION_IN_PROGRESS', payload: true });
-            },
-            onTranscriptionComplete: (transcription) => {
-              console.log('📝 ConversationContext: Transcription complete:', {
-                text: transcription.text?.substring(0, 50) + '...',
-                language: transcription.language,
-                confidence: transcription.confidence
-              });
-              dispatch({ type: 'SET_TRANSCRIPTION_IN_PROGRESS', payload: false });
-              dispatch({ type: 'SET_CURRENT_TRANSCRIPTION', payload: transcription });
-            },
-            onTranslationComplete: (translation) => {
-              console.log('🔤 ConversationContext: Translation complete:', {
-                text: translation.text?.substring(0, 50) + '...',
-                fromLanguage: translation.fromLanguage,
-                toLanguage: translation.toLanguage
-              });
-              dispatch({ type: 'SET_TRANSLATION_IN_PROGRESS', payload: false });
-              dispatch({ type: 'SET_CURRENT_TRANSLATION', payload: translation });
-            }
-          };
-          
-          await service.initialize(callbacks);
-          alwaysListeningServiceRef.current = service;
-        }
-        
-        // Start the service
-        if (alwaysListeningServiceRef.current && state.sourceLanguage && state.targetLanguage) {
-          await alwaysListeningServiceRef.current.startAlwaysListening(
-            state.sourceLanguage,
-            state.targetLanguage
-          );
-        }
-      } else {
-        // Stop the service
+      // Only update the preference, don't start/stop the service automatically
+      // The service will be controlled manually when needed
+      if (!enabled) {
+        // If disabling, stop the service if it's running
         if (alwaysListeningServiceRef.current) {
           await alwaysListeningServiceRef.current.stopAlwaysListening();
+          alwaysListeningServiceRef.current = null;
         }
       }
+      // If enabling, we don't start the service - it will be started manually when needed
     }, [state.sourceLanguage, state.targetLanguage]),
 
 
