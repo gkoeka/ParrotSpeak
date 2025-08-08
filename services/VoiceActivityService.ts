@@ -84,14 +84,8 @@ export class VoiceActivityService {
       }
       console.log('✅ VoiceActivityService: Microphone permissions granted');
 
-      // Configure audio recording settings for continuous recording
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: false,
-      });
-      console.log('✅ VoiceActivityService: Audio mode configured');
+      // Don't set audio mode here - do it when actually starting recording
+      // This prevents conflicts with other audio operations
 
       this.callbacks = callbacks;
       console.log('✅ VoiceActivityService: Initialization complete');
@@ -120,11 +114,22 @@ export class VoiceActivityService {
         chunkDuration: `${this.config.chunkSize}ms`
       });
       
-      // Start recording first chunk
-      await this.startNewChunk();
+      // Set audio mode before starting recording
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+        staysActiveInBackground: false,
+      });
+      console.log('✅ Audio mode set for recording');
       
       this.isListening = true;
       this.chunkCount = 0;
+      
+      // Start recording first chunk
+      await this.startNewChunk();
+      
       console.log('✅ VoiceActivityService: Mic started');
 
       // Begin chunk rotation timer for 2-second chunks
@@ -135,9 +140,10 @@ export class VoiceActivityService {
       
     } catch (error) {
       console.error('❌ VoiceActivityService: Failed to start listening:', error);
+      console.error('   Error details:', error instanceof Error ? error.message : error);
       this.isListening = false;
       this.callbacks?.onError(error instanceof Error ? error : new Error('Failed to start listening'));
-      throw error;
+      // Don't throw - let the UI handle the error callback
     }
   }
   
@@ -163,14 +169,7 @@ export class VoiceActivityService {
         this.recording = null; // Clear the recording instance
       }
       
-      // Ensure audio mode is set for recording
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: false,
-        staysActiveInBackground: false,
-      });
+      // Don't set audio mode here - it's already set in startListening
       
       // Create new recording - use separate instance to avoid conflicts
       console.log('🎤 Creating new chunk recording...');
