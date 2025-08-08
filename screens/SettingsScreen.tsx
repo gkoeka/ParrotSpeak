@@ -11,6 +11,7 @@ import Header from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { useConversation } from '../contexts/ConversationContext';
 
 type SettingsNavigationProp = CompositeNavigationProp<
   StackNavigationProp<SettingsStackParamList, 'Settings'>,
@@ -21,6 +22,7 @@ export default function SettingsScreen() {
   const navigation = useNavigation<SettingsNavigationProp>();
   const { logout, user } = useAuth();
   const { isDarkMode, toggleDarkMode } = useTheme();
+  const { state: conversationState, actions: conversationActions } = useConversation();
   const [autoPlayEnabled, setAutoPlayEnabled] = useState(true);
   const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
 
@@ -48,6 +50,12 @@ export default function SettingsScreen() {
       icon: 'moon-outline',
       value: isDarkMode,
       onValueChange: toggleDarkMode,
+    },
+    {
+      title: 'Conversation Mode',
+      icon: 'mic-outline',
+      value: conversationState.conversationModeEnabled,
+      onValueChange: (value: boolean) => conversationActions.setConversationModeEnabled(value),
     },
     {
       title: 'Auto-play Translations',

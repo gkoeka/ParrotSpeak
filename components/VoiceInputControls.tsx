@@ -67,11 +67,11 @@ export default function VoiceInputControls({
   const isSourceSpeechSupported = sourceLanguageConfig?.speechSupported ?? true;
   const isTargetSpeechSupported = targetLanguageConfig?.speechSupported ?? true;
 
-  // Phase 2: Initialize VoiceActivityService when NOT in always listening mode
+  // Phase 2: Initialize VoiceActivityService when NOT in conversation mode
   useEffect(() => {
-    // Only initialize standalone VAD if not using always listening
-    if (state.isAlwaysListeningEnabled) {
-      console.log('🔇 VoiceInputControls: Skipping standalone VAD - Always listening is active');
+    // Only initialize standalone VAD if not using conversation mode
+    if (state.conversationModeEnabled) {
+      console.log('🔇 VoiceInputControls: Skipping standalone VAD - Conversation Mode is active');
       return;
     }
     
@@ -336,22 +336,10 @@ export default function VoiceInputControls({
 
   return (
     <View style={styles.container}>
-      {/* Always Listening Toggle - TODO: Phase 2 - Wire up to conversation context */}
-      {showAlwaysListeningToggle && (
-        <View style={styles.alwaysListeningContainer}>
-          <AlwaysListeningToggle
-            variant="switch"
-            size="medium"
-            showStatus={true}
-            onToggle={onAlwaysListeningToggle}
-          />
-        </View>
-      )}
-
-      {/* Phase 1: Voice Activity Detection Controls */}
+      {/* Voice Activity Detection Controls (used when Conversation Mode is disabled) */}
       <View style={styles.vadContainer}>
         <Text style={[styles.vadTitle, { color: isDarkMode ? '#ffffff' : '#000000' }]}>
-          Voice Activity Detection (Phase 1)
+          {state.conversationModeEnabled ? 'Conversation Mode Active' : 'Voice Activity Detection'}
         </Text>
         
         <TouchableOpacity

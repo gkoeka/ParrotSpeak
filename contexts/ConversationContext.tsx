@@ -7,6 +7,7 @@
  */
 
 import React, { createContext, useContext, useReducer, useCallback, useEffect, useRef } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import AlwaysListeningService, { 
   ConversationState, 
   SpeakerRole, 
@@ -16,8 +17,9 @@ import AlwaysListeningService, {
 } from '../services/AlwaysListeningService';
 
 export interface ConversationUIState {
-  // Always listening mode state
-  isAlwaysListeningEnabled: boolean;
+  // Conversation mode state (formerly "Always Listening")
+  conversationModeEnabled: boolean;  // Persistent preference from settings
+  isAlwaysListeningEnabled: boolean; // Deprecated - kept for compatibility
   isAlwaysListeningActive: boolean;
   
   // Current conversation state
@@ -69,9 +71,10 @@ export interface ConversationUIState {
 }
 
 export interface ConversationActions {
-  // Always listening controls
+  // Conversation Mode controls (formerly "Always Listening")
   enableAlwaysListening: () => void;
   disableAlwaysListening: () => void;
+  setConversationModeEnabled: (enabled: boolean) => Promise<void>;
 
   
   // Phase 1: VoiceActivityService controls
@@ -136,6 +139,7 @@ export interface ConversationContextType {
 type ConversationActionType =
   | { type: 'ENABLE_ALWAYS_LISTENING' }
   | { type: 'DISABLE_ALWAYS_LISTENING' }
+  | { type: 'SET_CONVERSATION_MODE_ENABLED'; payload: boolean }
   | { type: 'SET_LISTENING'; payload: boolean }
   | { type: 'SET_MIC_PERMISSION'; payload: boolean }
   | { type: 'SET_CONVERSATION_STATE'; payload: ConversationState }
@@ -163,6 +167,7 @@ type ConversationActionType =
 
 // Initial state
 const initialState: ConversationUIState = {
+  conversationModeEnabled: true,  // Default to true for new installs
   isAlwaysListeningEnabled: false,
   isAlwaysListeningActive: false,
   conversationState: ConversationState.IDLE,
@@ -215,6 +220,22 @@ function conversationReducer(
         isMicrophoneActive: false,
         isProcessingAudio: false,
         audioLevel: 0,
+      };
+      
+    case 'SET_CONVERSATION_MODE_ENABLED':
+      return {
+        ...state,
+        conversationModeEnabled: action.payload,
+        isAlwaysListeningEnabled: action.payload,
+        // If disabling, also stop the active session
+        ...(action.payload === false && {
+          isAlwaysListeningActive: false,
+          conversationState: ConversationState.IDLE,
+          isListening: false,
+          isMicrophoneActive: false,
+          isProcessingAudio: false,
+          audioLevel: 0,
+        }),
       };
 
     case 'SET_LISTENING':
@@ -398,6 +419,31 @@ const ConversationContext = createContext<ConversationContextType | undefined>(u
 export function ConversationProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(conversationReducer, initialState);
   const alwaysListeningServiceRef = useRef<AlwaysListeningService | null>(null);
+  
+  // Load conversation mode preference on mount
+  useEffect(() => {
+    const loadConversationModePreference = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('conversationModeEnabled');
+        if (stored !== null) {
+          const enabled = JSON.parse(stored);
+          console.log(`📱 ConversationContext: Loaded conversation mode preference: ${enabled}`);
+          dispatch({ type: 'SET_CONVERSATION_MODE_ENABLED', payload: enabled });
+        } else {
+          // First time - set default to true and save it
+          console.log('📱 ConversationContext: No saved preference, defaulting conversation mode to enabled');
+          await AsyncStorage.setItem('conversationModeEnabled', JSON.stringify(true));
+          dispatch({ type: 'SET_CONVERSATION_MODE_ENABLED', payload: true });
+        }
+      } catch (error) {
+        console.error('Failed to load conversation mode preference:', error);
+        // Default to true on error
+        dispatch({ type: 'SET_CONVERSATION_MODE_ENABLED', payload: true });
+      }
+    };
+    
+    loadConversationModePreference();
+  }, []);
 
   // Create action handlers
   const actions: ConversationActions = {
@@ -489,7 +535,7 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
     }, [state.sourceLanguage, state.targetLanguage]),
 
     disableAlwaysListening: useCallback(async () => {
-      console.log('🔇 ConversationContext: Disabling always listening...');
+      console.log('🔇 ConversationContext: Disabling conversation mode...');
       
       if (alwaysListeningServiceRef.current) {
         await alwaysListeningServiceRef.current.stopAlwaysListening();
@@ -497,6 +543,108 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
       
       dispatch({ type: 'DISABLE_ALWAYS_LISTENING' });
     }, []),
+    
+    setConversationModeEnabled: useCallback(async (enabled: boolean) => {
+      console.log(`🎯 ConversationContext: Setting conversation mode to ${enabled ? 'enabled' : 'disabled'}`);
+      
+      // Save preference to AsyncStorage
+      try {
+        await AsyncStorage.setItem('conversationModeEnabled', JSON.stringify(enabled));
+      } catch (error) {
+        console.error('Failed to save conversation mode preference:', error);
+      }
+      
+      // Update state
+      dispatch({ type: 'SET_CONVERSATION_MODE_ENABLED', payload: enabled });
+      
+      // Start or stop the service based on the new setting
+      if (enabled) {
+        // Initialize and start the service if not already running
+        if (!alwaysListeningServiceRef.current) {
+          console.log('🔧 ConversationContext: Creating AlwaysListeningService instance...');
+          const service = new AlwaysListeningService();
+          
+          // Set up callbacks (reuse the same callback setup from enableAlwaysListening)
+          const callbacks: AlwaysListeningCallbacks = {
+            onStateChange: (newState: ConversationState, speaker: SpeakerRole) => {
+              console.log(`📡 ConversationContext: State change → ${newState} (Speaker: ${speaker})`);
+              dispatch({ type: 'SET_CONVERSATION_STATE', payload: newState });
+              dispatch({ type: 'SET_SPEAKER', payload: speaker });
+            },
+            onSpeakerSwitch: (from: SpeakerRole, to: SpeakerRole) => {
+              console.log(`🔄 ConversationContext: Speaker switch: ${from} → ${to}`);
+              dispatch({ type: 'SET_SPEAKER', payload: to });
+            },
+            onLanguageDetected: (language: string, confidence: number) => {
+              console.log(`🌐 ConversationContext: Language detected: ${language} (confidence: ${confidence})`);
+              dispatch({ type: 'SET_DETECTED_LANGUAGE', payload: { language, confidence } });
+            },
+            onConversationTurn: (turn: ConversationTurn) => {
+              console.log(`💬 ConversationContext: Conversation turn:`, {
+                speaker: turn.speaker,
+                transcription: turn.transcription?.substring(0, 50) + '...',
+                translation: turn.translation?.substring(0, 50) + '...',
+                language: turn.detectedLanguage
+              });
+            },
+            onError: (error: Error, context: string) => {
+              if (context === 'api_key_missing') {
+                console.error('❌ ConversationContext: Missing mic input - OpenAI API key required');
+              } else if (context === 'whisper_api_error') {
+                console.error('❌ ConversationContext: Whisper API failure:', error.message);
+              } else if (context === 'audio_file_error') {
+                console.error('❌ ConversationContext: Audio file issues:', error.message);
+              } else if (context === 'translation_timeout') {
+                console.error('❌ ConversationContext: Translation API timeout');
+              } else if (context === 'tts_error') {
+                console.error('❌ ConversationContext: TTS errors:', error.message);
+              } else {
+                console.error(`❌ ConversationContext: Error in ${context}:`, error.message);
+              }
+              dispatch({ type: 'SET_ERROR', payload: error.message });
+            },
+            onTranscriptionStart: () => {
+              console.log('🎯 ConversationContext: Transcription started');
+              dispatch({ type: 'SET_TRANSCRIPTION_IN_PROGRESS', payload: true });
+            },
+            onTranscriptionComplete: (transcription) => {
+              console.log('📝 ConversationContext: Transcription complete:', {
+                text: transcription.text?.substring(0, 50) + '...',
+                language: transcription.language,
+                confidence: transcription.confidence
+              });
+              dispatch({ type: 'SET_TRANSCRIPTION_IN_PROGRESS', payload: false });
+              dispatch({ type: 'SET_CURRENT_TRANSCRIPTION', payload: transcription });
+            },
+            onTranslationComplete: (translation) => {
+              console.log('🔤 ConversationContext: Translation complete:', {
+                text: translation.text?.substring(0, 50) + '...',
+                fromLanguage: translation.fromLanguage,
+                toLanguage: translation.toLanguage
+              });
+              dispatch({ type: 'SET_TRANSLATION_IN_PROGRESS', payload: false });
+              dispatch({ type: 'SET_CURRENT_TRANSLATION', payload: translation });
+            }
+          };
+          
+          await service.initialize(callbacks);
+          alwaysListeningServiceRef.current = service;
+        }
+        
+        // Start the service
+        if (alwaysListeningServiceRef.current && state.sourceLanguage && state.targetLanguage) {
+          await alwaysListeningServiceRef.current.startAlwaysListening(
+            state.sourceLanguage,
+            state.targetLanguage
+          );
+        }
+      } else {
+        // Stop the service
+        if (alwaysListeningServiceRef.current) {
+          await alwaysListeningServiceRef.current.stopAlwaysListening();
+        }
+      }
+    }, [state.sourceLanguage, state.targetLanguage]),
 
 
 

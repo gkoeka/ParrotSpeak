@@ -49,26 +49,15 @@ export default function AlwaysListeningToggle({
   const { state, actions } = useConversation();
 
   /**
-   * Handle toggle state change
-   * TODO: Phase 2 - Implement toggle logic with validation
+   * Handle toggle state change (now controls Conversation Mode)
    */
   const handleToggle = async () => {
     try {
-      // TODO: Check permissions before enabling
-      // TODO: Validate current app state
-      // TODO: Handle potential errors gracefully
-      // TODO: Provide user feedback during state changes
-      
-      if (state.isAlwaysListeningEnabled) {
-        await actions.disableAlwaysListening();
-        onToggle?.(false);
-      } else {
-        await actions.enableAlwaysListening();
-        onToggle?.(true);
-      }
+      const newValue = !state.conversationModeEnabled;
+      await actions.setConversationModeEnabled(newValue);
+      onToggle?.(newValue);
     } catch (error) {
-      // TODO: Handle errors and notify user
-      const errorMessage = error instanceof Error ? error.message : 'Failed to toggle always listening';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to toggle conversation mode';
       actions.setError(errorMessage);
       onError?.(errorMessage);
     }
@@ -87,7 +76,7 @@ export default function AlwaysListeningToggle({
       return 'Error - Tap to retry';
     }
     
-    if (!state.isAlwaysListeningEnabled) {
+    if (!state.conversationModeEnabled) {
       return 'Off';
     }
     
@@ -112,7 +101,7 @@ export default function AlwaysListeningToggle({
       return 'warning-outline';
     }
     
-    if (!state.isAlwaysListeningEnabled) {
+    if (!state.conversationModeEnabled) {
       return 'mic-off-outline';
     }
     
@@ -132,7 +121,7 @@ export default function AlwaysListeningToggle({
     // TODO: Explain current mode and capabilities
     // TODO: Provide usage hints
     
-    if (!state.isAlwaysListeningEnabled) {
+    if (!state.conversationModeEnabled) {
       return 'Enable automatic speaker detection for natural conversation flow';
     }
     
@@ -153,19 +142,19 @@ export default function AlwaysListeningToggle({
             color={isDarkMode ? '#ffffff' : '#000000'} 
           />
           <Text style={[styles.label, { color: isDarkMode ? '#ffffff' : '#000000' }]}>
-            Always Listening
+            Conversation Mode
           </Text>
         </View>
         
         <Switch
-          value={state.isAlwaysListeningEnabled}
+          value={state.conversationModeEnabled}
           onValueChange={handleToggle}
           disabled={disabled}
           trackColor={{ 
             false: isDarkMode ? '#767577' : '#d3d3d3',
             true: '#3366FF' 
           }}
-          thumbColor={state.isAlwaysListeningEnabled ? '#ffffff' : '#f4f3f4'}
+          thumbColor={state.conversationModeEnabled ? '#ffffff' : '#f4f3f4'}
         />
         
         {showStatus && (
@@ -193,7 +182,7 @@ export default function AlwaysListeningToggle({
         style={[
           styles.container,
           styles.buttonContainer,
-          state.isAlwaysListeningEnabled && styles.buttonActive,
+          state.conversationModeEnabled && styles.buttonActive,
           disabled && styles.buttonDisabled,
           { backgroundColor: isDarkMode ? '#2a2a2a' : '#f0f0f0' },
           style
@@ -204,14 +193,14 @@ export default function AlwaysListeningToggle({
         <Ionicons 
           name={getStatusIcon()} 
           size={size === 'small' ? 20 : size === 'large' ? 32 : 24}
-          color={state.isAlwaysListeningEnabled ? '#3366FF' : (isDarkMode ? '#ffffff' : '#000000')}
+          color={state.conversationModeEnabled ? '#3366FF' : (isDarkMode ? '#ffffff' : '#000000')}
         />
         
         <Text style={[
           styles.buttonLabel,
-          { color: state.isAlwaysListeningEnabled ? '#3366FF' : (isDarkMode ? '#ffffff' : '#000000') }
+          { color: state.conversationModeEnabled ? '#3366FF' : (isDarkMode ? '#ffffff' : '#000000') }
         ]}>
-          Always Listening
+          Conversation Mode
         </Text>
         
         {showStatus && (

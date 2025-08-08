@@ -1,7 +1,7 @@
-# Always Listening Architecture - Implementation Plan
+# Conversation Mode Architecture - Implementation Plan
 
 ## Overview
-This document outlines the scaffolded architecture for implementing "Always Listening" mode in ParrotSpeak, enabling natural conversation flow without manual button tapping between speakers.
+This document outlines the scaffolded architecture for implementing "Conversation Mode" (formerly "Always Listening") in ParrotSpeak, enabling natural conversation flow without manual button tapping between speakers.
 
 ## Scaffolded Files
 
@@ -33,23 +33,24 @@ This document outlines the scaffolded architecture for implementing "Always List
 #### `ConversationContext.tsx`
 **Purpose**: Global state management for conversation flow
 - **State Management**: React Context + useReducer pattern
-- **Key State**: Always listening status, speaker info, microphone state, language detection
+- **Key State**: Conversation mode status, speaker info, microphone state, language detection
 - **Actions**: 20+ actions for complete conversation control
-- **Features**: Error handling, speaker tracking, UI state management
+- **Features**: Error handling, speaker tracking, UI state management, AsyncStorage persistence
 
 ### 📁 `/components/`
 
-#### `AlwaysListeningToggle.tsx` (New)
-**Purpose**: UI toggle for always listening mode
+#### `AlwaysListeningToggle.tsx` (Now ConversationModeToggle)
+**Purpose**: UI toggle for conversation mode
 - **Variants**: Switch, Button, Card layouts
 - **Features**: Status indicators, theme support, error states
 - **Integration**: Connected to ConversationContext
 - **Accessibility**: Visual and text feedback
+- **Location**: Now integrated in Settings screen
 
 #### `VoiceInputControls.tsx` (Updated)
-**Purpose**: Enhanced existing component with always listening integration
-- **Added**: Always listening toggle integration
-- **New Props**: `showAlwaysListeningToggle`, `onAlwaysListeningToggle`
+**Purpose**: Enhanced existing component with conversation mode awareness
+- **Updated**: Removed toggle from this component (moved to Settings)
+- **Integration**: Automatically disabled when conversation mode is active
 - **Layout**: Seamless integration with existing voice controls
 
 ## Implementation Phases

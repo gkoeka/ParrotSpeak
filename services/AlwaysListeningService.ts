@@ -490,9 +490,9 @@ export class AlwaysListeningService {
   /**
    * Switch to the next speaker in conversation
    * Phase 2 - Manage speaker transitions
-   * @param reason Reason for speaker switch (silence, manual, language, timeout, auto)
+   * @param reason Reason for speaker switch (silence, manual, language, timeout, auto, error_recovery)
    */
-  private switchSpeaker(reason: 'silence' | 'manual' | 'language' | 'timeout' | 'auto'): void {
+  private switchSpeaker(reason: 'silence' | 'manual' | 'language' | 'timeout' | 'auto' | 'error_recovery'): void {
     const previousSpeaker = this.currentSpeaker;
     const newSpeaker = this.toggleSpeaker(this.currentSpeaker);
     
