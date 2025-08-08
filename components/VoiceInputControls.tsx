@@ -156,22 +156,7 @@ export default function VoiceInputControls({
           },
           onSilenceDetected: (duration: number) => {
             console.log(`⏰ VoiceInputControls: Silence detected (${duration}ms), isRecording: ${isRecordingRef.current}`);
-            
-            // Phase 1: Auto-stop after 2 seconds of silence
-            if (duration >= 2000 && isRecordingRef.current) {
-              console.log('⏹️ Auto-stopping after 2 seconds of silence');
-              // Use the actual function directly to avoid closure issues
-              setIsRecording(false);
-              isRecordingRef.current = false;
-              
-              // Stop VAD and process final audio
-              if (voiceActivityServiceRef.current) {
-                voiceActivityServiceRef.current.stopListening().then(() => {
-                  console.log('✅ VAD stopped after silence timeout');
-                  actions.setListening(false);
-                }).catch(console.error);
-              }
-            }
+            // Don't auto-stop here - let the UI timer handle it
           },
           onError: (error: Error) => {
             console.error('❌ VoiceInputControls: VAD error:', error);

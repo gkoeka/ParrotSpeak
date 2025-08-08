@@ -250,35 +250,12 @@ export class VoiceActivityService {
    * Phase 1 - Detect 2 seconds of silence
    */
   private startSilenceDetection(): void {
-    // Use a simple timer-based approach for silence detection
-    // Reset on any user interaction with the recording
-    if (!this.silenceStartTime) {
-      this.silenceStartTime = new Date();
-    }
+    // Initialize silence start time to current time
+    this.silenceStartTime = new Date();
     
-    // Check for silence timeout every 100ms
-    if (this.audioAnalysisInterval) {
-      clearInterval(this.audioAnalysisInterval);
-    }
-    
-    this.audioAnalysisInterval = setInterval(() => {
-      if (!this.isListening || !this.silenceStartTime) return;
-      
-      const silenceDuration = Date.now() - this.silenceStartTime.getTime();
-      
-      // Check if we've hit the 2-second silence threshold
-      if (silenceDuration >= this.config.maxSilenceDuration) {
-        console.log(`⏰ VoiceActivityService: Silence timeout reached (${silenceDuration}ms)`);
-        
-        // Emit the current chunk and notify silence detected
-        if (this.callbacks?.onSilenceDetected) {
-          this.callbacks.onSilenceDetected(silenceDuration);
-        }
-        
-        // Reset silence timer
-        this.silenceStartTime = new Date();
-      }
-    }, MONITOR_INTERVAL_MS);
+    // Don't use interval for now - let the UI handle silence detection
+    // The UI component has its own 2-second timer that works properly
+    console.log('🔇 Silence detection initialized (2-second threshold)');
   }
   
   /**
