@@ -7,7 +7,8 @@ import { translateText } from '../api/languageService';
 import { getLanguageByCode } from '../constants/languageConfiguration';
 import { performanceMonitor } from '../utils/performanceMonitor';
 import AlwaysListeningToggle from './AlwaysListeningToggle';
-import VoiceActivityService, { VoiceActivityCallbacks, AudioChunk } from '../services/VoiceActivityService';
+// Migrating to turn-based VAD to fix Expo's single-recording constraint
+import { SimplifiedVADService, type SimplifiedVADCallbacks, type UtteranceChunk, RecordingState } from '../services/SimplifiedVADService';
 import { useConversation } from '../contexts/ConversationContext';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -43,17 +44,14 @@ export default function VoiceInputControls({
   const [textInput, setTextInput] = useState('');
   const [showTextInput, setShowTextInput] = useState(false);
   
-  // Phase 1: VoiceActivityService integration
-  const voiceActivityServiceRef = useRef<VoiceActivityService | null>(null);
+  // Turn-based VAD service integration
+  const vadServiceRef = useRef<SimplifiedVADService | null>(null);
   const [vadInitialized, setVadInitialized] = useState(false);
+  const [recordingState, setRecordingState] = useState<RecordingState>(RecordingState.IDLE);
   
-  // Auto-processing timer for 2-second silence rule
-  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Remove duplicate timers - VAD service handles all timing
   const recordingRef = useRef<any>(null);
-  
-  // Use ref to avoid stale closure issue with isRecording
   const isRecordingRef = useRef<boolean>(false);
-  const lastSpeechTimeRef = useRef<number>(Date.now());
   
   // Check if source or target language supports speech
   // Handle language codes that might be passed with regional variants
@@ -78,139 +76,110 @@ export default function VoiceInputControls({
   // Use a ref to store the handleStopRecording function to avoid circular dependency
   const handleStopRecordingRef = useRef<() => Promise<void>>();
   
-  // Forward declare functions that need to reference each other
-  const startSilenceDetectionTimer = () => {
-    // Clear any existing timer
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current);
-    }
-    
-    // Set a 2-second timer that will auto-stop if not reset
-    silenceTimerRef.current = setTimeout(() => {
-      if (isRecordingRef.current) {
-        console.log('⏰ Backup timer: 2 seconds of silence detected, auto-stopping...');
-        // Call the proper stop handler
-        if (handleStopRecordingRef.current) {
-          handleStopRecordingRef.current();
-        }
-      }
-    }, 2000);
-  };
-  
-  const resetSilenceTimer = () => {
-    console.log('🗣️ Resetting silence timer due to user interaction');
-    lastSpeechTimeRef.current = Date.now();
-    startSilenceDetectionTimer(); // Restart the timer
-  };
-  
-  // Handle touch events to reset silence timer
+  // Handle touch events to reset silence timer during recording
   const handleRecordingTouch = () => {
-    if (isRecordingRef.current) {
-      console.log('👆 User interaction detected during recording');
-      resetSilenceTimer();
-      
-      // Also reset VAD silence timer
-      if (voiceActivityServiceRef.current) {
-        voiceActivityServiceRef.current.resetSilenceTimer();
-      }
+    if (isRecordingRef.current && vadServiceRef.current) {
+      console.log('👆 User speaking - resetting silence timer');
+      vadServiceRef.current.onSpeechDetected();
     }
   };
 
-  // Phase 1: Initialize VoiceActivityService for chunking and 2-second rule
+  // Initialize Turn-based VAD Service for conversation mode
   useEffect(() => {
-    // Initialize VAD for conversation mode with 2-second rule
     if (!state.conversationModeEnabled) {
-      console.log('🔇 VoiceInputControls: Conversation Mode disabled, VAD not needed');
+      console.log('🔇 Conversation Mode disabled, VAD not needed');
       return;
     }
     
     const initializeVAD = async () => {
       try {
-        console.log('🎤 VoiceInputControls: Initializing Phase 1 VoiceActivityService for Conversation Mode...');
-        console.log('   conversationModeEnabled:', state.conversationModeEnabled);
-        console.log('   Current vadInitialized:', vadInitialized);
+        console.log('🎤 Initializing Turn-based VAD Service...');
         
-        const vadService = new VoiceActivityService();
-        voiceActivityServiceRef.current = vadService;
+        const vadService = new SimplifiedVADService();
+        vadServiceRef.current = vadService;
         
-        // Set up callbacks for Phase 1 VAD events
-        const callbacks: VoiceActivityCallbacks = {
-          onSpeechStart: () => {
-            console.log('🗣️ VoiceInputControls: Speech start detected');
+        // Set up callbacks for turn-based VAD events
+        const callbacks: SimplifiedVADCallbacks = {
+          onRecordingStart: () => {
+            console.log('🗣️ Utterance recording started');
             actions.setMicrophoneActive(true);
-            // Update last speech time
-            lastSpeechTimeRef.current = Date.now();
           },
-          onSpeechEnd: async (chunk: AudioChunk) => {
-            console.log('📦 VoiceInputControls: Chunk received:', {
+          onUtteranceComplete: async (chunk: UtteranceChunk) => {
+            console.log('📦 Utterance complete:', {
               duration: `${chunk.duration}ms`,
-              uri: chunk.uri.substring(chunk.uri.length - 20),
-              isRecording: isRecordingRef.current
+              uri: chunk.uri.substring(chunk.uri.length - 20)
             });
             
-            // Phase 1: Process chunk for automatic translation
-            if (isRecordingRef.current && chunk.duration > 500) { // Only process meaningful chunks
-              console.log('🔄 Processing chunk for translation...');
-              await processAudioChunk(chunk);
+            // Process utterance for translation
+            if (chunk.duration > 500) { // Only process meaningful utterances
+              console.log('🔄 Processing utterance for translation...');
+              await processUtterance(chunk);
             }
           },
-          onSilenceDetected: (duration: number) => {
-            console.log(`⏰ VoiceInputControls: Silence detected (${duration}ms), isRecording: ${isRecordingRef.current}`);
-            // Don't auto-stop here - let the UI timer handle it
+          onSilenceDetected: () => {
+            console.log('🔇 Silence detected - utterance ending');
+            actions.setMicrophoneActive(false);
           },
           onError: (error: Error) => {
-            console.error('❌ VoiceInputControls: VAD error:', error);
+            console.error('❌ VAD error:', error);
             actions.setError(error.message);
           },
+          onStateChange: (state: RecordingState) => {
+            setRecordingState(state);
+            console.log(`📊 Recording state changed to: ${state}`);
+          }
         };
         
         await vadService.initialize(callbacks);
         actions.setMicPermission(true);
         setVadInitialized(true);
-        console.log('✅ VoiceInputControls: Phase 1 VAD initialized with chunking');
-        console.log('   vadInitialized set to true');
+        console.log('✅ Turn-based VAD initialized');
         
       } catch (error) {
-        console.error('❌ VoiceInputControls: Failed to initialize VAD:', error);
-        console.error('   Error details:', error instanceof Error ? error.message : error);
+        console.error('❌ Failed to initialize VAD:', error);
         actions.setError(error instanceof Error ? error.message : 'Failed to initialize voice detection');
         actions.setMicPermission(false);
         setVadInitialized(false);
       }
     };
 
-    console.log('🚀 Starting VAD initialization because conversationModeEnabled =', state.conversationModeEnabled);
+    console.log('🚀 Starting VAD initialization');
     initializeVAD();
 
     // Cleanup on unmount
     return () => {
-      if (voiceActivityServiceRef.current) {
-        voiceActivityServiceRef.current.stopListening().catch(console.error);
-        voiceActivityServiceRef.current = null;
+      if (vadServiceRef.current) {
+        console.log('✅ VAD cleanup');
+        vadServiceRef.current.cleanup();
+        vadServiceRef.current = null;
       }
     };
   }, [state.conversationModeEnabled, actions]);
 
-  // Phase 1: Handle VoiceActivityService start/stop
-  const handleVADToggle = async () => {
-    if (!voiceActivityServiceRef.current || !vadInitialized) {
-      Alert.alert('Error', 'Voice detection not initialized');
-      return;
-    }
 
+
+  // Process an utterance chunk
+  const processUtterance = async (chunk: UtteranceChunk) => {
     try {
-      if (state.isListening) {
-        console.log('🛑 VoiceInputControls: Stopping VAD...');
-        await voiceActivityServiceRef.current.stopListening();
-        actions.setListening(false);
-      } else {
-        console.log('🎤 VoiceInputControls: Starting VAD...');
-        await voiceActivityServiceRef.current.startListening();
-        actions.setListening(true);
-      }
+      setIsProcessing(true);
+      console.log('🎯 Processing utterance:', chunk.uri);
+      
+      // Process the audio file for transcription and translation
+      await processRecording(chunk.uri, sourceLanguage, targetLanguage, async (message) => {
+        console.log('📝 Utterance processed:', message);
+        onMessage(message);
+        
+        // Speak the translation if target language supports speech
+        if (isTargetSpeechSupported && message.translation) {
+          await speakText(message.translation, targetLanguage);
+        }
+      });
+      
     } catch (error) {
-      console.error('❌ VoiceInputControls: VAD toggle failed:', error);
-      actions.setError(error instanceof Error ? error.message : 'Failed to toggle voice detection');
+      console.error('❌ Error processing utterance:', error);
+      actions.setError(error instanceof Error ? error.message : 'Failed to process utterance');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -218,35 +187,32 @@ export default function VoiceInputControls({
     try {
       console.log('📱 handleStartRecording called');
       console.log('   vadInitialized:', vadInitialized);
-      console.log('   voiceActivityServiceRef.current:', !!voiceActivityServiceRef.current);
+      console.log('   vadServiceRef.current:', !!vadServiceRef.current);
+      console.log('   recordingState:', recordingState);
       
-      // Phase 1: Use VoiceActivityService for recording with chunks
-      if (voiceActivityServiceRef.current && vadInitialized) {
-        setIsRecording(true);
-        isRecordingRef.current = true; // Update ref for callbacks
-        lastSpeechTimeRef.current = Date.now(); // Reset speech time
+      // Use Turn-based VAD for recording
+      if (vadServiceRef.current && vadInitialized) {
+        if (recordingState !== RecordingState.IDLE) {
+          console.log('⚠️ Cannot start: already in state', recordingState);
+          return;
+        }
         
-        console.log('🎤 Starting Phase 1 VAD recording with 2-second rule...');
+        setIsRecording(true);
+        isRecordingRef.current = true;
+        
+        console.log('🎤 Starting turn-based utterance recording...');
         
         try {
-          // Start the VAD service listening
-          await voiceActivityServiceRef.current.startListening();
+          // Start a single utterance recording
+          await vadServiceRef.current.startUtterance();
           actions.setListening(true);
-          
-          // Reset silence timer to start fresh
-          voiceActivityServiceRef.current.resetSilenceTimer();
-          
-          // Start a simple timer-based silence detection as backup
-          startSilenceDetectionTimer();
+          console.log('✅ Utterance recording started - will auto-stop after 1.8s of silence');
         } catch (vadError) {
-          console.error('❌ VAD start failed, falling back to regular recording:', vadError);
-          // Fall back to regular recording
+          console.error('❌ VAD start failed:', vadError);
           setIsRecording(false);
           isRecordingRef.current = false;
           throw vadError;
         }
-        
-        console.log('✅ Phase 1 recording started - will auto-stop after 2 seconds of silence');
       } else {
         // Fallback to regular recording if VAD not initialized
         setIsRecording(true);
@@ -272,20 +238,14 @@ export default function VoiceInputControls({
     try {
       console.log('🛑 handleStopRecording called');
       setIsRecording(false);
-      isRecordingRef.current = false; // Update ref immediately
+      isRecordingRef.current = false;
       
-      // Clear silence timer
-      if (silenceTimerRef.current) {
-        clearTimeout(silenceTimerRef.current);
-        silenceTimerRef.current = null;
-      }
-      
-      // Phase 1: Stop VAD service if it's running
-      if (voiceActivityServiceRef.current && state.isListening) {
-        console.log('🛑 Stopping Phase 1 VAD recording...');
-        await voiceActivityServiceRef.current.stopListening();
+      // Use Turn-based VAD service if available
+      if (vadServiceRef.current && state.isListening) {
+        console.log('🛑 Stopping turn-based utterance recording...');
+        await vadServiceRef.current.stopUtterance();
         actions.setListening(false);
-        console.log('✅ Phase 1 recording stopped');
+        console.log('✅ Utterance recording stopped');
       } else if (recordingRef.current) {
         // Fallback to regular recording stop
         setIsProcessing(true);
@@ -293,7 +253,7 @@ export default function VoiceInputControls({
         
         const result = await stopRecording();
         console.log('Recording stopped:', result.uri);
-        recordingRef.current = null; // Clear the ref after stopping
+        recordingRef.current = null;
         
         // Process the recording
         await processAudio(result.uri);
@@ -308,21 +268,6 @@ export default function VoiceInputControls({
   
   // Assign the function to the ref so it can be called from the timer
   handleStopRecordingRef.current = handleStopRecording;
-  
-  // Process audio chunk from VAD
-  const processAudioChunk = async (chunk: AudioChunk) => {
-    try {
-      setIsProcessing(true);
-      console.log('📋 Processing audio chunk:', chunk.uri);
-      
-      // Process the chunk for transcription and translation
-      await processAudio(chunk.uri);
-      
-    } catch (error) {
-      console.error('Error processing chunk:', error);
-      setIsProcessing(false);
-    }
-  };
 
   const processAudio = async (uri: string) => {
     try {
@@ -491,7 +436,7 @@ export default function VoiceInputControls({
               !vadInitialized && styles.vadButtonDisabled,
               { backgroundColor: state.isListening ? '#ff4444' : '#3366FF' }
             ]}
-            onPress={handleVADToggle}
+            onPress={() => console.log('VAD toggle - not implemented in turn-based model')}
             disabled={!vadInitialized}
           >
             <Ionicons 
