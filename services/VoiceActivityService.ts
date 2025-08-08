@@ -156,22 +156,19 @@ export class VoiceActivityService {
       // Stop current recording if exists
       if (this.recording) {
         try {
-          const status = await this.recording.getStatusAsync();
-          if (status.isRecording) {
-            const uri = this.recording.getURI();
-            console.log('🔄 Stopping current chunk recording...');
-            await this.recording.stopAndUnloadAsync();
-            
-            // Save the chunk if it has content
-            if (uri && this.chunkStartTime) {
-              const duration = Date.now() - this.chunkStartTime.getTime();
-              if (duration > 100) { // Only save chunks longer than 100ms
-                await this.emitChunk(uri, duration);
-              }
+          const uri = this.recording.getURI();
+          console.log('🔄 Stopping current chunk recording...');
+          await this.recording.stopAndUnloadAsync();
+          
+          // Save the chunk if it has content
+          if (uri && this.chunkStartTime) {
+            const duration = Date.now() - this.chunkStartTime.getTime();
+            if (duration > 100) { // Only save chunks longer than 100ms
+              await this.emitChunk(uri, duration);
             }
           }
         } catch (stopError) {
-          console.log('⚠️ Recording already stopped or not prepared');
+          console.log('⚠️ Could not stop recording:', stopError);
         }
         this.recording = null; // Clear the recording instance
       }
@@ -210,11 +207,16 @@ export class VoiceActivityService {
       };
       
       await this.recording.prepareToRecordAsync(recordingOptions);
-      await this.recording.startAsync();
       
-      this.chunkStartTime = new Date();
-      this.currentChunkUri = this.recording.getURI() || null;
-      console.log(`✅ Chunk #${this.chunkCount + 1} recording started`);
+      try {
+        await this.recording.startAsync();
+        this.chunkStartTime = new Date();
+        this.currentChunkUri = this.recording.getURI() || null;
+        console.log(`✅ Chunk #${this.chunkCount + 1} recording started`);
+      } catch (startError) {
+        console.error('❌ Failed to start recording:', startError);
+        throw startError;
+      }
       
     } catch (error) {
       console.error('❌ VoiceActivityService: Error starting new chunk:', error);
@@ -351,21 +353,18 @@ export class VoiceActivityService {
       // Stop and emit final chunk
       if (this.recording) {
         try {
-          const status = await this.recording.getStatusAsync();
-          if (status.isRecording) {
-            const uri = this.recording.getURI();
-            await this.recording.stopAndUnloadAsync();
-            
-            // Emit final chunk if it has content
-            if (uri && this.chunkStartTime) {
-              const duration = Date.now() - this.chunkStartTime.getTime();
-              if (duration > 100) {
-                await this.emitChunk(uri, duration);
-              }
+          const uri = this.recording.getURI();
+          await this.recording.stopAndUnloadAsync();
+          
+          // Emit final chunk if it has content
+          if (uri && this.chunkStartTime) {
+            const duration = Date.now() - this.chunkStartTime.getTime();
+            if (duration > 100) {
+              await this.emitChunk(uri, duration);
             }
           }
         } catch (stopError) {
-          console.log('⚠️ Recording already stopped or not prepared');
+          console.log('⚠️ Could not stop recording:', stopError);
         }
         
         this.recording = null;
