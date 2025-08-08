@@ -75,6 +75,9 @@ export default function VoiceInputControls({
   const isSourceSpeechSupported = sourceLanguageConfig?.speechSupported ?? true;
   const isTargetSpeechSupported = targetLanguageConfig?.speechSupported ?? true;
   
+  // Use a ref to store the handleStopRecording function to avoid circular dependency
+  const handleStopRecordingRef = useRef<() => Promise<void>>();
+  
   // Forward declare functions that need to reference each other
   const startSilenceDetectionTimer = () => {
     // Clear any existing timer
@@ -86,15 +89,9 @@ export default function VoiceInputControls({
     silenceTimerRef.current = setTimeout(() => {
       if (isRecordingRef.current) {
         console.log('⏰ Backup timer: 2 seconds of silence detected, auto-stopping...');
-        setIsRecording(false);
-        isRecordingRef.current = false;
-        
-        // Stop VAD if running
-        if (voiceActivityServiceRef.current && state.isListening) {
-          voiceActivityServiceRef.current.stopListening().then(() => {
-            console.log('✅ VAD stopped after silence timeout');
-            actions.setListening(false);
-          }).catch(console.error);
+        // Call the proper stop handler
+        if (handleStopRecordingRef.current) {
+          handleStopRecordingRef.current();
         }
       }
     }, 2000);
@@ -276,22 +273,11 @@ export default function VoiceInputControls({
     }
   };
 
-  // Update the timer callback to properly call handleStopRecording
-  const updateSilenceTimer = () => {
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current);
-    }
-    
-    silenceTimerRef.current = setTimeout(() => {
-      if (isRecordingRef.current) {
-        console.log('⏰ Backup timer: 2 seconds of silence detected, auto-stopping...');
-        handleStopRecording();
-      }
-    }, 2000);
-  };
+
 
   const handleStopRecording = async () => {
     try {
+      console.log('🛑 handleStopRecording called');
       setIsRecording(false);
       isRecordingRef.current = false; // Update ref immediately
       
@@ -325,6 +311,9 @@ export default function VoiceInputControls({
       Alert.alert('Error', 'Failed to process recording');
     }
   };
+  
+  // Assign the function to the ref so it can be called from the timer
+  handleStopRecordingRef.current = handleStopRecording;
   
   // Process audio chunk from VAD
   const processAudioChunk = async (chunk: AudioChunk) => {
