@@ -163,6 +163,15 @@ export class VoiceActivityService {
         this.recording = null; // Clear the recording instance
       }
       
+      // Ensure audio mode is set for recording
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+        staysActiveInBackground: false,
+      });
+      
       // Create new recording - use separate instance to avoid conflicts
       console.log('🎤 Creating new chunk recording...');
       this.recording = new Audio.Recording();
@@ -203,7 +212,9 @@ export class VoiceActivityService {
       
     } catch (error) {
       console.error('❌ VoiceActivityService: Error starting new chunk:', error);
-      throw error;
+      console.error('   Error message:', error instanceof Error ? error.message : error);
+      this.callbacks?.onError(error instanceof Error ? error : new Error('Failed to start recording'));
+      // Don't throw - try to recover
     }
   }
   
