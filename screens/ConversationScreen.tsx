@@ -214,7 +214,18 @@ export default function ConversationScreen() {
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
       <Header />
       
+      <UTBTHeader />
+      
       <StatusPill status={pipelineStatus} />
+      
+      <LanguageSelector 
+        sourceLanguage={sourceLanguage}
+        targetLanguage={targetLanguage}
+        onSourceLanguageChange={setSourceLanguage}
+        onTargetLanguageChange={setTargetLanguage}
+      />
+      
+      <PerformanceIndicator showDetails={false} />
       
       <ScrollView style={styles.messagesContainer}>
         {isLoading ? (
@@ -362,7 +373,6 @@ const styles = StyleSheet.create({
   messagesContainer: {
     flex: 1,
     padding: 16,
-    paddingTop: 8, // Reduced top padding since headers are removed
   },
   emptyState: {
     flex: 1,
@@ -472,11 +482,8 @@ const styles = StyleSheet.create({
   },
   controlsContainer: {
     padding: 16,
-    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#e9ecef',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   controlsContainerDark: {
     borderTopColor: '#3a3a3a',
