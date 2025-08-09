@@ -29,7 +29,7 @@ export const SESSION_CONFIG = {
   MIN_SPEECH_MS: 500,        // Minimum utterance duration to process
   MAX_UTTERANCE_MS: 20000,   // Maximum recording duration
   AUTO_DISARM_MS: 60000,     // Auto-disarm after inactivity
-  FOREGROUND_ONLY: true,     // Session ends on background
+  FOREGROUND_ONLY: true,     // Session ends on background (docs: privacy protection)
   FILE_CLEANUP_DELAY_MS: 10000, // Delete audio files after processing
   STOP_DEBOUNCE_MS: 50,      // Debounce stop requests to prevent races
 };
@@ -339,6 +339,14 @@ export class ConversationSessionService {
     
     console.log(`[START] Platform check passed: ${Platform.OS}`);
     
+    // FOREGROUND-ONLY guard: Check if app is in foreground
+    const currentAppState = AppState.currentState;
+    if (SESSION_CONFIG.FOREGROUND_ONLY && currentAppState !== 'active') {
+      console.warn(`⚠️ [CM Start] blocked: app not foreground (from ${source})`);
+      this.startMutex = false;
+      return { ok: false, reason: 'background' };
+    }
+    
     try {
       // Stop any TTS playback FIRST
       console.log('[START] Stopping TTS...');
@@ -353,15 +361,19 @@ export class ConversationSessionService {
         throw new Error('Microphone permission denied');
       }
       
-      // Set audio mode
-      console.log('[START] Configuring audio mode...');
-      await Audio.setAudioModeAsync({
+      // Set audio mode - FOREGROUND-ONLY configuration
+      const audioModeConfig = {
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
-        staysActiveInBackground: false, // Privacy: foreground only
+        staysActiveInBackground: false, // Foreground-only. Backgrounding stops recording/session.
         shouldDuckAndroid: true,
         playThroughEarpieceAndroid: false,
-      });
+        interruptionModeIOS: Audio.InterruptionModeIOS.DoNotMix,
+        interruptionModeAndroid: Audio.InterruptionModeAndroid.DoNotMix,
+      };
+      
+      console.log('[START] Configuring audio mode:', audioModeConfig);
+      await Audio.setAudioModeAsync(audioModeConfig);
       
       // Update state
       await this.setState(SessionState.RECORDING);

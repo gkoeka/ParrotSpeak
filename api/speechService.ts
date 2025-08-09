@@ -10,7 +10,7 @@ const isAudioAvailable = !!Audio;
 const isFileSystemAvailable = !!FileSystem;
 
 // FOREGROUND-ONLY: All recording stops when app backgrounds
-const FOREGROUND_ONLY = true; // Enforces recording only when app is in foreground
+const FOREGROUND_ONLY = true; // Enforces recording only when app is in foreground (docs: privacy protection)
 
 // Interface for voice profile
 export interface VoiceProfile {
