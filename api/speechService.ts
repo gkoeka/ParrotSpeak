@@ -2,7 +2,8 @@ import { Audio } from 'expo-av';
 import * as Speech from 'expo-speech';
 import * as FileSystem from 'expo-file-system';
 import { recognizeSpeech } from './languageService';
-import { AppState } from 'react-native';
+import { Platform } from 'react-native';
+import { addAppStateListener, getCurrentAppState, isAppInForeground } from '../utils/safeAppState';
 
 // Mobile-only speech service with module availability checks
 const isSpeechAvailable = !!Speech;
@@ -211,7 +212,7 @@ let appStateSubscription: any = null;
 function initializeLegacyAppStateListener() {
   if (appStateSubscription) return; // Already initialized
   
-  appStateSubscription = AppState.addEventListener('change', (nextAppState) => {
+  appStateSubscription = addAppStateListener((nextAppState) => {
     if (nextAppState === 'background' || nextAppState === 'inactive') {
       if (legacyRecordingActive && legacyRecording) {
         console.log('📱 [Legacy] App backgrounded → stopping recording');
@@ -264,8 +265,7 @@ export async function legacyStartRecording(): Promise<void> {
     }
     
     // Check if app is in foreground (FOREGROUND-ONLY enforcement)
-    const currentAppState = AppState.currentState;
-    if (currentAppState !== 'active') {
+    if (!isAppInForeground()) {
       console.warn('⚠️ [Legacy Start] blocked: app not foreground');
       throw new Error('Cannot start recording when app is not in foreground');
     }

@@ -12,6 +12,8 @@ import AlwaysListeningToggle from './AlwaysListeningToggle';
 import { ConversationSessionService, SessionState } from '../services/ConversationSessionService';
 import { useConversation } from '../contexts/ConversationContext';
 import { useTheme } from '../contexts/ThemeContext';
+// Safe AppState wrapper
+import { isAppInForeground } from '../utils/safeAppState';
 
 interface VoiceInputControlsProps {
   onMessage: (message: {
@@ -245,7 +247,7 @@ export default function VoiceInputControls({
     try {
       // DIAGNOSTIC LOGGING
       const sessionState = sessionServiceRef.current?.getState() || 'no-service';
-      const isForeground = AppState.currentState === 'active';
+      const isForeground = isAppInForeground();
       console.log('[UI] tap', {
         cmEnabled: state.conversationModeEnabled,
         sessionState,

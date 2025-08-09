@@ -10,8 +10,9 @@
 
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
-import { Platform, AppState } from 'react-native';
+import { Platform } from 'react-native';
 import { stopSpeaking } from '../api/speechService';
+import { addAppStateListener, getCurrentAppState, isAppInForeground } from '../utils/safeAppState';
 
 // Session states for explicit lifecycle
 export enum SessionState {
@@ -217,8 +218,7 @@ export class ConversationSessionService {
     console.log(`[CM] startSession (state=${this.state})`);
     
     // Check if app is in foreground (FOREGROUND-ONLY enforcement)
-    const currentAppState = AppState.currentState;
-    if (currentAppState !== 'active') {
+    if (!isAppInForeground()) {
       console.warn('⚠️ [CM Start] blocked: app not foreground');
       throw new Error('Cannot start session when app is not in foreground');
     }
@@ -346,8 +346,7 @@ export class ConversationSessionService {
     console.log(`[START] Platform check passed: ${Platform.OS}`);
     
     // FOREGROUND-ONLY guard: Check if app is in foreground
-    const currentAppState = AppState.currentState;
-    if (SESSION_CONFIG.FOREGROUND_ONLY && currentAppState !== 'active') {
+    if (SESSION_CONFIG.FOREGROUND_ONLY && !isAppInForeground()) {
       console.warn(`⚠️ [CM Start] blocked: app not foreground (from ${source})`);
       this.startMutex = false;
       return { ok: false, reason: 'background' };
