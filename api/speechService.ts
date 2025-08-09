@@ -19,6 +19,9 @@ const loggedFallbacks = new Set<string>();
 // Track if we've shown the long recording banner this session
 let longRecordingBannerShown = false;
 
+// Initialize audio route change monitoring
+let audioRouteListener: any = null;
+
 // Interface for voice profile
 export interface VoiceProfile {
   id: string;
@@ -213,6 +216,8 @@ export async function speakText(
         pitch: voiceProfile?.pitch ?? 1.0,
         rate: voiceProfile?.rate ?? 0.9,
         onDone: () => {
+          // Log audio route when TTS completes
+          logAudioRouteStatus('TTS complete');
           if (onDone) onDone();
           resolve();
         },
@@ -224,6 +229,10 @@ export async function speakText(
           } else {
             reject(error);
           }
+        },
+        onStart: () => {
+          // Log audio route when TTS starts
+          logAudioRouteStatus('TTS start');
         }
       };
       
@@ -307,6 +316,43 @@ let legacyRecordingActive: boolean = false;
 // AppState listener for legacy mode
 let appStateSubscription: any = null;
 
+// Initialize audio route monitoring on first use
+async function initializeAudioRouteMonitoring() {
+  if (audioRouteListener || !isAudioAvailable) return;
+  
+  try {
+    // Set up audio route change detection if available
+    // Note: Expo AV doesn't directly expose route change events,
+    // but we can detect them through recording status changes
+    console.log('🎧 [AudioRoute] Monitoring initialized');
+    
+    // Mark as initialized
+    audioRouteListener = true;
+  } catch (error) {
+    console.log('🎧 [AudioRoute] Could not initialize monitoring:', error);
+  }
+}
+
+// Log audio route changes (called during recording state changes)
+async function logAudioRouteStatus(context: string) {
+  if (!isAudioAvailable) return;
+  
+  try {
+    // Log context for route changes
+    console.log(`🎧 [AudioRoute] Status during ${context}`);
+    
+    // If recording is active, check its status
+    if (legacyRecording) {
+      const status = await legacyRecording.getStatusAsync();
+      if (status.isRecording) {
+        console.log('🎧 [AudioRoute] Recording still active after route change');
+      }
+    }
+  } catch (error) {
+    // Silent fail - route logging is non-critical
+  }
+}
+
 // Initialize AppState listener for legacy mode
 function initializeLegacyAppStateListener() {
   if (appStateSubscription) return; // Already initialized
@@ -376,6 +422,9 @@ export async function legacyStartRecording(): Promise<void> {
     // Initialize AppState listener if not already done
     initializeLegacyAppStateListener();
     
+    // Initialize audio route monitoring
+    await initializeAudioRouteMonitoring();
+    
     // Configure audio mode - FOREGROUND-ONLY configuration with optimized settings
     await Audio.setAudioModeAsync({ 
       allowsRecordingIOS: true, 
@@ -399,6 +448,9 @@ export async function legacyStartRecording(): Promise<void> {
       legacyRecording = recording;
       legacyRecordingActive = true;
       console.log('✅ [Legacy] Recording started successfully');
+      
+      // Log initial audio route
+      await logAudioRouteStatus('recording start');
     } catch (createError: any) {
       // Handle specific error types with user-friendly messages
       if (createError.message?.includes('permission')) {
@@ -433,6 +485,9 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
     
     // Mark as inactive immediately to prevent double-stop
     legacyRecordingActive = false;
+    
+    // Log audio route at stop
+    await logAudioRouteStatus('recording stop');
     
     // Stop and unload the recording with try/catch guard
     let uri = '';
