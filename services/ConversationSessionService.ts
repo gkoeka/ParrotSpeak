@@ -233,8 +233,6 @@ export class ConversationSessionService {
         shouldDuckAndroid: true,
         staysActiveInBackground: false, // Foreground-only. Backgrounding stops recording/session.
         playThroughEarpieceAndroid: false,
-        interruptionModeIOS: Audio.InterruptionModeIOS.DoNotMix,
-        interruptionModeAndroid: Audio.InterruptionModeAndroid.DoNotMix,
       };
       
       console.log('🔊 [CM] Audio mode config:', audioModeConfig);
@@ -368,8 +366,6 @@ export class ConversationSessionService {
         staysActiveInBackground: false, // Foreground-only. Backgrounding stops recording/session.
         shouldDuckAndroid: true,
         playThroughEarpieceAndroid: false,
-        interruptionModeIOS: Audio.InterruptionModeIOS.DoNotMix,
-        interruptionModeAndroid: Audio.InterruptionModeAndroid.DoNotMix,
       };
       
       console.log('[START] Configuring audio mode:', audioModeConfig);

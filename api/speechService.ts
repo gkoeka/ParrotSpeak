@@ -286,8 +286,6 @@ export async function legacyStartRecording(): Promise<void> {
       staysActiveInBackground: false, // Foreground-only. Backgrounding stops recording/session.
       shouldDuckAndroid: true,
       playThroughEarpieceAndroid: false,
-      interruptionModeIOS: Audio.InterruptionModeIOS.DoNotMix,
-      interruptionModeAndroid: Audio.InterruptionModeAndroid.DoNotMix,
     };
     
     console.log('🔊 [Legacy] Audio mode config:', audioModeConfig);
