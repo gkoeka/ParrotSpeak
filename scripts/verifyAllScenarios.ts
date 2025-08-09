@@ -5,11 +5,21 @@ import { spawn } from 'child_process';
 import { writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
 
+// Strict allowlist of executable commands with their base arguments
+const ALLOWED_COMMANDS: Record<string, { cmd: string; baseArgs: string[] }> = {
+  "tsx-exec": { cmd: "tsx", baseArgs: ["-e"] },
+  "node-exec": { cmd: "node", baseArgs: ["-e"] },
+  "node-file": { cmd: "node", baseArgs: [] },
+  "tsc": { cmd: "npx", baseArgs: ["tsc", "--noEmit"] },
+  "lint": { cmd: "npx", baseArgs: ["eslint", "--max-warnings=0"] },
+  "route-check": { cmd: "node", baseArgs: ["scripts/verify-routes-used.js"] },
+};
+
 interface LoadingScenario {
   name: string;
   description: string;
-  command: string;
-  args: string[];
+  scenarioId: string;  // Key into ALLOWED_COMMANDS
+  extraArgs: string[];  // Additional arguments to append
   envVars?: Record<string, string>;
   tempFiles?: Array<{ path: string; content: string }>;
   expectedPatterns: string[];
@@ -20,8 +30,8 @@ const LOADING_SCENARIOS: LoadingScenario[] = [
   {
     name: 'TSX Script Execution',
     description: 'Direct tsx execution (development workflow)',
-    command: 'tsx',
-    args: ['-e', `
+    scenarioId: 'tsx-exec',
+    extraArgs: [`
       const { API_BASE_URL, API_CONFIG } = require('./api/envConfig.ts');
       console.log('TSX_TEST_RESULT:', JSON.stringify({
         url: API_BASE_URL,
@@ -40,8 +50,8 @@ const LOADING_SCENARIOS: LoadingScenario[] = [
   {
     name: 'Node.js CommonJS Require',
     description: 'Node.js require() compatibility test',
-    command: 'node',
-    args: ['-e', `
+    scenarioId: 'node-exec',
+    extraArgs: [`
       try {
         const config = require('./api/envConfig.cjs');
         console.log('NODEJS_COMMONJS_RESULT:', JSON.stringify({
@@ -65,8 +75,8 @@ const LOADING_SCENARIOS: LoadingScenario[] = [
   {
     name: 'Node.js ES Module Import',
     description: 'Node.js ES module import() compatibility test',
-    command: 'node',
-    args: ['temp_es_test.mjs'],
+    scenarioId: 'node-file',
+    extraArgs: ['temp_es_test.mjs'],
     tempFiles: [{
       path: 'temp_es_test.mjs',
       content: `
@@ -96,8 +106,8 @@ const LOADING_SCENARIOS: LoadingScenario[] = [
   {
     name: 'Expo Mobile Environment',
     description: 'Expo mobile environment simulation with env vars',
-    command: 'tsx',
-    args: ['-e', `
+    scenarioId: 'tsx-exec',
+    extraArgs: [`
       const { API_BASE_URL, API_CONFIG } = require('./api/envConfig.ts');
       console.log('EXPO_MOBILE_RESULT:', JSON.stringify({
         url: API_BASE_URL,
@@ -122,8 +132,8 @@ const LOADING_SCENARIOS: LoadingScenario[] = [
   {
     name: 'OTA Reload Simulation',
     description: 'Simulate Expo OTA reload with environment changes',
-    command: 'tsx',
-    args: ['-e', `
+    scenarioId: 'tsx-exec',
+    extraArgs: [`
       // Simulate OTA reload by requiring config multiple times with different env vars
       
       // First load - no env var
@@ -159,8 +169,8 @@ const LOADING_SCENARIOS: LoadingScenario[] = [
   {
     name: 'EAS Build Simulation',
     description: 'Simulate EAS production build environment',
-    command: 'tsx',
-    args: ['-e', `
+    scenarioId: 'tsx-exec',
+    extraArgs: [`
       // Simulate EAS build environment variables
       process.env.NODE_ENV = 'production';
       process.env.EXPO_PUBLIC_API_URL = 'https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev';
@@ -193,8 +203,8 @@ const LOADING_SCENARIOS: LoadingScenario[] = [
   {
     name: 'Development Server Integration',
     description: 'Development server with live config reloading',
-    command: 'tsx',
-    args: ['-e', `
+    scenarioId: 'tsx-exec',
+    extraArgs: [`
       // Simulate development server startup
       process.env.NODE_ENV = 'development';
       delete process.env.EXPO_PUBLIC_API_URL;
@@ -244,6 +254,44 @@ interface TestResult {
 async function runLoadingScenario(scenario: LoadingScenario): Promise<TestResult> {
   const startTime = Date.now();
   
+  // Validate scenario against allowlist
+  const allowedCommand = ALLOWED_COMMANDS[scenario.scenarioId];
+  if (!allowedCommand) {
+    const error = `Scenario '${scenario.scenarioId}' not in allowed commands list`;
+    console.error(`❌ Security Error: ${error}`);
+    return {
+      scenario,
+      success: false,
+      output: '',
+      error,
+      duration: 0,
+      patternsMatched: 0
+    };
+  }
+  
+  // Validate extra arguments (no shell injection patterns)
+  const invalidArgPatterns = [';', '&&', '||', '|', '>', '<', '`', '$', '\n', '\r'];
+  const hasInvalidArgs = scenario.extraArgs.some(arg => 
+    invalidArgPatterns.some(pattern => arg.includes(pattern))
+  );
+  
+  if (hasInvalidArgs && scenario.scenarioId !== 'tsx-exec' && scenario.scenarioId !== 'node-exec') {
+    const error = `Invalid characters in arguments for scenario '${scenario.name}'`;
+    console.error(`❌ Security Error: ${error}`);
+    return {
+      scenario,
+      success: false,
+      output: '',
+      error,
+      duration: 0,
+      patternsMatched: 0
+    };
+  }
+  
+  // Build safe command and arguments
+  const cmd = allowedCommand.cmd;
+  const args = [...allowedCommand.baseArgs, ...scenario.extraArgs];
+  
   // Create temporary files if needed
   if (scenario.tempFiles) {
     scenario.tempFiles.forEach(file => {
@@ -254,10 +302,12 @@ async function runLoadingScenario(scenario: LoadingScenario): Promise<TestResult
   return new Promise((resolve) => {
     const env = scenario.envVars ? { ...process.env, ...scenario.envVars } : process.env;
     
-    const child = spawn(scenario.command, scenario.args, {
+    // Explicitly set shell: false for security (though it's the default)
+    const child = spawn(cmd, args, {
       env,
       stdio: 'pipe',
-      timeout: scenario.timeout
+      timeout: scenario.timeout,
+      shell: false  // Explicitly disable shell execution
     });
     
     let stdout = '';
