@@ -289,13 +289,14 @@ export default function VoiceInputControls({
         // Import legacy recording functions
         const { legacyStartRecording, isLegacyRecordingActive } = await import('../api/speechService');
         
-        // Check if already recording (prevent double-tap)
+        // Check if already recording - if so, STOP it (second tap)
         if (isLegacyRecordingActive()) {
-          console.log('⚠️ [OFF Mode] Already recording - ignoring tap');
+          console.log('🛑 [OFF Mode] Second tap - stopping recording');
+          await handleStopRecording();
           return;
         }
         
-        console.log('🎤 [OFF Mode] Starting legacy recording...');
+        console.log('🎤 [OFF Mode] First tap - starting legacy recording...');
         
         // Start legacy recording
         setIsRecording(true);
@@ -304,10 +305,9 @@ export default function VoiceInputControls({
         
         try {
           await legacyStartRecording();
-          console.log('✅ [OFF Mode] Legacy recording started');
+          console.log('✅ [OFF Mode] Legacy recording started - tap again to stop');
           
-          // For legacy mode, we don't have auto-stop, so we'll rely on manual stop
-          // or add a timer if needed
+          // For legacy mode, we rely on manual stop (second tap)
         } catch (error: any) {
           console.error('❌ [OFF Mode] Legacy recording failed:', error);
           setIsRecording(false);
