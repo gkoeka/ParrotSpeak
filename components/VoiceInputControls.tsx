@@ -285,10 +285,17 @@ export default function VoiceInputControls({
       } else {
         // CONVERSATION MODE OFF - Use legacy recording
         console.log('📊 Recording mode: Legacy (CM OFF)');
-        console.log('🎤 [OFF Mode] Starting legacy recording...');
         
         // Import legacy recording functions
-        const { legacyStartRecording } = await import('../api/speechService');
+        const { legacyStartRecording, isLegacyRecordingActive } = await import('../api/speechService');
+        
+        // Check if already recording (prevent double-tap)
+        if (isLegacyRecordingActive()) {
+          console.log('⚠️ [OFF Mode] Already recording - ignoring tap');
+          return;
+        }
+        
+        console.log('🎤 [OFF Mode] Starting legacy recording...');
         
         // Start legacy recording
         setIsRecording(true);

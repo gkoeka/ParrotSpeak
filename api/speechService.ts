@@ -285,9 +285,12 @@ export async function legacyStopRecording(): Promise<{ uri: string; duration: nu
     console.log('🛑 [Legacy] Stopping legacy recording...');
     
     if (!legacyRecording || !legacyRecordingActive) {
-      console.warn('⚠️ [Legacy] No active recording to stop');
+      console.warn('⚠️ [Legacy] No active recording to stop - ignoring');
       return { uri: '', duration: 0 };
     }
+    
+    // Mark as inactive immediately to prevent double-stop
+    legacyRecordingActive = false;
     
     // Stop and unload the recording
     await legacyRecording.stopAndUnloadAsync();
@@ -297,17 +300,25 @@ export async function legacyStopRecording(): Promise<{ uri: string; duration: nu
     
     // Clean up
     legacyRecording = null;
-    legacyRecordingActive = false;
     
     console.log(`✅ [Legacy] Recording stopped. Duration: ${duration}ms, URI: ${uri.substring(uri.length - 30)}`);
     
     return { uri, duration };
   } catch (error) {
-    console.error('❌ [Legacy] Failed to stop recording:', error);
+    console.error('❌ [Legacy] Error during stop (non-fatal):', error);
+    // Clean up regardless of error
     legacyRecording = null;
     legacyRecordingActive = false;
-    throw error;
+    // Return empty result instead of throwing - prevents UI errors
+    return { uri: '', duration: 0 };
   }
+}
+
+/**
+ * Check if legacy recording is currently active
+ */
+export function isLegacyRecordingActive(): boolean {
+  return legacyRecordingActive;
 }
 
 // Keep deprecated exports for backward compatibility but disabled for CM mode
