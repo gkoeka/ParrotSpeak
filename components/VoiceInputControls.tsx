@@ -239,7 +239,7 @@ export default function VoiceInputControls({
       const useSession = sessionServiceRef.current && sessionInitialized && state.conversationModeEnabled;
       console.log('📊 Recording mode:', useSession ? 'Session (Conversation Mode)' : 'Regular');
       
-      if (useSession) {
+      if (useSession && sessionServiceRef.current) {
         // Session-based recording
         const currentState = sessionServiceRef.current.getState();
         
@@ -476,11 +476,11 @@ export default function VoiceInputControls({
             style={[
               styles.vadButton,
               state.isListening && styles.vadButtonActive,
-              !vadInitialized && styles.vadButtonDisabled,
+              false && styles.vadButtonDisabled,  // VAD removed - using session-based recording
               { backgroundColor: state.isListening ? '#ff4444' : '#3366FF' }
             ]}
             onPress={() => console.log('VAD toggle - not implemented in turn-based model')}
-            disabled={!vadInitialized}
+            disabled={true}  // VAD removed - using session-based recording
           >
             <Ionicons 
               name={state.isListening ? 'stop' : 'mic'} 
@@ -488,7 +488,7 @@ export default function VoiceInputControls({
               color="#ffffff" 
             />
             <Text style={styles.vadButtonText}>
-              {!vadInitialized ? 'Initializing...' : state.isListening ? 'Stop Listening' : 'Start Listening'}
+              {state.isListening ? 'Stop Listening' : 'Start Listening'}
             </Text>
           </TouchableOpacity>
 

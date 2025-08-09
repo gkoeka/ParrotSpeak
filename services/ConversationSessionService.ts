@@ -47,6 +47,8 @@ export interface SessionCallbacks {
 }
 
 export class ConversationSessionService {
+  private static instance: ConversationSessionService | null = null;
+  
   private state: SessionState = SessionState.DISARMED;
   private callbacks: SessionCallbacks | null = null;
   private recording: Audio.Recording | null = null;
@@ -71,6 +73,16 @@ export class ConversationSessionService {
 
   constructor() {
     console.log('🎯 ConversationSessionService: Created');
+  }
+  
+  /**
+   * Get singleton instance
+   */
+  public static getInstance(): ConversationSessionService {
+    if (!this.instance) {
+      this.instance = new ConversationSessionService();
+    }
+    return this.instance;
   }
 
   /**
