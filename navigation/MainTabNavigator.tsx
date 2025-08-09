@@ -35,7 +35,6 @@ export type TabParamList = {
 export type ChatStackParamList = {
   Home: undefined;
   Conversation: { id?: string };
-  Analytics: undefined;
 };
 
 export type HistoryStackParamList = {
@@ -49,6 +48,7 @@ export type SettingsStackParamList = {
   SubscriptionPlans: undefined;
   Pricing: undefined;
   Checkout: { plan: string; amount: number; interval: string };
+  Analytics: undefined;
   HelpCenter: undefined;
   PrivacyPolicy: undefined;
   TermsConditions: undefined;
@@ -79,7 +79,6 @@ function ChatStackNavigator() {
     >
       <ChatStack.Screen name="Conversation" component={ConversationScreen} />
       <ChatStack.Screen name="Home" component={HomeScreen} />
-      <ChatStack.Screen name="Analytics" component={AnalyticsScreen} />
     </ChatStack.Navigator>
   );
 }
@@ -115,6 +114,7 @@ function SettingsStackNavigator() {
       <SettingsStack.Screen name="SubscriptionPlans" component={SubscriptionPlansScreen} />
       <SettingsStack.Screen name="Pricing" component={PricingScreen} />
       <SettingsStack.Screen name="Checkout" component={CheckoutScreen} />
+      <SettingsStack.Screen name="Analytics" component={AnalyticsScreen} />
       <SettingsStack.Screen name="HelpCenter" component={HelpCenterScreen} />
       <SettingsStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
       <SettingsStack.Screen name="TermsConditions" component={TermsConditionsScreen} />

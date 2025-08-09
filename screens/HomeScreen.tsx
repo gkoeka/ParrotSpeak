@@ -80,11 +80,11 @@ export default function HomeScreen() {
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={styles.featureCard}
-            onPress={() => navigation.navigate('Analytics')}
+            style={[styles.featureCard, isDarkMode && styles.featureCardDark]}
+            onPress={() => navigation.navigate('SettingsTab', { screen: 'Analytics' })}
           >
-            <Text style={styles.featureTitle}>Analytics</Text>
-            <Text style={styles.featureDescription}>Usage insights</Text>
+            <Text style={[styles.featureTitle, isDarkMode && styles.featureTitleDark]}>Analytics</Text>
+            <Text style={[styles.featureDescription, isDarkMode && styles.featureDescriptionDark]}>Usage insights</Text>
           </TouchableOpacity>
         </View>
       </View>

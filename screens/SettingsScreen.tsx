@@ -71,11 +71,10 @@ export default function SettingsScreen() {
   const analyticsOptions = [
     { 
       title: 'Analytics Dashboard', 
-      screen: 'ChatTab',
+      screen: 'Analytics',
       icon: 'bar-chart-outline',
       subtitle: 'View your usage stats',
-      isTab: true,
-      params: { screen: 'Analytics' }
+      isStack: true
     },
     { 
       title: 'Privacy Controls', 
