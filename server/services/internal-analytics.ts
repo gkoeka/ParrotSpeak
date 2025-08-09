@@ -9,10 +9,20 @@ import {
 import { conversations, users, messages } from "@shared/schema";
 import { eq, and, gte, lte, desc, count, avg, sql } from "drizzle-orm";
 
+// Rate limiting for error logs (log once per minute max)
+let lastErrorLogTime = 0;
+const ERROR_LOG_INTERVAL = 60000; // 1 minute
+
 export class InternalAnalyticsService {
   
   // Track when a conversation starts
   static async startConversationTracking(conversationId: string, userId?: number) {
+    // Check if metrics are enabled
+    if (process.env.METRICS_ENABLED !== 'true') {
+      console.log('[Metrics] disabled');
+      return;
+    }
+
     try {
       await db.insert(conversationMetrics).values({
         conversationId,
@@ -23,7 +33,12 @@ export class InternalAnalyticsService {
         lastActivityAt: new Date()
       });
     } catch (error) {
-      console.error('Failed to start conversation tracking:', error);
+      // Rate-limited error logging (once per minute max)
+      const now = Date.now();
+      if (now - lastErrorLogTime > ERROR_LOG_INTERVAL) {
+        console.error('[Metrics] Error starting conversation tracking (silenced for 1 min):', error);
+        lastErrorLogTime = now;
+      }
       // Don't throw - analytics failures shouldn't break user functionality
     }
   }
@@ -35,6 +50,12 @@ export class InternalAnalyticsService {
     failed?: boolean;
     retried?: boolean;
   }) {
+    // Check if metrics are enabled
+    if (process.env.METRICS_ENABLED !== 'true') {
+      console.log('[Metrics] disabled');
+      return;
+    }
+
     try {
       const existing = await db.query.conversationMetrics.findFirst({
         where: eq(conversationMetrics.conversationId, conversationId)
@@ -84,7 +105,13 @@ export class InternalAnalyticsService {
         .where(eq(conversationMetrics.conversationId, conversationId));
 
     } catch (error) {
-      console.error('Failed to update conversation metrics:', error);
+      // Rate-limited error logging (once per minute max)
+      const now = Date.now();
+      if (now - lastErrorLogTime > ERROR_LOG_INTERVAL) {
+        console.error('[Metrics] Error updating conversation metrics (silenced for 1 min):', error);
+        lastErrorLogTime = now;
+      }
+      // Never throw - analytics failures shouldn't break user functionality
     }
   }
 

@@ -9,6 +9,9 @@ import { setupAuth } from "./auth";
 
 const app = express();
 
+// Environment configuration with defaults
+process.env.METRICS_ENABLED = process.env.METRICS_ENABLED || 'false';
+
 // Basic setup for Replit environment
 app.set('trust proxy', 1);
 
