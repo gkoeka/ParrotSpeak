@@ -317,6 +317,27 @@ let legacyRecordingActive: boolean = false;
 // AppState listener for legacy mode
 let appStateSubscription: any = null;
 
+/**
+ * Helper to resolve interruption mode constants safely across Expo AV versions
+ * Some SDK versions may not have all constants defined
+ */
+function resolveInterruptionModes(Audio: any) {
+  // Legacy constants present in most SDKs
+  const IOS = Audio?.InterruptionModeIOS?.DoNotMix
+    ?? Audio?.INTERRUPTION_MODE_IOS_DO_NOT_MIX
+    ?? Audio?.InterruptionModeIOS?.MixWithOthers
+    ?? Audio?.INTERRUPTION_MODE_IOS_MIX_WITH_OTHERS
+    ?? 0; // fallback to numeric value
+    
+  const ANDROID = Audio?.InterruptionModeAndroid?.DoNotMix
+    ?? Audio?.INTERRUPTION_MODE_ANDROID_DO_NOT_MIX
+    ?? Audio?.InterruptionModeAndroid?.DuckOthers
+    ?? Audio?.INTERRUPTION_MODE_ANDROID_DUCK_OTHERS
+    ?? 1; // fallback to numeric value
+    
+  return { IOS, ANDROID };
+}
+
 // Initialize audio route monitoring on first use
 async function initializeAudioRouteMonitoring() {
   if (audioRouteListener || !isAudioAvailable) return;
@@ -440,14 +461,22 @@ export async function legacyStartRecording(): Promise<void> {
     await initializeAudioRouteMonitoring();
     
     // Configure audio mode - FOREGROUND-ONLY configuration with optimized settings
-    await Audio.setAudioModeAsync({ 
-      allowsRecordingIOS: true, 
-      playsInSilentModeIOS: true, 
-      staysActiveInBackground: false, // Enforces foreground-only recording
-      interruptionModeIOS: Audio.InterruptionModeIOS.DoNotMix, 
-      interruptionModeAndroid: Audio.InterruptionModeAndroid.DoNotMix, 
-      shouldDuckAndroid: true 
-    });
+    if (!Audio || !Audio.setAudioModeAsync) {
+      console.warn('[AudioMode] Audio module unavailable; skipping setAudioModeAsync');
+    } else {
+      const { IOS, ANDROID } = resolveInterruptionModes(Audio);
+      console.log('[AudioMode] Using interruption modes', { IOS, ANDROID });
+      
+      await Audio.setAudioModeAsync({ 
+        allowsRecordingIOS: true, 
+        playsInSilentModeIOS: true, 
+        staysActiveInBackground: false, // Enforces foreground-only recording
+        interruptionModeIOS: IOS, 
+        interruptionModeAndroid: ANDROID, 
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false
+      });
+    }
     
     // Check and request permissions every time
     console.log('🎤 [Perms] Checking microphone permission...');
