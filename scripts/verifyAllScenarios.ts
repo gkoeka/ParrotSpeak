@@ -249,6 +249,75 @@ interface TestResult {
 }
 
 /**
+ * Validate arguments for safety
+ * Only allows simple flag patterns and rejects dangerous characters
+ */
+function validateExtraArgs(args: string[], scenarioId: string): { valid: boolean; error?: string } {
+  // Special handling for exec scenarios that need code snippets
+  if (scenarioId === 'tsx-exec' || scenarioId === 'node-exec') {
+    // For exec scenarios, we expect a single code string
+    if (args.length !== 1) {
+      return { valid: false, error: 'Exec scenarios must have exactly one code argument' };
+    }
+    // Code snippets can be longer but still have a reasonable limit
+    if (args[0].length > 5000) {
+      return { valid: false, error: 'Code argument exceeds 5000 character limit' };
+    }
+    return { valid: true };
+  }
+  
+  // For non-exec scenarios, strict validation
+  const MAX_ARGS = 6;
+  const MAX_ARG_LENGTH = 200;
+  const MAX_TOTAL_LENGTH = 500;
+  
+  // Check arg count
+  if (args.length > MAX_ARGS) {
+    return { valid: false, error: `Too many arguments (${args.length} > ${MAX_ARGS})` };
+  }
+  
+  // Check total length
+  const totalLength = args.join(' ').length;
+  if (totalLength > MAX_TOTAL_LENGTH) {
+    return { valid: false, error: `Total arguments too long (${totalLength} > ${MAX_TOTAL_LENGTH})` };
+  }
+  
+  // Forbidden metacharacters that could be used for injection
+  const FORBIDDEN_CHARS = [
+    ';', '|', '&', '>', '<', '$', '`', "'", '"',
+    '(', ')', '{', '}', '[', ']', '*', '?', '~',
+    '\n', '\r', '\t', '\\'
+  ];
+  
+  // Valid flag patterns
+  const FLAG_PATTERN = /^--[a-zA-Z0-9-]+(=[a-zA-Z0-9_\-\.\/]+)?$/;
+  const SHORT_FLAG_PATTERN = /^-[a-zA-Z0-9]$/;
+  const FILE_PATH_PATTERN = /^[a-zA-Z0-9_\-\.\/]+$/;
+  
+  for (const arg of args) {
+    // Check length
+    if (arg.length > MAX_ARG_LENGTH) {
+      return { valid: false, error: `Argument too long: "${arg.substring(0, 50)}..."` };
+    }
+    
+    // Check for forbidden characters
+    for (const char of FORBIDDEN_CHARS) {
+      if (arg.includes(char)) {
+        return { valid: false, error: `Forbidden character '${char}' in argument: "${arg}"` };
+      }
+    }
+    
+    // Check if it matches valid patterns
+    const isValidFlag = FLAG_PATTERN.test(arg) || SHORT_FLAG_PATTERN.test(arg) || FILE_PATH_PATTERN.test(arg);
+    if (!isValidFlag) {
+      return { valid: false, error: `Invalid argument format: "${arg}"` };
+    }
+  }
+  
+  return { valid: true };
+}
+
+/**
  * Run a single loading scenario test
  */
 async function runLoadingScenario(scenario: LoadingScenario): Promise<TestResult> {
@@ -269,14 +338,10 @@ async function runLoadingScenario(scenario: LoadingScenario): Promise<TestResult
     };
   }
   
-  // Validate extra arguments (no shell injection patterns)
-  const invalidArgPatterns = [';', '&&', '||', '|', '>', '<', '`', '$', '\n', '\r'];
-  const hasInvalidArgs = scenario.extraArgs.some(arg => 
-    invalidArgPatterns.some(pattern => arg.includes(pattern))
-  );
-  
-  if (hasInvalidArgs && scenario.scenarioId !== 'tsx-exec' && scenario.scenarioId !== 'node-exec') {
-    const error = `Invalid characters in arguments for scenario '${scenario.name}'`;
+  // Validate extra arguments for safety
+  const validation = validateExtraArgs(scenario.extraArgs, scenario.scenarioId);
+  if (!validation.valid) {
+    const error = `Argument validation failed: ${validation.error}`;
     console.error(`❌ Security Error: ${error}`);
     return {
       scenario,
