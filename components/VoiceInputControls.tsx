@@ -273,7 +273,8 @@ export default function VoiceInputControls({
         console.log(`📊 Current session state: ${currentState}`);
         
         if (currentState === SessionState.DISARMED) {
-          // Start a new session
+          // TASK A FIX: First tap only arms the session, does NOT start recording
+          console.log('[UI] CM tap#1 → startSession only (DISARMED→ARMED_IDLE)');
           console.log('🚀 Starting new Conversation Mode session...');
           await sessionServiceRef.current.startSession();
           
@@ -281,17 +282,10 @@ export default function VoiceInputControls({
           const updatedState = sessionServiceRef.current.getState();
           console.log(`📊 Session state after start: ${updatedState}`);
           
-          // Now start recording if session is armed
+          // DO NOT start recording on first tap - wait for second tap or VAD
           if (updatedState === SessionState.ARMED_IDLE) {
-            console.log('🎤 Session armed, starting recording...');
-            // Don't set isRecording here - let the callback handle it
-            const result = await sessionServiceRef.current.startRecording('micTap');
-            if (result.ok) {
-              actions.setListening(true);
-              console.log('✅ CM recording started - will auto-stop after 2s of silence');
-            } else {
-              console.log(`⚠️ CM start failed: ${result.reason}`);
-            }
+            console.log('✅ Session armed - tap again to start recording or just start speaking');
+            actions.setListening(false); // Not listening yet, just armed
           }
         } else if (currentState === SessionState.ARMED_IDLE) {
           // Session already armed, just start recording
