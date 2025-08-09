@@ -152,3 +152,27 @@ export function useParticipants() {
   }
   return context;
 }
+
+/**
+ * Hook-based selector to check if auto-detect speakers is enabled
+ * Must be used within a React component
+ * @returns boolean indicating if auto-detect is enabled
+ */
+export function useIsAutoDetectEnabled(): boolean {
+  const context = useContext(ParticipantsContext);
+  if (!context) {
+    // Return default value if context not available
+    return true;
+  }
+  return context.participants.autoDetectSpeakers;
+}
+
+/**
+ * Safe selector to check if auto-detect speakers is enabled
+ * Can be used anywhere, returns default if context unavailable
+ * @param participants - The participants state object
+ * @returns boolean indicating if auto-detect is enabled
+ */
+export function isAutoDetectEnabled(participants?: ParticipantsState): boolean {
+  return participants?.autoDetectSpeakers ?? true;
+}

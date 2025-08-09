@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, Platform, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -48,6 +48,12 @@ export default function VoiceInputControls({
   
   // Track if long recording banner has been shown this session
   const [longRecordingBannerShown, setLongRecordingBannerShown] = useState(false);
+
+  // Log auto-detect status on mount
+  useEffect(() => {
+    const autoDetectEnabled = participants.autoDetectSpeakers;
+    console.log(`[AutoDetect] enabled=${autoDetectEnabled}`);
+  }, []); // Only run once on mount
 
   // Check if source or target language supports speech
   const normalizeLanguageCode = (code: string) => {
