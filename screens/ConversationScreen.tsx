@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, I18nManager, ActivityIndicator, Button } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
@@ -25,6 +26,7 @@ export default function ConversationScreen() {
   const navigation = useNavigation<ConversationNavigationProp>();
   const route = useRoute<any>();
   const conversationId = route.params?.id;
+  const insets = useSafeAreaInsets();
   
   // Probe functionality removed - no longer needed after recording fixes
   
@@ -288,7 +290,11 @@ export default function ConversationScreen() {
         )}
       </ScrollView>
       
-      <View style={[styles.controlsContainer, isDarkMode && styles.controlsContainerDark]}>
+      <View style={[
+        styles.controlsContainer, 
+        isDarkMode && styles.controlsContainerDark,
+        { paddingBottom: Math.max(16, insets.bottom + 8) }
+      ]}>
         <VoiceInputControls 
           onStatusChange={setPipelineStatus}
           onMessage={async (message) => {

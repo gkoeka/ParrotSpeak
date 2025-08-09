@@ -475,7 +475,9 @@ export default function VoiceInputControls({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 4,
     backgroundColor: 'transparent',
   },
 
