@@ -5,11 +5,21 @@ import { spawn } from 'child_process';
 import { writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
 
+// Strict allowlist of executable commands with their base arguments
+const ALLOWED_COMMANDS: Record<string, { cmd: string; baseArgs: string[] }> = {
+  "tsx-exec": { cmd: "tsx", baseArgs: ["-e"] },
+  "node-exec": { cmd: "node", baseArgs: ["-e"] },
+  "node-file": { cmd: "node", baseArgs: [] },
+  "tsc": { cmd: "npx", baseArgs: ["tsc", "--noEmit"] },
+  "lint": { cmd: "npx", baseArgs: ["eslint", "--max-warnings=0"] },
+  "route-check": { cmd: "node", baseArgs: ["scripts/verify-routes-used.js"] },
+};
+
 interface LoadingScenario {
   name: string;
   description: string;
-  command: string;
-  args: string[];
+  scenarioId: string;  // Key into ALLOWED_COMMANDS
+  extraArgs: string[];  // Additional arguments to append
   envVars?: Record<string, string>;
   tempFiles?: Array<{ path: string; content: string }>;
   expectedPatterns: string[];
@@ -20,8 +30,8 @@ const LOADING_SCENARIOS: LoadingScenario[] = [
   {
     name: 'TSX Script Execution',
     description: 'Direct tsx execution (development workflow)',
-    command: 'tsx',
-    args: ['-e', `
+    scenarioId: 'tsx-exec',
+    extraArgs: [`
       const { API_BASE_URL, API_CONFIG } = require('./api/envConfig.ts');
       console.log('TSX_TEST_RESULT:', JSON.stringify({
         url: API_BASE_URL,
@@ -40,8 +50,8 @@ const LOADING_SCENARIOS: LoadingScenario[] = [
   {
     name: 'Node.js CommonJS Require',
     description: 'Node.js require() compatibility test',
-    command: 'node',
-    args: ['-e', `
+    scenarioId: 'node-exec',
+    extraArgs: [`
       try {
         const config = require('./api/envConfig.cjs');
         console.log('NODEJS_COMMONJS_RESULT:', JSON.stringify({
@@ -65,8 +75,8 @@ const LOADING_SCENARIOS: LoadingScenario[] = [
   {
     name: 'Node.js ES Module Import',
     description: 'Node.js ES module import() compatibility test',
-    command: 'node',
-    args: ['temp_es_test.mjs'],
+    scenarioId: 'node-file',
+    extraArgs: ['temp_es_test.mjs'],
     tempFiles: [{
       path: 'temp_es_test.mjs',
       content: `
@@ -96,8 +106,8 @@ const LOADING_SCENARIOS: LoadingScenario[] = [
   {
     name: 'Expo Mobile Environment',
     description: 'Expo mobile environment simulation with env vars',
-    command: 'tsx',
-    args: ['-e', `
+    scenarioId: 'tsx-exec',
+    extraArgs: [`
       const { API_BASE_URL, API_CONFIG } = require('./api/envConfig.ts');
       console.log('EXPO_MOBILE_RESULT:', JSON.stringify({
         url: API_BASE_URL,
@@ -122,8 +132,8 @@ const LOADING_SCENARIOS: LoadingScenario[] = [
   {
     name: 'OTA Reload Simulation',
     description: 'Simulate Expo OTA reload with environment changes',
-    command: 'tsx',
-    args: ['-e', `
+    scenarioId: 'tsx-exec',
+    extraArgs: [`
       // Simulate OTA reload by requiring config multiple times with different env vars
       
       // First load - no env var
@@ -159,8 +169,8 @@ const LOADING_SCENARIOS: LoadingScenario[] = [
   {
     name: 'EAS Build Simulation',
     description: 'Simulate EAS production build environment',
-    command: 'tsx',
-    args: ['-e', `
+    scenarioId: 'tsx-exec',
+    extraArgs: [`
       // Simulate EAS build environment variables
       process.env.NODE_ENV = 'production';
       process.env.EXPO_PUBLIC_API_URL = 'https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev';
@@ -193,8 +203,8 @@ const LOADING_SCENARIOS: LoadingScenario[] = [
   {
     name: 'Development Server Integration',
     description: 'Development server with live config reloading',
-    command: 'tsx',
-    args: ['-e', `
+    scenarioId: 'tsx-exec',
+    extraArgs: [`
       // Simulate development server startup
       process.env.NODE_ENV = 'development';
       delete process.env.EXPO_PUBLIC_API_URL;
@@ -239,10 +249,123 @@ interface TestResult {
 }
 
 /**
+ * Validate arguments for safety
+ * Only allows simple flag patterns and rejects dangerous characters
+ */
+function validateExtraArgs(args: string[], scenarioId: string): { valid: boolean; error?: string } {
+  // Special handling for exec scenarios that need code snippets
+  if (scenarioId === 'tsx-exec' || scenarioId === 'node-exec') {
+    // For exec scenarios, we expect a single code string
+    if (args.length !== 1) {
+      return { valid: false, error: 'Exec scenarios must have exactly one code argument' };
+    }
+    // Code snippets can be longer but still have a reasonable limit
+    if (args[0].length > 5000) {
+      return { valid: false, error: 'Code argument exceeds 5000 character limit' };
+    }
+    return { valid: true };
+  }
+  
+  // For non-exec scenarios, strict validation
+  const MAX_ARGS = 6;
+  const MAX_ARG_LENGTH = 200;
+  const MAX_TOTAL_LENGTH = 500;
+  
+  // Check arg count
+  if (args.length > MAX_ARGS) {
+    return { valid: false, error: `Too many arguments (${args.length} > ${MAX_ARGS})` };
+  }
+  
+  // Check total length
+  const totalLength = args.join(' ').length;
+  if (totalLength > MAX_TOTAL_LENGTH) {
+    return { valid: false, error: `Total arguments too long (${totalLength} > ${MAX_TOTAL_LENGTH})` };
+  }
+  
+  // Forbidden metacharacters that could be used for injection
+  const FORBIDDEN_CHARS = [
+    ';', '|', '&', '>', '<', '$', '`', "'", '"',
+    '(', ')', '{', '}', '[', ']', '*', '?', '~',
+    '\n', '\r', '\t', '\\'
+  ];
+  
+  // Valid flag patterns - no parent directory traversal allowed
+  const FLAG_PATTERN = /^--[a-zA-Z0-9-]+(=[a-zA-Z0-9_\-\/]+)?$/;  // No dots in values
+  const SHORT_FLAG_PATTERN = /^-[a-zA-Z0-9]$/;
+  const FILE_PATH_PATTERN = /^[a-zA-Z0-9_\-\/]+\.(ts|js|json|mjs|cjs)?$/;  // Only forward paths with extensions
+  
+  for (const arg of args) {
+    // Check length
+    if (arg.length > MAX_ARG_LENGTH) {
+      return { valid: false, error: `Argument too long: "${arg.substring(0, 50)}..."` };
+    }
+    
+    // Check for path traversal attempts
+    if (arg.includes('../') || arg.includes('..\\')) {
+      return { valid: false, error: `Path traversal attempt blocked: "${arg}"` };
+    }
+    
+    // Check for double slashes (obfuscation attempt)
+    if (arg.includes('//') || arg.includes('\\\\')) {
+      return { valid: false, error: `Double slash obfuscation blocked: "${arg}"` };
+    }
+    
+    // Check for forbidden characters
+    for (const char of FORBIDDEN_CHARS) {
+      if (arg.includes(char)) {
+        return { valid: false, error: `Forbidden character '${char}' in argument: "${arg}"` };
+      }
+    }
+    
+    // Check if it matches valid patterns
+    const isValidFlag = FLAG_PATTERN.test(arg) || SHORT_FLAG_PATTERN.test(arg) || FILE_PATH_PATTERN.test(arg);
+    if (!isValidFlag) {
+      return { valid: false, error: `Invalid argument format: "${arg}"` };
+    }
+  }
+  
+  return { valid: true };
+}
+
+/**
  * Run a single loading scenario test
  */
 async function runLoadingScenario(scenario: LoadingScenario): Promise<TestResult> {
   const startTime = Date.now();
+  
+  // Validate scenario against allowlist
+  const allowedCommand = ALLOWED_COMMANDS[scenario.scenarioId];
+  if (!allowedCommand) {
+    const error = `Scenario '${scenario.scenarioId}' not in allowed commands list`;
+    console.error(`❌ Security Error: ${error}`);
+    return {
+      scenario,
+      success: false,
+      output: '',
+      error,
+      duration: 0,
+      patternsMatched: 0
+    };
+  }
+  
+  // Validate extra arguments for safety
+  const validation = validateExtraArgs(scenario.extraArgs, scenario.scenarioId);
+  if (!validation.valid) {
+    const error = `Argument validation failed: ${validation.error}`;
+    console.error(`❌ Security Error: ${error}`);
+    return {
+      scenario,
+      success: false,
+      output: '',
+      error,
+      duration: 0,
+      patternsMatched: 0
+    };
+  }
+  
+  // Build safe command and arguments
+  const cmd = allowedCommand.cmd;
+  const args = [...allowedCommand.baseArgs, ...scenario.extraArgs];
   
   // Create temporary files if needed
   if (scenario.tempFiles) {
@@ -252,26 +375,66 @@ async function runLoadingScenario(scenario: LoadingScenario): Promise<TestResult
   }
   
   return new Promise((resolve) => {
-    const env = scenario.envVars ? { ...process.env, ...scenario.envVars } : process.env;
+    // Create minimal environment - only PATH and essential Node vars, no secrets
+    const minimalEnv: Record<string, string> = {
+      PATH: process.env.PATH || '',
+      NODE_ENV: process.env.NODE_ENV || 'development',
+      HOME: process.env.HOME || '',
+      USER: process.env.USER || '',
+      // Add scenario-specific env vars (already validated)
+      ...(scenario.envVars || {})
+    };
     
-    const child = spawn(scenario.command, scenario.args, {
-      env,
-      stdio: 'pipe',
-      timeout: scenario.timeout
+    // Security-hardened spawn options
+    const child = spawn(cmd, args, {
+      env: minimalEnv,  // Minimal env: PATH, NODE_ENV, HOME, USER only
+      cwd: process.cwd(),  // Lock to repo root, not temp dirs
+      stdio: 'pipe',  // Capture output with size limits
+      timeout: Math.min(scenario.timeout || 60000, 60000),  // Max 60s timeout
+      shell: false,  // Explicitly disable shell execution
+      windowsHide: true  // Hide console window on Windows
     });
     
     let stdout = '';
     let stderr = '';
+    const MAX_OUTPUT_SIZE = 100_000; // 100KB max output per stream
     
     child.stdout.on('data', (data) => {
-      stdout += data.toString();
+      const chunk = data.toString();
+      if (stdout.length + chunk.length <= MAX_OUTPUT_SIZE) {
+        stdout += chunk;
+      } else if (stdout.length < MAX_OUTPUT_SIZE) {
+        stdout += chunk.substring(0, MAX_OUTPUT_SIZE - stdout.length);
+        stdout += '\n[Output truncated at 100KB limit]';
+      }
     });
     
     child.stderr.on('data', (data) => {
-      stderr += data.toString();
+      const chunk = data.toString();
+      if (stderr.length + chunk.length <= MAX_OUTPUT_SIZE) {
+        stderr += chunk;
+      } else if (stderr.length < MAX_OUTPUT_SIZE) {
+        stderr += chunk.substring(0, MAX_OUTPUT_SIZE - stderr.length);
+        stderr += '\n[Error output truncated at 100KB limit]';
+      }
     });
     
+    // Handle timeout explicitly
+    let timedOut = false;
+    const timeoutMs = Math.min(scenario.timeout || 60000, 60000);
+    const killTimer = setTimeout(() => {
+      timedOut = true;
+      child.kill('SIGTERM');
+      // Force kill after 5 seconds if still running
+      setTimeout(() => {
+        if (child.exitCode === null) {
+          child.kill('SIGKILL');
+        }
+      }, 5000);
+    }, timeoutMs);
+    
     child.on('close', (code) => {
+      clearTimeout(killTimer);
       const duration = Date.now() - startTime;
       const output = stdout + stderr;
       
@@ -280,7 +443,7 @@ async function runLoadingScenario(scenario: LoadingScenario): Promise<TestResult
         output.includes(pattern)
       ).length;
       
-      const success = code === 0 && patternsMatched === scenario.expectedPatterns.length;
+      const success = code === 0 && patternsMatched === scenario.expectedPatterns.length && !timedOut;
       
       // Clean up temporary files
       if (scenario.tempFiles) {
@@ -297,7 +460,8 @@ async function runLoadingScenario(scenario: LoadingScenario): Promise<TestResult
         scenario,
         success,
         output,
-        error: code !== 0 ? `Process exited with code ${code}` : undefined,
+        error: timedOut ? `Process killed after ${timeoutMs}ms timeout` : 
+                code !== 0 ? `Process exited with code ${code}` : undefined,
         duration,
         patternsMatched
       });

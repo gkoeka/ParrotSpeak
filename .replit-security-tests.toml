@@ -1,0 +1,31 @@
+# Replit Security Test Configuration
+# Run security tests as part of your build/deployment process
+
+[build]
+name = "Security Tests"
+description = "Run security regression tests before deployment"
+
+[[build.steps]]
+name = "injection-prevention"
+command = "npx tsx scripts/test-injection-prevention.ts"
+description = "Test injection prevention mechanisms"
+
+[[build.steps]]
+name = "arg-validator"
+command = "npx tsx scripts/test-arg-validator.ts"
+description = "Test argument validation"
+
+[[build.steps]]
+name = "blast-radius"
+command = "npx tsx scripts/test-blast-radius.ts"
+description = "Test blast radius reduction"
+
+[[build.steps]]
+name = "security-checks"
+command = "./scripts/run-security-tests.sh"
+description = "Run comprehensive security tests"
+
+[deployment]
+# Run security tests before deployment
+preDeployCommand = "./scripts/run-security-tests.sh"
+failOnSecurityTests = true

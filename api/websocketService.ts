@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../api/config';
+import { SecureStorage } from '../utils/secureStorage';
 
 export interface WebSocketMessage {
   type: 'translation' | 'transcription' | 'error' | 'connection';
@@ -21,33 +22,58 @@ class WebSocketService {
   private maxReconnectAttempts = 5;
   private reconnectInterval = 1000;
   private isConnecting = false;
+  private hasLoggedInsecureWarning = false;
 
-  private createSecureWebSocketUrl(baseUrl: string): string {
+  private buildWebSocketURL(baseHttpUrl: string, path: string = '', opts?: { forceInsecure?: boolean }): string {
     try {
-      const url = new URL(baseUrl);
+      const url = new URL(baseHttpUrl);
       
-      // Always use secure WebSocket protocol (wss://) for production
-      // Only allow ws:// for localhost development
-      if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
-        url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-      } else {
-        // Force secure WebSocket for all non-localhost connections
-        url.protocol = 'wss:';
+      // Environment checks
+      const isProd = process.env.NODE_ENV === 'production';
+      const allowDevInsecure = !isProd && process.env.ALLOW_INSECURE_WS === 'true';
+      
+      // Development-only allowlist for insecure connections
+      const devAllowlist = new Set(['127.0.0.1', 'localhost', '10.0.2.2', '10.0.3.2']);
+      
+      // Determine WebSocket scheme
+      const shouldUseInsecure = allowDevInsecure && devAllowlist.has(url.hostname) && opts?.forceInsecure !== false;
+      const scheme = shouldUseInsecure ? 'ws' : 'wss';
+      
+      // CRITICAL: Prevent ws:// in production - fail fast
+      if (isProd && scheme === 'ws') {
+        const error = new Error('SECURITY ERROR: Insecure WebSocket (ws://) is forbidden in production');
+        console.error(error.message);
+        throw error;
       }
       
-      return url.toString();
+      // Log warning once per session for insecure connections
+      if (scheme === 'ws' && !this.hasLoggedInsecureWarning) {
+        console.warn('⚠️ WARNING: Using insecure WebSocket connection (ws://). This should only be used in development.');
+        this.hasLoggedInsecureWarning = true;
+      }
+      
+      // Build the WebSocket URL - NEVER include tokens in URL
+      url.protocol = scheme + ':';
+      if (path) {
+        url.pathname = url.pathname.replace(/\/$/, '') + '/' + path.replace(/^\//, '');
+      }
+      
+      // Security check: Ensure no token in URL
+      const finalUrl = url.toString();
+      if (finalUrl.includes('token=') || finalUrl.includes('jwt=') || finalUrl.includes('auth=')) {
+        throw new Error('SECURITY ERROR: Authentication tokens must not be included in WebSocket URLs');
+      }
+      
+      return finalUrl;
     } catch (error) {
-      // Fallback for malformed URLs - always use secure protocol
-      console.error('Error parsing WebSocket URL:', error);
-      // If URL doesn't start with protocol, prepend wss://
-      if (!baseUrl.match(/^wss?:\/\/|^https?:\/\//i)) {
-        return `wss://${baseUrl}`;
-      }
-      return baseUrl.replace(/^https?:/i, 'wss:');
+      console.error('Error building WebSocket URL:', error);
+      // Fallback - always use secure protocol
+      const fallbackUrl = baseHttpUrl.replace(/^(https?|wss?):\/\//i, 'wss://');
+      return path ? `${fallbackUrl}/${path.replace(/^\//, '')}` : fallbackUrl;
     }
   }
 
-  connect(config: WebSocketConfig) {
+  async connect(config: WebSocketConfig) {
     if (this.isConnecting || (this.ws && this.ws.readyState === WebSocket.CONNECTING)) {
       return;
     }
@@ -56,9 +82,22 @@ class WebSocketService {
     this.isConnecting = true;
 
     try {
-      // Convert HTTP URL to secure WebSocket URL
-      const wsUrl = this.createSecureWebSocketUrl(API_BASE_URL);
-      this.ws = new WebSocket(wsUrl);
+      // Get authentication token
+      const token = await SecureStorage.getAuthToken();
+      
+      if (!token) {
+        console.error('No authentication token available for WebSocket connection');
+        this.isConnecting = false;
+        this.config?.onError(new Event('auth_error'));
+        return;
+      }
+
+      // Build WebSocket URL with security defaults (no token in URL)
+      const wsUrl = this.buildWebSocketURL(API_BASE_URL, '/ws');
+      
+      // Pass token via subprotocol (secure method)
+      // Using subprotocol as it's supported across browsers and React Native
+      this.ws = new WebSocket(wsUrl, [`bearer.${token}`]);
 
       this.ws.onopen = () => {
         this.isConnecting = false;
