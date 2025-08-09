@@ -176,7 +176,9 @@ export default function VoiceInputControls({
         actualSourceLang = speaker === 'A' ? participants.A.lang : participants.B.lang;
         actualTargetLang = getTargetLanguage(speaker, participants.A, participants.B);
         
-        console.log(`🎯 Speaker detected: ${speaker} (${actualSourceLang} → ${actualTargetLang})`);
+        console.log(`🎯 Speaker detected: ${speaker}`);
+        console.log(`    targetLang: ${actualTargetLang}`);
+        console.log(`    Route: ${actualSourceLang} → ${actualTargetLang}`);
         setLastTurnSpeaker(speaker);
       } else {
         // Manual mode: use provided source/target
@@ -217,7 +219,18 @@ export default function VoiceInputControls({
       if (isTargetSupported && translationResult.translation) {
         console.log('[UI] status=preparingAudio');
         onStatusChange?.('preparingAudio');
-        console.log('🔊 Speaking translation...');
+        
+        // Log TTS voice selection
+        console.log(`🔊 TTS Voice Selection:`);
+        console.log(`    chosenTTSVoice: ${actualTargetLang}`);
+        
+        // Check if we have a specific voice for the regional variant
+        const hasRegionalVoice = actualTargetLang.includes('-');
+        if (hasRegionalVoice) {
+          console.log(`    Using regional voice: ${actualTargetLang}`);
+        } else {
+          console.log(`    Using base language voice: ${actualTargetLang}`);
+        }
         
         // Subtle haptic when TTS begins
         console.log('[UX] haptics=tts');

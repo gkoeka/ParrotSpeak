@@ -87,32 +87,49 @@ export function isCloseMatch(detectedLang: string, targetLang: string): boolean 
   const detected = normalizeLanguageCode(detectedLang);
   const target = normalizeLanguageCode(targetLang);
   
-  // Exact match
+  // Exact match after normalization
   if (detected === target) return true;
   
-  // Both are variants of same language
-  if (target.includes('-') && detected === target.split('-')[0]) return true;
-  if (detected.includes('-') && target === detected.split('-')[0]) return true;
+  // Handle regional variants more generically
+  // e.g., 'pt-BR' matches 'pt', 'pt' matches 'pt-BR'
+  const detectedBase = detectedLang.split('-')[0].toLowerCase();
+  const targetBase = targetLang.split('-')[0].toLowerCase();
+  
+  // Normalize both to base and compare
+  const normalizedDetectedBase = normalizeLanguageCode(detectedBase);
+  const normalizedTargetBase = normalizeLanguageCode(targetBase);
+  
+  if (normalizedDetectedBase === normalizedTargetBase) {
+    return true;
+  }
   
   // Special case for Spanish variants
   if ((detected === 'es' || detected === 'spa') && 
-      (target === 'es' || target === 'es-ES' || target === 'es-419')) {
+      (target === 'es' || target === 'spa')) {
     return true;
   }
   
   // Special case for Portuguese variants  
   if ((detected === 'pt' || detected === 'por') &&
-      (target === 'pt' || target === 'pt-BR' || target === 'pt-PT')) {
+      (target === 'pt' || target === 'por')) {
     return true;
   }
   
   // Special case for Chinese variants
   if ((detected === 'zh' || detected === 'zho') &&
-      (target === 'zh' || target.startsWith('zh-'))) {
+      (target === 'zh' || target === 'zho')) {
     return true;
   }
   
   return false;
+}
+
+/**
+ * Normalize language code for routing (preserves regional for TTS)
+ * Maps regional codes to base for matching (e.g., 'pt-BR' → 'pt')
+ */
+export function normalizeLang(code: string): string {
+  return normalizeLanguageCode(code);
 }
 
 /**
@@ -124,19 +141,34 @@ export function determineSpeaker(
   participantB: { lang: string },
   lastSpeaker?: 'A' | 'B'
 ): 'A' | 'B' {
+  // Log raw and normalized values for debugging
+  const normalizedDetected = normalizeLang(detectedLang);
+  const normalizedA = normalizeLang(participantA.lang);
+  const normalizedB = normalizeLang(participantB.lang);
+  
+  console.log(`🔍 Language Detection:
+    detectedLang: ${detectedLang}
+    normalizedLang: ${normalizedDetected}
+    participant A: ${participantA.lang} (normalized: ${normalizedA})
+    participant B: ${participantB.lang} (normalized: ${normalizedB})`);
+  
   // Check if detected language matches participant A
   if (isCloseMatch(detectedLang, participantA.lang)) {
+    console.log(`    chosenSpeaker: A`);
     return 'A';
   }
   
   // Check if detected language matches participant B
   if (isCloseMatch(detectedLang, participantB.lang)) {
+    console.log(`    chosenSpeaker: B`);
     return 'B';
   }
   
   // If no match, alternate from last speaker
   // Default to 'A' if no last speaker
-  return lastSpeaker === 'A' ? 'B' : 'A';
+  const fallbackSpeaker = lastSpeaker === 'A' ? 'B' : 'A';
+  console.log(`    chosenSpeaker: ${fallbackSpeaker} (fallback)`);
+  return fallbackSpeaker;
 }
 
 /**
