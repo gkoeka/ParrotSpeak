@@ -231,10 +231,25 @@ export default function VoiceInputControls({
         console.log(`    Route: ${actualSourceLang} → ${actualTargetLang}`);
         setLastTurnSpeaker(speaker);
       } else {
-        // Manual mode: use provided source/target
+        // Manual mode: force A→B (or B→A if swapped) regardless of detected language
         actualSourceLang = sourceLanguage;
         actualTargetLang = targetLanguage;
-        console.log(`📍 Manual mode: ${actualSourceLang} → ${actualTargetLang}`);
+        
+        // Determine speaker based on configured source
+        if (sourceLanguage === participants.A.lang) {
+          speaker = 'A';
+        } else if (sourceLanguage === participants.B.lang) {
+          speaker = 'B';
+        }
+        
+        // Log if detected language doesn't match expected source
+        if (detectedLang && detectedLang !== actualSourceLang) {
+          console.log(`📍 Manual mode: Detected ${detectedLang} but forcing ${actualSourceLang} → ${actualTargetLang}`);
+          // Important: We still translate from configured source to target
+          // even if the detected language is different
+        } else {
+          console.log(`📍 Manual mode: ${actualSourceLang} → ${actualTargetLang}`);
+        }
       }
       
       // Set target language for metrics
@@ -245,13 +260,24 @@ export default function VoiceInputControls({
       onStatusChange?.('translating');
       console.log('🌐 Translating text...');
       
-      metricsCollector.startTimer('translate');
-      const translationResult = await translateText(
-        transcription,
-        actualSourceLang,
-        actualTargetLang
-      );
-      metricsCollector.endTimer('translate');
+      // Check if source and target are the same (edge case)
+      let translationResult: { translation: string };
+      
+      if (actualSourceLang === actualTargetLang) {
+        console.log(`⚠️ Source and target are the same (${actualSourceLang}), skipping translation`);
+        // Still create a "translation" that's the same as the original
+        translationResult = { translation: transcription };
+        metricsCollector.startTimer('translate');
+        metricsCollector.endTimer('translate');
+      } else {
+        metricsCollector.startTimer('translate');
+        translationResult = await translateText(
+          transcription,
+          actualSourceLang,
+          actualTargetLang
+        );
+        metricsCollector.endTimer('translate');
+      }
       
       console.log('Translation:', translationResult.translation);
       
