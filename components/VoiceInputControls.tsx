@@ -292,8 +292,9 @@ export default function VoiceInputControls({
       
       // Use session service if available
       if (sessionServiceRef.current && state.sessionState === SessionState.RECORDING) {
-        console.log('🛑 Stopping session recording (forced)...');
-        // Session will handle the stop automatically, we just update UI
+        console.log('🛑 Stopping session recording manually...');
+        // Request stop through the idempotent method
+        await sessionServiceRef.current.requestStop('manual-release');
         actions.setListening(false);
         console.log('✅ Recording stop requested');
       } else if (recordingRef.current) {

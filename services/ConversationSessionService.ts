@@ -31,6 +31,7 @@ export const SESSION_CONFIG = {
   AUTO_DISARM_MS: 60000,     // Auto-disarm after inactivity
   FOREGROUND_ONLY: true,     // Session ends on background
   FILE_CLEANUP_DELAY_MS: 10000, // Delete audio files after processing
+  STOP_DEBOUNCE_MS: 50,      // Debounce stop requests to prevent races
 };
 
 export interface SessionCallbacks {
@@ -60,6 +61,7 @@ export class ConversationSessionService {
   private silenceTimer: ReturnType<typeof setTimeout> | null = null;
   private maxDurationTimer: ReturnType<typeof setTimeout> | null = null;
   private autoDisarmTimer: ReturnType<typeof setTimeout> | null = null;
+  private stopDebounceTimer: ReturnType<typeof setTimeout> | null = null;
   private fileCleanupTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
   
   // Tracking
@@ -230,7 +232,9 @@ export class ConversationSessionService {
     
     // Stop any active recording
     if (this.state === SessionState.RECORDING) {
-      await this.stopRecording();
+      await this.requestStop('session-end');
+      // Wait for debounce to complete
+      await new Promise(resolve => setTimeout(resolve, SESSION_CONFIG.STOP_DEBOUNCE_MS + 50));
     }
     
     // Clean up
@@ -374,88 +378,154 @@ export class ConversationSessionService {
   }
 
   /**
-   * Stop recording and get URI
-   * CRITICAL FIX: Prevent race conditions, only get URI after stop
+   * Public stop request with debouncing and reason tracking
+   * This is the ONLY public way to stop recording - all UI and timers use this
    */
-  private async stopRecording(): Promise<void> {
-    if (this.state !== SessionState.RECORDING) {
-      console.log(`⚠️ [STOP] Not recording, current state: ${this.state}`);
+  public async requestStop(reason: string = 'manual'): Promise<void> {
+    console.log(`📨 [STOP] Request received (reason: ${reason})`);
+    
+    // Clear any pending debounced stop
+    if (this.stopDebounceTimer) {
+      clearTimeout(this.stopDebounceTimer);
+      console.log('[STOP] Cleared pending debounce');
+    }
+    
+    // Debounce rapid stop requests
+    this.stopDebounceTimer = setTimeout(async () => {
+      console.log(`[STOP] Executing debounced stop (${reason})`);
+      await this.stopRecordingIdempotent(reason);
+    }, SESSION_CONFIG.STOP_DEBOUNCE_MS);
+  }
+
+  /**
+   * IDEMPOTENT Stop recording - safe to call multiple times
+   * Only this method actually stops the recording
+   */
+  private async stopRecordingIdempotent(reason: string): Promise<void> {
+    // Early return if not in a stoppable state
+    if (this.state !== SessionState.RECORDING && this.state !== SessionState.STOPPING) {
+      console.log(`[STOP] Ignored (state not recording): ${this.state}`);
       return;
     }
     
-    // FIX 6: Prevent concurrent stop operations
+    // Check atomic flag
     if (this.isStoppingRecording) {
-      console.log('⚠️ [STOP] Already stopping recording');
+      console.log('[STOP] Already stopping');
       return;
     }
     
+    // Set atomic flag
     this.isStoppingRecording = true;
-    await this.setState(SessionState.STOPPING);
     
     try {
-      // Clear timers
-      this.clearRecordingTimers();
+      // Clear ALL timers BEFORE stopping to prevent cascade calls
+      this.clearAllRecordingTimers();
       
+      // Check if recording exists
       if (!this.recording) {
-        throw new Error('No recording to stop');
-      }
-      
-      console.log('🛑 [STOP] Stopping recording...');
-      
-      // FIX: Get URI BEFORE stopAndUnload (unloading destroys the recorder)
-      const uri = this.recording.getURI();
-      console.log(`📁 [STOP] Got recording URI: ${uri ? 'Valid' : 'NULL'}`);
-      
-      // Now stop and unload
-      await this.recording.stopAndUnloadAsync();
-      console.log('✅ [STOP] Recording stopped and unloaded');
-      if (!uri) {
-        throw new Error('No URI from recording');
-      }
-      
-      // Calculate duration
-      const duration = this.recordingStartTime 
-        ? Date.now() - this.recordingStartTime.getTime()
-        : 0;
-      
-      console.log(`✅ [STOP] Utterance #${this.utteranceCount} stopped (${duration}ms)`);
-      
-      // Check minimum duration
-      if (duration < SESSION_CONFIG.MIN_SPEECH_MS) {
-        console.log(`⚠️ [STOP] Too short (${duration}ms < ${SESSION_CONFIG.MIN_SPEECH_MS}ms), discarding`);
-        this.recording = null;
+        console.log('[STOP] Already cleared recorder');
         this.isStoppingRecording = false;
         await this.setState(SessionState.ARMED_IDLE);
         return;
       }
       
-      // Process the utterance
-      await this.setState(SessionState.PROCESSING);
-      this.callbacks?.onUtteranceReady(uri, duration);
+      // Transition to stopping state
+      await this.setState(SessionState.STOPPING);
       
-      // Schedule file cleanup
-      this.scheduleFileCleanup(uri);
+      // Try to get recording status (may fail if already stopped)
+      let isRecording = false;
+      try {
+        const status = await this.recording.getStatusAsync();
+        isRecording = status?.isRecording || false;
+        console.log(`[STOP] Status check: ${isRecording ? 'still recording' : 'already stopped'}`);
+      } catch (statusError) {
+        console.log('[STOP] Status check failed (likely already stopped)');
+      }
       
-      // Clean up recording reference
-      this.recording = null;
-      this.isStoppingRecording = false;
+      // Get URI before attempting stop (may be null if recorder destroyed)
+      let uri: string | null = null;
+      try {
+        uri = this.recording.getURI();
+        console.log(`[STOP] URI retrieved: ${uri ? 'Valid' : 'NULL'}`);
+      } catch (uriError) {
+        console.log('[STOP] URI retrieval failed');
+      }
+      
+      // Only stop if actually recording
+      if (isRecording) {
+        try {
+          console.log('[STOP] Calling stopAndUnloadAsync...');
+          await this.recording.stopAndUnloadAsync();
+          console.log('[STOP] Successfully stopped');
+        } catch (stopError) {
+          const errorMsg = stopError instanceof Error ? stopError.message : 'Unknown';
+          
+          // Check if it's the "already stopped" error
+          if (errorMsg.includes('Recorder does not exist')) {
+            console.log('[STOP] Already stopped (native)');
+          } else {
+            // Real error - rethrow
+            throw stopError;
+          }
+        }
+      } else {
+        console.log('[STOP] Already stopped (status)');
+      }
+      
+      // Calculate duration if we have timestamps
+      const duration = this.recordingStartTime 
+        ? Date.now() - this.recordingStartTime.getTime()
+        : 0;
+      
+      // Log completion
+      console.log(`[STOP] Completed, uri=${uri || 'null'}, duration=${duration}ms, reason=${reason}`);
+      
+      // Process if we have a valid URI and duration
+      if (uri && duration >= SESSION_CONFIG.MIN_SPEECH_MS) {
+        await this.setState(SessionState.PROCESSING);
+        this.callbacks?.onUtteranceReady(uri, duration);
+        this.scheduleFileCleanup(uri);
+      } else if (duration < SESSION_CONFIG.MIN_SPEECH_MS) {
+        console.log(`[STOP] Too short (${duration}ms), discarding`);
+        await this.setState(SessionState.ARMED_IDLE);
+      } else {
+        console.log('[STOP] No URI available, returning to armed state');
+        await this.setState(SessionState.ARMED_IDLE);
+      }
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`❌ [STOP] Failed: ${errorMessage}`);
+      console.error(`[STOP] Error during stop: ${errorMessage}`);
       
-      // Clean up on error
-      this.recording = null;
-      this.isStoppingRecording = false;
-      
-      // FIX 7: Explicit error messages
-      if (errorMessage.includes('stopAndUnloadAsync')) {
-        this.callbacks?.onError(new Error('Failed to stop recording. Please try again.'));
-      } else {
+      // Don't propagate "Recorder does not exist" errors
+      if (!errorMessage.includes('Recorder does not exist')) {
         this.callbacks?.onError(error instanceof Error ? error : new Error('Failed to stop recording'));
       }
       
       await this.setState(SessionState.ARMED_IDLE);
+      
+    } finally {
+      // Always clean up
+      this.recording = null;
+      this.isStoppingRecording = false;
+    }
+  }
+
+  /**
+   * Clear all recording-related timers
+   */
+  private clearAllRecordingTimers(): void {
+    if (this.silenceTimer) {
+      clearTimeout(this.silenceTimer);
+      this.silenceTimer = null;
+    }
+    if (this.maxDurationTimer) {
+      clearTimeout(this.maxDurationTimer);
+      this.maxDurationTimer = null;
+    }
+    if (this.stopDebounceTimer) {
+      clearTimeout(this.stopDebounceTimer);
+      this.stopDebounceTimer = null;
     }
   }
 
@@ -499,7 +569,7 @@ export class ConversationSessionService {
     
     this.silenceTimer = setTimeout(() => {
       console.log('🔇 Silence detected - stopping recording');
-      this.stopRecording();
+      this.requestStop('silence-timeout');
     }, SESSION_CONFIG.STOP_SILENCE_MS);
   }
 
@@ -513,7 +583,7 @@ export class ConversationSessionService {
     
     this.maxDurationTimer = setTimeout(() => {
       console.log('⏰ Max duration reached - stopping recording');
-      this.stopRecording();
+      this.requestStop('max-duration');
     }, SESSION_CONFIG.MAX_UTTERANCE_MS);
   }
 
