@@ -225,7 +225,15 @@ export async function speakText(
       };
       
       // Start speaking with the given options
-      Speech.speak(text, options);
+      try {
+        Speech.speak(text, options);
+      } catch (ttsError) {
+        console.error('❌ TTS API error:', ttsError);
+        // Don't throw - TTS failure shouldn't break the pipeline
+        console.warn('⚠️ TTS failed but continuing pipeline');
+        if (onDone) onDone();
+        resolve();
+      }
     } catch (error) {
       reject(error);
     }
