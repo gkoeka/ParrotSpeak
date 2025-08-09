@@ -15,7 +15,6 @@ import { LanguagePreferencesStorage } from '../utils/languagePreferences';
 
 import LanguageSelector from '../components/LanguageSelectorMobile';
 import PerformanceIndicator from '../components/PerformanceMonitor';
-import UTBTHeader from '../components/UTBTHeader';
 import StatusPill, { PipelineStatus } from '../components/StatusPill';
 
 type ConversationNavigationProp = StackNavigationProp<RootStackParamList, 'Conversation'>;
@@ -213,8 +212,6 @@ export default function ConversationScreen() {
   return (
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
       <Header />
-      
-      <UTBTHeader />
       
       <StatusPill status={pipelineStatus} />
       
