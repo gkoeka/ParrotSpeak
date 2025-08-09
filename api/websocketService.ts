@@ -26,14 +26,9 @@ class WebSocketService {
     try {
       const url = new URL(baseUrl);
       
-      // Always use secure WebSocket protocol (wss://) for production
-      // Only allow ws:// for localhost development
-      if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
-        url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-      } else {
-        // Force secure WebSocket for all non-localhost connections
-        url.protocol = 'wss:';
-      }
+      // Always use secure WebSocket protocol (wss://) for security
+      // This ensures encrypted connections even in development
+      url.protocol = 'wss:';
       
       return url.toString();
     } catch (error) {
@@ -43,7 +38,8 @@ class WebSocketService {
       if (!baseUrl.match(/^wss?:\/\/|^https?:\/\//i)) {
         return `wss://${baseUrl}`;
       }
-      return baseUrl.replace(/^https?:/i, 'wss:');
+      // Always replace any protocol with wss://
+      return baseUrl.replace(/^(https?|wss?):\/\//i, 'wss://');
     }
   }
 

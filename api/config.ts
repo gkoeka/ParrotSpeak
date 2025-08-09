@@ -6,7 +6,7 @@ const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "https://40e9270e-7819-4
 const API_CONFIG = {
   baseURL: API_BASE_URL,
   source: 'environment',
-  environment: __DEV__ ? 'development' : 'production',
+  environment: process.env.NODE_ENV === 'development' ? 'development' : 'production',
   timestamp: new Date().toISOString()
 };
 
