@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, I18nManager, ActivityIndicator, Button } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, I18nManager, ActivityIndicator, Button, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { API_BASE_URL } from '../api/config';
 import { getSupportedLanguages } from '../constants/languageConfiguration';
 import { LanguagePreferencesStorage } from '../utils/languagePreferences';
+import { configureNavigationBar } from '../utils/navigationBarConfig';
 
 import LanguageSelector from '../components/LanguageSelectorMobile';
 import PerformanceIndicator from '../components/PerformanceMonitor';
@@ -49,6 +50,11 @@ export default function ConversationScreen() {
 
   // Check subscription status
   const hasActiveSubscription = user?.subscriptionStatus === 'active' || user?.subscriptionTier === 'lifetime';
+  
+  // Configure Android navigation bar for this screen
+  useEffect(() => {
+    configureNavigationBar(isDarkMode);
+  }, [isDarkMode]);
 
   // Get all supported languages for flag display
   const allLanguages = getSupportedLanguages();

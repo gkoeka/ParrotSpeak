@@ -3,8 +3,9 @@ import React, { useEffect, useState } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, View, Platform } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { configureNavigationBar, logNavigationBarStatus } from './utils/navigationBarConfig';
 
 // Auth Provider
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -145,6 +146,13 @@ function AuthNavigator() {
 
 function AppContent() {
   const { isDarkMode } = useTheme();
+  
+  // Configure Android navigation bar
+  useEffect(() => {
+    configureNavigationBar(isDarkMode);
+    // Log status for debugging
+    logNavigationBarStatus();
+  }, [isDarkMode]);
   
   return (
     <>
