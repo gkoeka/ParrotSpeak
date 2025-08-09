@@ -287,24 +287,25 @@ export default function VoiceInputControls({
             console.log('✅ Session armed - tap again to start recording or just start speaking');
             actions.setListening(false); // Not listening yet, just armed
           }
-        } else if (currentState === SessionState.ARMED_IDLE) {
-          // Session already armed, just start recording
-          console.log('🎤 Session already armed, starting recording...');
-          // Don't set isRecording here - let the callback handle it
-          const result = await sessionServiceRef.current.startRecording('micTap');
-          if (result.ok) {
-            actions.setListening(true);
-            console.log('✅ CM recording started - will auto-stop after 2s of silence');
-          } else {
-            console.log(`⚠️ CM start failed: ${result.reason}`);
+        } else if (currentState === SessionState.ARMED_IDLE || 
+                   currentState === SessionState.RECORDING || 
+                   currentState === SessionState.STOPPING) {
+          // TASK B FIX: Tap #2 (or any tap when armed/recording) = stop/disarm
+          console.log('[UI] CM tap → requestStop(\'manual\')');
+          console.log(`🛑 Stopping/disarming from state: ${currentState}`);
+          
+          if (currentState === SessionState.RECORDING || currentState === SessionState.STOPPING) {
+            // If recording, stop it
+            await sessionServiceRef.current.requestStop('manual');
           }
-        } else if (currentState === SessionState.RECORDING) {
-          console.log('🎯 Already recording - stopping on second tap');
-          // Handle second tap to stop recording
-          await sessionServiceRef.current.requestStop('manual-tap');
-          console.log('✅ Stop requested via second tap');
+          // Always end the session to disarm
+          await sessionServiceRef.current.endSession('manual-tap');
+          actions.setListening(false);
+          console.log('✅ Session disarmed');
         } else {
-          console.log(`⚠️ Cannot start recording in state: ${currentState}`);
+          // Any other state - ignore tap
+          console.log(`[UI] CM tap → ignored (state=${currentState})`);
+          console.log(`⚠️ Cannot handle tap in state: ${currentState}`);
         }
       } else {
         // CONVERSATION MODE OFF - Use legacy recording
@@ -674,7 +675,7 @@ export default function VoiceInputControls({
           isProcessing && styles.recordButtonProcessing,
           !isSourceSpeechSupported && styles.recordButtonDisabled
         ]}
-        onPress={isRecording ? handleStopRecording : handleStartRecording}
+        onPress={handleStartRecording}
         onPressIn={handleRecordingTouch}
         disabled={isProcessing || !isSourceSpeechSupported}
       >
