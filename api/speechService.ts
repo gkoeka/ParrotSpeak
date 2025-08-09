@@ -215,6 +215,7 @@ export async function speakText(
         language: voiceSelection.fallbackLevel === 'default' ? 'en-US' : mappedLanguageCode,
         pitch: voiceProfile?.pitch ?? 1.0,
         rate: voiceProfile?.rate ?? 0.9,
+        voice: voiceSelection.chosen, // Track which voice was used
         onDone: () => {
           // Log audio route when TTS completes
           logAudioRouteStatus('TTS complete');

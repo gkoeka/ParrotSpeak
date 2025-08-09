@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, Platform, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as FileSystem from 'expo-file-system';
 
 import { legacyStartRecording, legacyStopRecording, processRecording, speakText, deleteRecordingFile } from '../api/speechService';
 import { translateText } from '../api/languageService';
@@ -10,6 +11,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useParticipants } from '../contexts/ParticipantsContext';
 import { determineSpeaker, getTargetLanguage } from '../utils/languageDetection';
 import { PipelineStatus } from './StatusPill';
+import { metricsTracker } from '../utils/metricsTracker';
 
 interface VoiceInputControlsProps {
   onMessage: (message: {
@@ -137,8 +139,8 @@ export default function VoiceInputControls({
         console.log('🔄 Processing audio for translation...');
         setIsProcessing(true);
         
-        // Process the recording through the translation pipeline
-        await processAudio(uri);
+        // Process the recording through the translation pipeline with duration
+        await processAudio(uri, duration);
       } else {
         console.log('⚠️ Recording too short or no URI');
       }
@@ -151,8 +153,26 @@ export default function VoiceInputControls({
   };
 
   // Process audio through transcription → translation → TTS pipeline
-  const processAudio = async (uri: string) => {
+  const processAudio = async (uri: string, recordingDuration?: number) => {
+    // Start metrics collection for this turn
+    const metricsCollector = metricsTracker.startTurn();
+    
+    // Set recording duration if provided
+    if (recordingDuration) {
+      metricsCollector.setRecordingDuration(recordingDuration);
+    }
+    
     try {
+      // Get file size for metrics
+      try {
+        const fileInfo = await FileSystem.getInfoAsync(uri);
+        if (fileInfo.exists && fileInfo.size) {
+          metricsCollector.setFileSize(fileInfo.size);
+        }
+      } catch (e) {
+        // Non-critical - ignore file size errors
+      }
+      
       // Step 1: Upload/Transcribe with language detection
       console.log('[UI] status=uploading');
       onStatusChange?.('uploading');
@@ -163,7 +183,10 @@ export default function VoiceInputControls({
       console.log('[UI] status=transcribing');
       onStatusChange?.('transcribing');
       console.log('📝 Transcribing audio...');
+      
+      metricsCollector.startTimer('whisper');
       const transcriptionResult = await processRecording(uri, sourceLanguage);
+      metricsCollector.endTimer('whisper');
       
       // Handle both string and object responses
       let transcription: string;
@@ -179,6 +202,7 @@ export default function VoiceInputControls({
       console.log('Transcription:', transcription);
       if (detectedLang) {
         console.log('Detected language:', detectedLang);
+        metricsCollector.setDetectedLanguage(detectedLang);
       }
       
       if (!transcription || transcription.trim() === '') {
@@ -213,15 +237,22 @@ export default function VoiceInputControls({
         console.log(`📍 Manual mode: ${actualSourceLang} → ${actualTargetLang}`);
       }
       
+      // Set target language for metrics
+      metricsCollector.setTargetLanguage(actualTargetLang);
+      
       // Step 3: Translate
       console.log('[UI] status=translating');
       onStatusChange?.('translating');
       console.log('🌐 Translating text...');
+      
+      metricsCollector.startTimer('translate');
       const translationResult = await translateText(
         transcription,
         actualSourceLang,
         actualTargetLang
       );
+      metricsCollector.endTimer('translate');
+      
       console.log('Translation:', translationResult.translation);
       
       // Step 4: Create message with speaker info
@@ -256,7 +287,9 @@ export default function VoiceInputControls({
         }
         
         // Set idle when TTS starts
+        metricsCollector.startTimer('tts');
         await speakText(translationResult.translation, actualTargetLang);
+        metricsCollector.endTimer('tts');
         console.log('[UI] status=idle (tts started)');
         onStatusChange?.('idle');
       } else {
@@ -267,6 +300,9 @@ export default function VoiceInputControls({
       
       console.log('✅ Pipeline complete');
       
+      // Complete metrics collection for this turn
+      metricsCollector.complete();
+      
       // Step 7: Delete recording file to save storage (after TTS starts)
       console.log('🧹 [File] Scheduling delete after TTS started');
       await deleteRecordingFile(uri);
@@ -275,6 +311,9 @@ export default function VoiceInputControls({
       console.error('❌ Error processing audio:', error);
       const errorMsg = error instanceof Error ? error.message : 'Failed to process audio';
       setError(errorMsg);
+      
+      // Complete metrics even on error
+      metricsCollector.complete();
       
       // Show error status briefly
       onStatusChange?.('error');
