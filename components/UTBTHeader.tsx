@@ -89,19 +89,26 @@ export default function UTBTHeader() {
         </TouchableOpacity>
       </View>
       
-      {/* Auto-detect toggle */}
-      <View style={styles.toggleRow}>
-        <Text style={[styles.toggleLabel, isDarkMode && styles.textDark]}>
-          Auto-detect speakers
+      {/* Auto-detect toggle with caption */}
+      <View style={styles.toggleSection}>
+        <View style={styles.toggleRow}>
+          <Text style={[styles.toggleLabel, isDarkMode && styles.textDark]}>
+            Auto-detect speakers
+          </Text>
+          <Switch
+            value={autoDetectSpeakers}
+            onValueChange={handleAutoDetectToggle}
+            trackColor={{ false: '#767577', true: '#81b0ff' }}
+            thumbColor={autoDetectSpeakers ? '#007AFF' : '#f4f3f4'}
+            accessibilityLabel={autoDetectSpeakers ? "Auto-detect enabled: routes by spoken language" : "Auto-detect disabled: manual A to B routing"}
+            accessibilityRole="switch"
+          />
+        </View>
+        <Text style={[styles.caption, isDarkMode && styles.captionDark]}>
+          {autoDetectSpeakers 
+            ? 'Auto: routes by spoken language' 
+            : 'Manual: A → B (use Swap)'}
         </Text>
-        <Switch
-          value={autoDetectSpeakers}
-          onValueChange={handleAutoDetectToggle}
-          trackColor={{ false: '#767577', true: '#81b0ff' }}
-          thumbColor={autoDetectSpeakers ? '#007AFF' : '#f4f3f4'}
-          accessibilityLabel="Auto-detect speakers"
-          accessibilityRole="switch"
-        />
       </View>
       
       {/* Language picker modal */}
@@ -197,6 +204,9 @@ const styles = StyleSheet.create({
   swapButtonDark: {
     backgroundColor: '#0051D5',
   },
+  toggleSection: {
+    // Container for toggle and caption
+  },
   toggleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -204,6 +214,15 @@ const styles = StyleSheet.create({
   },
   toggleLabel: {
     fontSize: 13,
+    color: '#666',
+  },
+  caption: {
+    fontSize: 11,
+    color: '#999',
+    marginTop: 2,
+    fontStyle: 'italic',
+  },
+  captionDark: {
     color: '#666',
   },
   modalOverlay: {
