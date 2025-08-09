@@ -120,10 +120,16 @@ export default function VoiceInputControls({
           onRecordingStart: () => {
             console.log('🗣️ Recording started');
             actions.setMicrophoneActive(true);
+            // Critical: Update recording state when CM actually starts recording
+            setIsRecording(true);
+            isRecordingRef.current = true;
           },
           onRecordingStop: () => {
             console.log('🔇 Recording stopped');
             actions.setMicrophoneActive(false);
+            // Critical: Update recording state when CM stops recording
+            setIsRecording(false);
+            isRecordingRef.current = false;
           },
           onUtteranceReady: async (uri: string, duration: number) => {
             console.log('📦 Utterance ready:', {
@@ -268,34 +274,31 @@ export default function VoiceInputControls({
           // Now start recording if session is armed
           if (updatedState === SessionState.ARMED_IDLE) {
             console.log('🎤 Session armed, starting recording...');
-            setIsRecording(true);
-            isRecordingRef.current = true;
+            // Don't set isRecording here - let the callback handle it
             const result = await sessionServiceRef.current.startRecording('micTap');
             if (result.ok) {
               actions.setListening(true);
               console.log('✅ CM recording started - will auto-stop after 2s of silence');
             } else {
               console.log(`⚠️ CM start failed: ${result.reason}`);
-              setIsRecording(false);
-              isRecordingRef.current = false;
             }
           }
         } else if (currentState === SessionState.ARMED_IDLE) {
           // Session already armed, just start recording
           console.log('🎤 Session already armed, starting recording...');
-          setIsRecording(true);
-          isRecordingRef.current = true;
+          // Don't set isRecording here - let the callback handle it
           const result = await sessionServiceRef.current.startRecording('micTap');
           if (result.ok) {
             actions.setListening(true);
             console.log('✅ CM recording started - will auto-stop after 2s of silence');
           } else {
             console.log(`⚠️ CM start failed: ${result.reason}`);
-            setIsRecording(false);
-            isRecordingRef.current = false;
           }
         } else if (currentState === SessionState.RECORDING) {
-          console.log('⚠️ Already recording - ignoring tap');
+          console.log('🎯 Already recording - stopping on second tap');
+          // Handle second tap to stop recording
+          await sessionServiceRef.current.requestStop('manual-tap');
+          console.log('✅ Stop requested via second tap');
         } else {
           console.log(`⚠️ Cannot start recording in state: ${currentState}`);
         }
