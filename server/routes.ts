@@ -19,6 +19,7 @@ import * as mfaService from "./services/mfa";
 import { db } from "@db";
 import { users, conversations, messages, userFeedback } from "@shared/schema";
 import { InternalAnalyticsService } from "./services/internal-analytics";
+import { SimpleMetricsService } from "./services/simple-metrics";
 import { eq } from "drizzle-orm";
 import passport from "passport";
 import iapRoutes from "./routes/iap";
@@ -387,6 +388,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         translationTime,
         failed: false
       }).catch(err => console.error('Analytics tracking failed:', err));
+
+      // Test the new metrics system
+      SimpleMetricsService.writeMetric({
+        conversationId,
+        translateMs: translationTime,
+        detectedLang: sourceLanguage,
+        targetLang: targetLanguage
+      }).catch(err => console.error('Simple metrics failed:', err));
       
       res.status(201).json({
         id: messageId,

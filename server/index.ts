@@ -6,11 +6,12 @@ import compression from "compression";
 import { registerRoutes } from "./routes";
 // Mobile-only API server - no frontend serving needed
 import { setupAuth } from "./auth";
+import { runMigrations } from "./db/run-migrations";
 
 const app = express();
 
 // Environment configuration with defaults
-process.env.METRICS_ENABLED = process.env.METRICS_ENABLED || 'false';
+process.env.METRICS_ENABLED = process.env.METRICS_ENABLED || 'true';
 
 // Basic setup for Replit environment
 app.set('trust proxy', 1);
@@ -81,6 +82,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Run database migrations (non-blocking, logs but doesn't crash on error)
+  runMigrations().catch(err => console.error('[Migr] Failed to run migrations:', err));
+  
   // Setup authentication before registering routes
   setupAuth(app);
   
