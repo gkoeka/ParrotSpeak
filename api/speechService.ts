@@ -16,6 +16,9 @@ const FOREGROUND_ONLY = true; // Enforces recording only when app is in foregrou
 // Track which languages have already logged fallback (once per app launch)
 const loggedFallbacks = new Set<string>();
 
+// Track if we've shown the long recording banner this session
+let longRecordingBannerShown = false;
+
 // Interface for voice profile
 export interface VoiceProfile {
   id: string;
@@ -460,6 +463,23 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
     legacyRecording = null;
     
     console.log(`✅ [Legacy] Recording stopped. Duration: ${duration}ms, URI: ${uri ? uri.substring(uri.length - 30) : 'none'}`);
+    
+    // Check for long recording (> 60 seconds)
+    if (duration > 60000) {
+      console.log(`📊 [Metrics] Long recording detected: ${duration}ms`);
+      
+      // Show banner once per session
+      if (!longRecordingBannerShown) {
+        console.log('📢 [Banner] Showing long recording suggestion: "Let\'s try shorter turns (≤60s)"');
+        longRecordingBannerShown = true;
+      }
+      
+      // Record metric
+      console.log(`📈 [Metric] Recording turn: {durationMs: ${duration}}`);
+    } else {
+      // Still record metric for all turns
+      console.log(`📈 [Metric] Recording turn: {durationMs: ${duration}}`);
+    }
     
     return { uri, duration };
   } catch (error) {

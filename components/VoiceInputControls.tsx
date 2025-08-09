@@ -43,6 +43,9 @@ export default function VoiceInputControls({
 
   const [textInput, setTextInput] = useState('');
   const [showTextInput, setShowTextInput] = useState(false);
+  
+  // Track if long recording banner has been shown this session
+  const [longRecordingBannerShown, setLongRecordingBannerShown] = useState(false);
 
   // Check if source or target language supports speech
   const normalizeLanguageCode = (code: string) => {
@@ -108,6 +111,14 @@ export default function VoiceInputControls({
       
       if (uri && duration > 500) {
         console.log(`✅ Recording stopped. Duration: ${duration}ms`);
+        
+        // Check for long recording and show banner if needed
+        if (duration > 60000 && !longRecordingBannerShown) {
+          setError('Let\'s try shorter turns (≤60s) for better results');
+          setTimeout(() => setError(null), 5000); // Show for 5 seconds
+          setLongRecordingBannerShown(true);
+        }
+        
         console.log('🔄 Processing audio for translation...');
         setIsProcessing(true);
         
