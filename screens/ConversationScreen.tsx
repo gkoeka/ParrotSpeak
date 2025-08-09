@@ -487,9 +487,11 @@ const styles = StyleSheet.create({
     padding: 16,
     borderTopWidth: 1,
     borderTopColor: '#e9ecef',
+    backgroundColor: '#ffffff',
   },
   controlsContainerDark: {
     borderTopColor: '#3a3a3a',
+    backgroundColor: '#1a1a1a',
   },
   rtlSection: {
     alignItems: 'flex-end',

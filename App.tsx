@@ -148,7 +148,11 @@ function AppContent() {
   
   return (
     <>
-      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
+      <StatusBar 
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
+        backgroundColor={isDarkMode ? "#1a1a1a" : "#ffffff"}
+        translucent={false}
+      />
       <NavigationContainer>
         <AuthNavigator />
       </NavigationContainer>
