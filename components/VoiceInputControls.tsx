@@ -197,10 +197,12 @@ export default function VoiceInputControls({
       // Handle both string and object responses
       let transcription: string;
       let detectedLang: string | undefined;
+      let confidence: number = 1.0; // Default to high confidence
       
       if (typeof transcriptionResult === 'object' && transcriptionResult !== null) {
         transcription = (transcriptionResult as any).text || '';
         detectedLang = (transcriptionResult as any).language;
+        confidence = (transcriptionResult as any).confidence ?? 1.0;
       } else {
         transcription = transcriptionResult;
       }
@@ -225,15 +227,35 @@ export default function VoiceInputControls({
       if (participants.autoDetectSpeakers && detectedLang) {
         // Auto-detect mode: determine speaker by detected language
         routeMode = 'auto';
-        speaker = determineSpeaker(
-          detectedLang,
-          participants.A,
-          participants.B,
-          participants.lastTurnSpeaker
-        );
         
-        actualSourceLang = speaker === 'A' ? participants.A.lang : participants.B.lang;
-        actualTargetLang = getTargetLanguage(speaker, participants.A, participants.B);
+        // Check for low confidence or undefined language
+        if (detectedLang === 'und' || confidence < 0.75) {
+          // Low confidence fallback: use opposite of last speaker or default to A→B
+          if (participants.lastTurnSpeaker) {
+            speaker = participants.lastTurnSpeaker === 'A' ? 'B' : 'A';
+            actualSourceLang = speaker === 'A' ? participants.A.lang : participants.B.lang;
+            actualTargetLang = getTargetLanguage(speaker, participants.A, participants.B);
+            console.log(`[Route] low-confidence fallback used (conf=${confidence.toFixed(2)}) → target=${actualTargetLang}`);
+          } else {
+            // No last speaker, fallback to manual A→B
+            speaker = 'A';
+            actualSourceLang = participants.A.lang;
+            actualTargetLang = participants.B.lang;
+            console.log(`[Route] low-confidence fallback used (conf=${confidence.toFixed(2)}) → target=${actualTargetLang}`);
+          }
+        } else {
+          // High confidence: normal detection
+          speaker = determineSpeaker(
+            detectedLang,
+            participants.A,
+            participants.B,
+            participants.lastTurnSpeaker
+          );
+          
+          actualSourceLang = speaker === 'A' ? participants.A.lang : participants.B.lang;
+          actualTargetLang = getTargetLanguage(speaker, participants.A, participants.B);
+        }
+        
         setLastTurnSpeaker(speaker);
       } else {
         // Manual mode: force A→B direction (or B→A if swapped)
