@@ -278,11 +278,23 @@ export default function VoiceInputControls({
         metricsCollector.startTimer('translate');
         metricsCollector.endTimer('translate');
       } else {
+        // In manual mode, if detected language matches target language, 
+        // we should use the detected language as source for proper translation
+        let effectiveSourceLang = actualSourceLang;
+        let effectiveTargetLang = actualTargetLang;
+        
+        if (!participants.autoDetectSpeakers && detectedLang && detectedLang === actualTargetLang) {
+          // User spoke the target language - swap the translation direction
+          console.log(`🔄 Manual mode correction: Using detected ${detectedLang} as source`);
+          effectiveSourceLang = detectedLang;
+          effectiveTargetLang = actualSourceLang; // Swap to translate back to expected source
+        }
+        
         metricsCollector.startTimer('translate');
         translationResult = await translateText(
           transcription,
-          actualSourceLang,
-          actualTargetLang
+          effectiveSourceLang,
+          effectiveTargetLang
         );
         metricsCollector.endTimer('translate');
       }
