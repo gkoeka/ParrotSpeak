@@ -53,6 +53,8 @@ ParrotSpeak is built as a mobile-first TypeScript application with a clean API b
   - Environment isolation: Stripped to PATH, NODE_ENV, HOME, USER only - no secrets/API keys
   - Blast radius reduction: 60s timeout, 100KB output cap, repo root cwd, shell disabled
   - All user input validated through scenarioId lookup, never reaches spawn() directly
+  - Security regression tests: Run `./scripts/run-security-tests.sh` to verify all protections
+  - CI/CD integration: GitHub Actions workflow and Replit build configs prevent security regressions
 - **Version Compatibility**: React and React Native versions (currently React 19.0.0, React Native 0.79.5 for Expo SDK 53) must be kept in sync.
 - **Profile Management**: Sign Out, Delete Account, and GDPR Export functionality with API integration, confirmation dialogs, and loading states.
 - **Welcome Screen**: First-time launch detection and welcome screen flow for new users.
