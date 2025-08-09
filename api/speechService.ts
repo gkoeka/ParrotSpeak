@@ -224,31 +224,29 @@ function initializeLegacyAppStateListener() {
   console.log('✅ [Legacy] AppState listener initialized for foreground-only recording');
 }
 
-// Low-bitrate M4A preset for 16kHz mono recording (~24 kbps)
-const LOW_BITRATE_M4A = {
-  isMeteringEnabled: true,
-  android: {
-    extension: '.m4a',
-    outputFormat: Audio.AndroidOutputFormat.MPEG_4,
-    audioEncoder: Audio.AndroidAudioEncoder.AAC,
-    sampleRate: 16000,
-    numberOfChannels: 1,
-    bitRate: 24000,
+// Low-bitrate mono M4A optimized for Whisper (16kHz, 24kbps)
+const LOW_M4A: Audio.RecordingOptions = {
+  android: { 
+    extension: '.m4a', 
+    outputFormat: Audio.AndroidOutputFormat.MPEG_4, 
+    audioEncoder: Audio.AndroidAudioEncoder.AAC, 
+    sampleRate: 16000, 
+    numberOfChannels: 1, 
+    bitRate: 24000 
   },
-  ios: {
-    extension: '.m4a',
-    audioQuality: Audio.IOSAudioQuality.LOW,
-    sampleRate: 16000,
-    numberOfChannels: 1,
-    bitRate: 24000,
-    linearPCMBitDepth: 16,
-    linearPCMIsBigEndian: false,
-    linearPCMIsFloat: false,
+  ios: { 
+    extension: '.m4a', 
+    outputFormat: Audio.IOSOutputFormat.MPEG4AAC, 
+    audioQuality: Audio.IOSAudioQuality.LOW, 
+    sampleRate: 16000, 
+    numberOfChannels: 1, 
+    bitRate: 24000 
   },
   web: {
     mimeType: 'audio/webm',
     bitsPerSecond: 24000,
   },
+  isMeteringEnabled: true
 };
 
 /**
@@ -279,17 +277,15 @@ export async function legacyStartRecording(): Promise<void> {
     // Initialize AppState listener if not already done
     initializeLegacyAppStateListener();
     
-    // Configure audio mode - FOREGROUND-ONLY configuration
-    const audioModeConfig = {
-      allowsRecordingIOS: true,
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false, // Foreground-only. Backgrounding stops recording/session.
-      shouldDuckAndroid: true,
-      playThroughEarpieceAndroid: false,
-    };
-    
-    console.log('🔊 [Legacy] Audio mode config:', audioModeConfig);
-    await Audio.setAudioModeAsync(audioModeConfig);
+    // Configure audio mode - FOREGROUND-ONLY configuration with optimized settings
+    await Audio.setAudioModeAsync({ 
+      allowsRecordingIOS: true, 
+      playsInSilentModeIOS: true, 
+      staysActiveInBackground: false, // Enforces foreground-only recording
+      interruptionModeIOS: Audio.InterruptionModeIOS.DoNotMix, 
+      interruptionModeAndroid: Audio.InterruptionModeAndroid.DoNotMix, 
+      shouldDuckAndroid: true 
+    });
     
     // Request permissions
     const { status } = await Audio.requestPermissionsAsync();
@@ -297,13 +293,23 @@ export async function legacyStartRecording(): Promise<void> {
       throw new Error('Microphone permission denied');
     }
     
-    // Create and start recording
+    // Create and start recording with error handling
     console.log('📱 [Legacy] Creating recording with createAsync...');
-    const { recording } = await Audio.Recording.createAsync(LOW_BITRATE_M4A);
-    legacyRecording = recording;
-    legacyRecordingActive = true;
-    
-    console.log('✅ [Legacy] Recording started successfully');
+    try {
+      const { recording } = await Audio.Recording.createAsync(LOW_M4A);
+      legacyRecording = recording;
+      legacyRecordingActive = true;
+      console.log('✅ [Legacy] Recording started successfully');
+    } catch (createError: any) {
+      // Handle specific error types with user-friendly messages
+      if (createError.message?.includes('permission')) {
+        throw new Error('Microphone permission required. Please enable it in settings.');
+      } else if (createError.message?.includes('audio mode')) {
+        throw new Error('Audio system busy. Please try again.');
+      } else {
+        throw createError; // Re-throw unexpected errors
+      }
+    }
   } catch (error) {
     console.error('❌ [Legacy] Failed to start recording:', error);
     legacyRecording = null;
@@ -329,16 +335,35 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
     // Mark as inactive immediately to prevent double-stop
     legacyRecordingActive = false;
     
-    // Stop and unload the recording
-    await legacyRecording.stopAndUnloadAsync();
-    const uri = legacyRecording.getURI() || '';
-    const status = await legacyRecording.getStatusAsync();
-    const duration = status.durationMillis || 0;
+    // Stop and unload the recording with try/catch guard
+    let uri = '';
+    let duration = 0;
+    
+    try {
+      await legacyRecording.stopAndUnloadAsync();
+      uri = legacyRecording.getURI() || '';
+      const status = await legacyRecording.getStatusAsync();
+      duration = status.durationMillis || 0;
+      
+      // Log file size for optimization tracking
+      if (uri && isFileSystemAvailable) {
+        try {
+          const fileInfo = await FileSystem.getInfoAsync(uri);
+          const fileSizeMB = fileInfo.exists ? (fileInfo.size || 0) / (1024 * 1024) : 0;
+          console.log(`📊 [Legacy] Recording file size: ${fileSizeMB.toFixed(2)}MB`);
+        } catch (e) {
+          // Non-critical - just log size check failure
+          console.log('📊 [Legacy] Could not check file size');
+        }
+      }
+    } catch (stopError) {
+      console.warn('⚠️ [Legacy] Error during stopAndUnload (continuing):', stopError);
+    }
     
     // Clean up
     legacyRecording = null;
     
-    console.log(`✅ [Legacy] Recording stopped. Duration: ${duration}ms, URI: ${uri.substring(uri.length - 30)}`);
+    console.log(`✅ [Legacy] Recording stopped. Duration: ${duration}ms, URI: ${uri ? uri.substring(uri.length - 30) : 'none'}`);
     
     return { uri, duration };
   } catch (error) {
@@ -374,6 +399,24 @@ export async function startRecording(): Promise<{ uri: string }> {
  */
 export async function stopRecording(): Promise<{ uri: string; duration?: number }> {
   return legacyStopRecording();
+}
+
+/**
+ * Delete recording file after processing to save storage
+ */
+export async function deleteRecordingFile(uri: string): Promise<void> {
+  if (!uri || !isFileSystemAvailable) return;
+  
+  try {
+    const fileInfo = await FileSystem.getInfoAsync(uri);
+    if (fileInfo.exists) {
+      await FileSystem.deleteAsync(uri, { idempotent: true });
+      console.log('🗑️ [Legacy] Recording file deleted:', uri.substring(uri.length - 30));
+    }
+  } catch (error) {
+    console.warn('⚠️ [Legacy] Could not delete recording file:', error);
+    // Non-critical - continue without throwing
+  }
 }
 
 // Convert audio file to Base64 for API transmission

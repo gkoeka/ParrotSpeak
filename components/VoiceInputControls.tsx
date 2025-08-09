@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { legacyStartRecording, legacyStopRecording, processRecording, speakText } from '../api/speechService';
+import { legacyStartRecording, legacyStopRecording, processRecording, speakText, deleteRecordingFile } from '../api/speechService';
 import { translateText } from '../api/languageService';
 import { getLanguageByCode } from '../constants/languageConfiguration';
 import { useTheme } from '../contexts/ThemeContext';
@@ -193,9 +193,15 @@ export default function VoiceInputControls({
       
       console.log('✅ Pipeline complete');
       
+      // Step 7: Delete recording file to save storage
+      await deleteRecordingFile(uri);
+      
     } catch (error) {
       console.error('❌ Error processing audio:', error);
       setError(error instanceof Error ? error.message : 'Failed to process audio');
+      
+      // Still try to delete file even on error
+      await deleteRecordingFile(uri);
     }
   };
 
