@@ -365,28 +365,66 @@ async function runLoadingScenario(scenario: LoadingScenario): Promise<TestResult
   }
   
   return new Promise((resolve) => {
-    const env = scenario.envVars ? { ...process.env, ...scenario.envVars } : process.env;
+    // Create minimal environment - only PATH and essential Node vars, no secrets
+    const minimalEnv: Record<string, string> = {
+      PATH: process.env.PATH || '',
+      NODE_ENV: process.env.NODE_ENV || 'development',
+      HOME: process.env.HOME || '',
+      USER: process.env.USER || '',
+      // Add scenario-specific env vars (already validated)
+      ...(scenario.envVars || {})
+    };
     
-    // Explicitly set shell: false for security (though it's the default)
+    // Security-hardened spawn options
     const child = spawn(cmd, args, {
-      env,
-      stdio: 'pipe',
-      timeout: scenario.timeout,
-      shell: false  // Explicitly disable shell execution
+      env: minimalEnv,  // Minimal env: PATH, NODE_ENV, HOME, USER only
+      cwd: process.cwd(),  // Lock to repo root, not temp dirs
+      stdio: 'pipe',  // Capture output with size limits
+      timeout: Math.min(scenario.timeout || 60000, 60000),  // Max 60s timeout
+      shell: false,  // Explicitly disable shell execution
+      windowsHide: true  // Hide console window on Windows
     });
     
     let stdout = '';
     let stderr = '';
+    const MAX_OUTPUT_SIZE = 100_000; // 100KB max output per stream
     
     child.stdout.on('data', (data) => {
-      stdout += data.toString();
+      const chunk = data.toString();
+      if (stdout.length + chunk.length <= MAX_OUTPUT_SIZE) {
+        stdout += chunk;
+      } else if (stdout.length < MAX_OUTPUT_SIZE) {
+        stdout += chunk.substring(0, MAX_OUTPUT_SIZE - stdout.length);
+        stdout += '\n[Output truncated at 100KB limit]';
+      }
     });
     
     child.stderr.on('data', (data) => {
-      stderr += data.toString();
+      const chunk = data.toString();
+      if (stderr.length + chunk.length <= MAX_OUTPUT_SIZE) {
+        stderr += chunk;
+      } else if (stderr.length < MAX_OUTPUT_SIZE) {
+        stderr += chunk.substring(0, MAX_OUTPUT_SIZE - stderr.length);
+        stderr += '\n[Error output truncated at 100KB limit]';
+      }
     });
     
+    // Handle timeout explicitly
+    let timedOut = false;
+    const timeoutMs = Math.min(scenario.timeout || 60000, 60000);
+    const killTimer = setTimeout(() => {
+      timedOut = true;
+      child.kill('SIGTERM');
+      // Force kill after 5 seconds if still running
+      setTimeout(() => {
+        if (child.exitCode === null) {
+          child.kill('SIGKILL');
+        }
+      }, 5000);
+    }, timeoutMs);
+    
     child.on('close', (code) => {
+      clearTimeout(killTimer);
       const duration = Date.now() - startTime;
       const output = stdout + stderr;
       
@@ -395,7 +433,7 @@ async function runLoadingScenario(scenario: LoadingScenario): Promise<TestResult
         output.includes(pattern)
       ).length;
       
-      const success = code === 0 && patternsMatched === scenario.expectedPatterns.length;
+      const success = code === 0 && patternsMatched === scenario.expectedPatterns.length && !timedOut;
       
       // Clean up temporary files
       if (scenario.tempFiles) {
@@ -412,7 +450,8 @@ async function runLoadingScenario(scenario: LoadingScenario): Promise<TestResult
         scenario,
         success,
         output,
-        error: code !== 0 ? `Process exited with code ${code}` : undefined,
+        error: timedOut ? `Process killed after ${timeoutMs}ms timeout` : 
+                code !== 0 ? `Process exited with code ${code}` : undefined,
         duration,
         patternsMatched
       });

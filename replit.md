@@ -47,7 +47,12 @@ ParrotSpeak is built as a mobile-first TypeScript application with a clean API b
 - **Enhanced Voice Selection**: Logic for improved cross-language support, timeout detection, and graceful fallbacks.
 - **Security**: Comprehensive security headers, API rate limiting, server-side input validation, and secure session configuration.
 - **WebSocket Security (Jan 2025)**: Enhanced WebSocket URL builder with secure-by-default approach. Always uses wss:// protocol except in development with explicit opt-in (NODE_ENV=development AND ALLOW_INSECURE_WS=true AND allowlisted host). Development allowlist limited to 127.0.0.1, localhost, 10.0.2.2, 10.0.3.2. Logs warning for insecure connections. Authentication via WebSocket subprotocol (bearer.TOKEN) instead of query strings. Server validates JWT tokens on connection with rate limiting by IP. Rejects connections with 401 for invalid/missing tokens. Strict origin/host validation enforces allowlisted domains (parrotspeak.com and Replit domains in production, localhost/emulator IPs in development). Rejects unauthorized origins with 403 Forbidden.
-- **Script Execution Security (Jan 2025)**: Hardened scripts/verifyAllScenarios.ts with command allowlist pattern. Only pre-defined commands (tsx, node, npx with specific args) can execute via ALLOWED_COMMANDS mapping. Replaced direct command/args with scenarioId lookup system. Shell execution explicitly disabled (shell: false). Argument validation prevents shell injection patterns. All scenarios use controlled executable paths with no user input reaching spawn() directly.
+- **Script Execution Security (Jan 2025)**: Hardened scripts/verifyAllScenarios.ts with defense-in-depth security:
+  - Command allowlist: Only tsx, node, npx via ALLOWED_COMMANDS mapping
+  - Argument validator: Blocks 19 metacharacters, enforces length limits (6 args max, 200 chars/arg)
+  - Environment isolation: Stripped to PATH, NODE_ENV, HOME, USER only - no secrets/API keys
+  - Blast radius reduction: 60s timeout, 100KB output cap, repo root cwd, shell disabled
+  - All user input validated through scenarioId lookup, never reaches spawn() directly
 - **Version Compatibility**: React and React Native versions (currently React 19.0.0, React Native 0.79.5 for Expo SDK 53) must be kept in sync.
 - **Profile Management**: Sign Out, Delete Account, and GDPR Export functionality with API integration, confirmation dialogs, and loading states.
 - **Welcome Screen**: First-time launch detection and welcome screen flow for new users.
