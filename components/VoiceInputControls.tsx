@@ -254,17 +254,35 @@ export default function VoiceInputControls({
         }
         
         const currentState = sessionServiceRef.current.getState();
+        console.log(`📊 Current session state: ${currentState}`);
         
         if (currentState === SessionState.DISARMED) {
           // Start a new session
           console.log('🚀 Starting new Conversation Mode session...');
           await sessionServiceRef.current.startSession();
-          // Session is now ARMED_IDLE, ready for recording
-        }
-        
-        if (currentState === SessionState.ARMED_IDLE || sessionServiceRef.current.getState() === SessionState.ARMED_IDLE) {
-          // Start recording with source tagging
-          console.log('🎤 Starting recording in session...');
+          
+          // After starting session, get the updated state
+          const updatedState = sessionServiceRef.current.getState();
+          console.log(`📊 Session state after start: ${updatedState}`);
+          
+          // Now start recording if session is armed
+          if (updatedState === SessionState.ARMED_IDLE) {
+            console.log('🎤 Session armed, starting recording...');
+            setIsRecording(true);
+            isRecordingRef.current = true;
+            const result = await sessionServiceRef.current.startRecording('micTap');
+            if (result.ok) {
+              actions.setListening(true);
+              console.log('✅ CM recording started - will auto-stop after 2s of silence');
+            } else {
+              console.log(`⚠️ CM start failed: ${result.reason}`);
+              setIsRecording(false);
+              isRecordingRef.current = false;
+            }
+          }
+        } else if (currentState === SessionState.ARMED_IDLE) {
+          // Session already armed, just start recording
+          console.log('🎤 Session already armed, starting recording...');
           setIsRecording(true);
           isRecordingRef.current = true;
           const result = await sessionServiceRef.current.startRecording('micTap');
@@ -275,10 +293,9 @@ export default function VoiceInputControls({
             console.log(`⚠️ CM start failed: ${result.reason}`);
             setIsRecording(false);
             isRecordingRef.current = false;
-            if (result.reason === 'inflight') {
-              console.log('Recording already in progress');
-            }
           }
+        } else if (currentState === SessionState.RECORDING) {
+          console.log('⚠️ Already recording - ignoring tap');
         } else {
           console.log(`⚠️ Cannot start recording in state: ${currentState}`);
         }
