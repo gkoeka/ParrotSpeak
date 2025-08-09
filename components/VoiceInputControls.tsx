@@ -84,16 +84,23 @@ export default function VoiceInputControls({
     }
   };
 
-  // Initialize Conversation Session Service
+  // Initialize Conversation Session Service ONLY when CM is enabled
   useEffect(() => {
     if (!state.conversationModeEnabled) {
-      console.log('🔇 Conversation Mode disabled in settings');
+      console.log('🔇 [OFF Mode] Conversation Mode disabled - no session initialization');
+      // Clean up any existing session when CM is turned OFF
+      if (sessionServiceRef.current) {
+        console.log('🧹 [OFF Mode] Cleaning up existing session service');
+        sessionServiceRef.current.endSession('cm-disabled');
+        sessionServiceRef.current = null;
+        setSessionInitialized(false);
+      }
       return;
     }
     
     const initializeSession = async () => {
       try {
-        console.log('🎤 Initializing Conversation Session Service...');
+        console.log('🎤 [CM ON] Initializing Conversation Session Service...');
         
         const service = ConversationSessionService.getInstance();
         sessionServiceRef.current = service;
@@ -231,16 +238,21 @@ export default function VoiceInputControls({
   const handleStartRecording = async () => {
     try {
       console.log('📱 handleStartRecording called');
+      console.log('   conversationModeEnabled:', state.conversationModeEnabled);
       console.log('   sessionInitialized:', sessionInitialized);
       console.log('   sessionServiceRef.current:', !!sessionServiceRef.current);
-      console.log('   sessionState:', state.sessionState);
       
-      // Check if we should use session-based recording or regular recording
-      const useSession = sessionServiceRef.current && sessionInitialized && state.conversationModeEnabled;
-      console.log('📊 Recording mode:', useSession ? 'Session (Conversation Mode)' : 'Regular');
-      
-      if (useSession && sessionServiceRef.current) {
-        // Session-based recording
+      // HARD GATE: Check if we should use Conversation Mode or Legacy mode
+      if (state.conversationModeEnabled) {
+        // CONVERSATION MODE ON - Use session-based recording
+        console.log('📊 Recording mode: Conversation Mode (CM ON)');
+        
+        if (!sessionServiceRef.current || !sessionInitialized) {
+          console.error('❌ CM enabled but session not initialized');
+          Alert.alert('Error', 'Conversation Mode is not ready. Please try again.');
+          return;
+        }
+        
         const currentState = sessionServiceRef.current.getState();
         
         if (currentState === SessionState.DISARMED) {
@@ -258,9 +270,9 @@ export default function VoiceInputControls({
           const result = await sessionServiceRef.current.startRecording('micTap');
           if (result.ok) {
             actions.setListening(true);
-            console.log('✅ Utterance recording started - will auto-stop after 2s of silence');
+            console.log('✅ CM recording started - will auto-stop after 2s of silence');
           } else {
-            console.log(`⚠️ Start failed: ${result.reason}`);
+            console.log(`⚠️ CM start failed: ${result.reason}`);
             setIsRecording(false);
             isRecordingRef.current = false;
             if (result.reason === 'inflight') {
@@ -271,50 +283,51 @@ export default function VoiceInputControls({
           console.log(`⚠️ Cannot start recording in state: ${currentState}`);
         }
       } else {
-        // Fallback to standard single-tap recording when Conversation Mode is disabled
-        console.log('📱 Using standard single-tap recording (Conversation Mode disabled)');
+        // CONVERSATION MODE OFF - Use legacy recording
+        console.log('📊 Recording mode: Legacy (CM OFF)');
+        console.log('🎤 [OFF Mode] Starting legacy recording...');
         
-        // Create a minimal recording session for standard mode
-        if (!sessionServiceRef.current) {
-          console.log('⚠️ Creating temporary session service for standard recording');
-          const { ConversationSessionService } = await import('../services/ConversationSessionService');
-          sessionServiceRef.current = ConversationSessionService.getInstance();
-          sessionServiceRef.current.setCallbacks({
-            onSessionStart: () => console.log('Standard recording session started'),
-            onSessionEnd: () => console.log('Standard recording session ended'),
-            onUtteranceReady: handleUtteranceReady,
-            onError: (error) => {
-              console.error('Session error:', error);
-              actions.setError(error.message);
-            },
-          });
-        }
+        // Import legacy recording functions
+        const { legacyStartRecording } = await import('../api/speechService');
         
-        // Start a temporary session for this recording
-        const currentState = sessionServiceRef.current.getState();
-        if (currentState === SessionState.DISARMED) {
-          await sessionServiceRef.current.startSession();
-        }
-        
-        // Start recording
+        // Start legacy recording
         setIsRecording(true);
         isRecordingRef.current = true;
-        const result = await sessionServiceRef.current.startRecording('micTap');
-        if (result.ok) {
-          actions.setListening(true);
-          console.log('✅ Standard recording started - will auto-stop after 2s of silence');
-        } else {
-          console.log(`⚠️ Start failed: ${result.reason}`);
+        actions.setListening(true);
+        
+        try {
+          await legacyStartRecording();
+          console.log('✅ [OFF Mode] Legacy recording started');
+          
+          // For legacy mode, we don't have auto-stop, so we'll rely on manual stop
+          // or add a timer if needed
+        } catch (error: any) {
+          console.error('❌ [OFF Mode] Legacy recording failed:', error);
           setIsRecording(false);
           isRecordingRef.current = false;
+          actions.setListening(false);
+          
+          // Only show permission alert for actual permission errors
+          if (error.message?.includes('permission')) {
+            Alert.alert('Error', 'Microphone permission denied. Please enable it in settings.');
+          } else if (error.message?.includes('Audio module not available')) {
+            Alert.alert('Error', 'Audio recording is not supported on this device.');
+          } else {
+            // Don't show alert for other errors, just log them
+            console.error('[OFF Mode] Recording error:', error.message);
+          }
         }
       }
       
     } catch (error) {
-      console.error('Error starting recording:', error);
+      console.error('❌ Unexpected error in handleStartRecording:', error);
       setIsRecording(false);
       isRecordingRef.current = false;
-      Alert.alert('Error', 'Failed to start recording. Please check microphone permissions.');
+      actions.setListening(false);
+      // Only show alert for unexpected errors in debug mode
+      if (__DEV__) {
+        Alert.alert('Debug Error', `Unexpected: ${error}`);
+      }
     }
   };
 
@@ -323,37 +336,62 @@ export default function VoiceInputControls({
   const handleStopRecording = async () => {
     try {
       console.log('🛑 handleStopRecording called');
+      console.log('   conversationModeEnabled:', state.conversationModeEnabled);
       setIsRecording(false);
       isRecordingRef.current = false;
       
-      // Check if we have an active session service
-      if (sessionServiceRef.current) {
-        const currentState = sessionServiceRef.current.getState();
-        if (currentState === SessionState.RECORDING) {
-          console.log('🛑 Stopping recording manually...');
-          // Request stop through the idempotent method
-          await sessionServiceRef.current.requestStop('manual-release');
-          actions.setListening(false);
-          console.log('✅ Recording stop requested');
-          
-          // If not in Conversation Mode, also disarm the session
-          if (!state.conversationModeEnabled) {
-            console.log('📴 Disarming temporary session (standard mode)');
-            setTimeout(() => {
-              sessionServiceRef.current?.disarmSession('manual');
-            }, 100);
+      // HARD GATE: Check if we're in CM mode or Legacy mode
+      if (state.conversationModeEnabled) {
+        // CONVERSATION MODE ON - Use session service
+        console.log('🛑 [CM ON] Stopping session recording...');
+        
+        if (sessionServiceRef.current) {
+          const currentState = sessionServiceRef.current.getState();
+          if (currentState === SessionState.RECORDING) {
+            console.log('🛑 Requesting stop through session service...');
+            await sessionServiceRef.current.requestStop('manual-release');
+            actions.setListening(false);
+            console.log('✅ [CM ON] Recording stop requested');
+          } else {
+            console.log(`⚠️ [CM ON] Not recording, current state: ${currentState}`);
           }
+        } else {
+          console.log('⚠️ [CM ON] No session service available');
         }
-      } else if (recordingRef.current) {
-        // Legacy fallback - shouldn't happen anymore
-        console.error('Direct recording not supported');
-        recordingRef.current = null;
+      } else {
+        // CONVERSATION MODE OFF - Use legacy stop
+        console.log('🛑 [OFF Mode] Stopping legacy recording...');
+        actions.setListening(false);
+        
+        try {
+          const { legacyStopRecording } = await import('../api/speechService');
+          const { uri, duration } = await legacyStopRecording();
+          
+          if (uri && duration > 500) {
+            console.log(`✅ [OFF Mode] Recording stopped. Duration: ${duration}ms`);
+            console.log('🔄 [OFF Mode] Processing audio for translation...');
+            setIsProcessing(true);
+            
+            // Process the recording through the translation pipeline
+            await processAudio(uri);
+          } else {
+            console.log('⚠️ [OFF Mode] Recording too short or no URI');
+          }
+        } catch (error) {
+          console.error('❌ [OFF Mode] Failed to stop recording:', error);
+          // Don't show alert for stop errors, just log them
+        } finally {
+          setIsProcessing(false);
+        }
       }
       
     } catch (error) {
-      console.error('Error stopping recording:', error);
+      console.error('❌ Unexpected error in handleStopRecording:', error);
       setIsProcessing(false);
-      Alert.alert('Error', 'Failed to process recording');
+      // Only show alert for unexpected errors in debug mode
+      if (__DEV__) {
+        Alert.alert('Debug Error', `Stop error: ${error}`);
+      }
     }
   };
   

@@ -196,28 +196,137 @@ export interface SpeechRecognitionResult {
   confidence: number;
 }
 
-// CRITICAL FIX 2: Recording is now centralized in ConversationSessionService
-// This export is kept for backward compatibility but should not be used
-export let recording: Audio.Recording | null = null;
+// Legacy recording variable for OFF mode only
+let legacyRecording: Audio.Recording | null = null;
+let legacyRecordingActive: boolean = false;
+
+// Low-bitrate M4A preset for 16kHz mono recording (~24 kbps)
+const LOW_BITRATE_M4A = {
+  isMeteringEnabled: true,
+  android: {
+    extension: '.m4a',
+    outputFormat: Audio.AndroidOutputFormat.MPEG_4,
+    audioEncoder: Audio.AndroidAudioEncoder.AAC,
+    sampleRate: 16000,
+    numberOfChannels: 1,
+    bitRate: 24000,
+  },
+  ios: {
+    extension: '.m4a',
+    audioQuality: Audio.IOSAudioQuality.LOW,
+    sampleRate: 16000,
+    numberOfChannels: 1,
+    bitRate: 24000,
+    linearPCMBitDepth: 16,
+    linearPCMIsBigEndian: false,
+    linearPCMIsFloat: false,
+  },
+  web: {
+    mimeType: 'audio/webm',
+    bitsPerSecond: 24000,
+  },
+};
 
 /**
- * @deprecated Recording is now managed by ConversationSessionService
- * This function is disabled to prevent multiple Recording instances
+ * Legacy recording start for OFF mode (standard single-tap recording)
+ * Used when Conversation Mode is disabled
  */
-export async function startRecording(): Promise<{ uri: string }> {
-  // FIX 2: Disable recording creation here - all recording control is in ConversationSessionService
-  console.warn('⚠️ [speechService] startRecording is DISABLED - use ConversationSessionService');
-  throw new Error('Recording is managed by ConversationSessionService. Do not call speechService.startRecording()');
+export async function legacyStartRecording(): Promise<void> {
+  try {
+    console.log('🎤 [Legacy] Starting legacy recording (CM OFF mode)...');
+    
+    // Platform guard
+    if (!isAudioAvailable) {
+      throw new Error('Audio module not available on this platform');
+    }
+    
+    // Prevent multiple recordings
+    if (legacyRecordingActive || legacyRecording) {
+      console.warn('⚠️ [Legacy] Recording already in progress');
+      return;
+    }
+    
+    // Configure audio mode
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: true,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false, // Foreground only for privacy
+      shouldDuckAndroid: true,
+      playThroughEarpieceAndroid: false,
+    });
+    
+    // Request permissions
+    const { status } = await Audio.requestPermissionsAsync();
+    if (status !== 'granted') {
+      throw new Error('Microphone permission denied');
+    }
+    
+    // Create and start recording
+    console.log('📱 [Legacy] Creating recording with createAsync...');
+    const { recording } = await Audio.Recording.createAsync(LOW_BITRATE_M4A);
+    legacyRecording = recording;
+    legacyRecordingActive = true;
+    
+    console.log('✅ [Legacy] Recording started successfully');
+  } catch (error) {
+    console.error('❌ [Legacy] Failed to start recording:', error);
+    legacyRecording = null;
+    legacyRecordingActive = false;
+    throw error;
+  }
 }
 
 /**
- * @deprecated Recording is now managed by ConversationSessionService
- * This function is disabled to prevent multiple Recording instances
+ * Legacy recording stop for OFF mode (standard single-tap recording)
+ * Used when Conversation Mode is disabled
+ */
+export async function legacyStopRecording(): Promise<{ uri: string; duration: number }> {
+  try {
+    console.log('🛑 [Legacy] Stopping legacy recording...');
+    
+    if (!legacyRecording || !legacyRecordingActive) {
+      console.warn('⚠️ [Legacy] No active recording to stop');
+      return { uri: '', duration: 0 };
+    }
+    
+    // Stop and unload the recording
+    await legacyRecording.stopAndUnloadAsync();
+    const uri = legacyRecording.getURI() || '';
+    const status = await legacyRecording.getStatusAsync();
+    const duration = status.durationMillis || 0;
+    
+    // Clean up
+    legacyRecording = null;
+    legacyRecordingActive = false;
+    
+    console.log(`✅ [Legacy] Recording stopped. Duration: ${duration}ms, URI: ${uri.substring(uri.length - 30)}`);
+    
+    return { uri, duration };
+  } catch (error) {
+    console.error('❌ [Legacy] Failed to stop recording:', error);
+    legacyRecording = null;
+    legacyRecordingActive = false;
+    throw error;
+  }
+}
+
+// Keep deprecated exports for backward compatibility but disabled for CM mode
+export let recording: Audio.Recording | null = null;
+
+/**
+ * @deprecated Use ConversationSessionService for CM mode or legacyStartRecording for OFF mode
+ */
+export async function startRecording(): Promise<{ uri: string }> {
+  console.warn('⚠️ [speechService] startRecording is deprecated - use legacyStartRecording or ConversationSessionService');
+  throw new Error('Use legacyStartRecording for OFF mode or ConversationSessionService for CM mode');
+}
+
+/**
+ * @deprecated Use ConversationSessionService for CM mode or legacyStopRecording for OFF mode
  */
 export async function stopRecording(): Promise<{ uri: string; duration?: number }> {
-  // FIX 2: Disable recording stop here - all recording control is in ConversationSessionService
-  console.warn('⚠️ [speechService] stopRecording is DISABLED - use ConversationSessionService');
-  throw new Error('Recording is managed by ConversationSessionService. Do not call speechService.stopRecording()');
+  console.warn('⚠️ [speechService] stopRecording is deprecated - use legacyStopRecording or ConversationSessionService');
+  throw new Error('Use legacyStopRecording for OFF mode or ConversationSessionService for CM mode');
 }
 
 // Convert audio file to Base64 for API transmission

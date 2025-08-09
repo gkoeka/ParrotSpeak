@@ -153,6 +153,20 @@ export interface ConversationContextType {
   actions: ConversationActions;
 }
 
+// Helper function to check if Conversation Mode should be used
+export async function shouldUseConversationMode(): Promise<boolean> {
+  try {
+    const stored = await AsyncStorage.getItem('conversationModeEnabled');
+    if (stored !== null) {
+      return JSON.parse(stored);
+    }
+    return false; // Default to OFF for legacy safety
+  } catch (error) {
+    console.error('Failed to check conversation mode preference:', error);
+    return false; // Default to OFF on error
+  }
+}
+
 // Action types for reducer
 type ConversationActionType =
   | { type: 'ENABLE_ALWAYS_LISTENING' }
