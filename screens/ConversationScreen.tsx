@@ -254,12 +254,12 @@ export default function ConversationScreen() {
         ) : messages.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons 
-              name="mic-outline" 
+              name="globe-outline" 
               size={48} 
               color={isDarkMode ? '#666' : '#ccc'} 
             />
             <Text style={[styles.emptyStateText, isDarkMode && styles.emptyStateTextDark]}>
-              {conversationId ? 'No messages in this conversation' : 'Tap the mic button below to start'}
+              {conversationId ? 'No messages in this conversation' : 'Welcome! Your translations will appear here'}
             </Text>
           </View>
         ) : (
