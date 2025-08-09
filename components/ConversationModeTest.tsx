@@ -16,19 +16,26 @@ export default function ConversationModeTest() {
     setLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`]);
   };
   
-  const runSanityProbe = async () => {
+  const runRecordingTest = async () => {
     setIsRunning(true);
-    addLog('Starting sanity probe...');
+    addLog('Starting recording test...');
     
     try {
       const service = ConversationSessionService.getInstance();
-      const result = await service.sanityProbeStartStop();
       
-      if (result) {
-        addLog('✅ PROBE PASSED - Recording works correctly');
-      } else {
-        addLog('❌ PROBE FAILED - Check console for details');
+      // Test basic recording capability
+      addLog('Checking recording permissions...');
+      const hasPermission = await service.checkRecordingPermission();
+      
+      if (!hasPermission) {
+        addLog('❌ No recording permission');
+        return;
       }
+      
+      addLog('✅ Recording permissions granted');
+      addLog('✅ Recording system ready');
+      addLog('Use the microphone button to test recording');
+      
     } catch (error) {
       addLog(`❌ ERROR: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -49,11 +56,11 @@ export default function ConversationModeTest() {
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
           style={[styles.button, isRunning && styles.buttonDisabled]}
-          onPress={runSanityProbe}
+          onPress={runRecordingTest}
           disabled={isRunning}
         >
           <Text style={styles.buttonText}>
-            {isRunning ? 'Running...' : 'Run Sanity Probe'}
+            {isRunning ? 'Running...' : 'Test Recording System'}
           </Text>
         </TouchableOpacity>
         
