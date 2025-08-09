@@ -1021,16 +1021,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`📊 Audio size: ${(audioBuffer.length / 1024).toFixed(2)}KB`);
       
       // Use the working transcription method that handles file I/O properly
-      const transcription = await transcribeAudio(audioBuffer, language);
+      const transcriptionResult = await transcribeAudio(audioBuffer, language);
       
       const processingTime = Date.now() - startTime;
-      console.log(`✅ Transcription successful in ${processingTime}ms:`, transcription.substring(0, 50) + '...');
+      console.log(`✅ Transcription successful in ${processingTime}ms:`, transcriptionResult.text.substring(0, 50) + '...');
       
       // Add performance headers
       res.set('X-Processing-Time', processingTime.toString());
       
-      // Return the transcribed text
-      res.json({ text: transcription });
+      // Return the transcribed text and detected language
+      res.json({ 
+        text: transcriptionResult.text,
+        language: transcriptionResult.language 
+      });
       
     } catch (error) {
       const processingTime = Date.now() - startTime;

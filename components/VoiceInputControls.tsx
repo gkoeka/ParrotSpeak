@@ -12,6 +12,7 @@ import { useParticipants } from '../contexts/ParticipantsContext';
 import { determineSpeaker, getTargetLanguage } from '../utils/languageDetection';
 import { PipelineStatus } from './StatusPill';
 import { metricsTracker } from '../utils/metricsTracker';
+import { normalizeLanguageCode } from '../utils/languageNormalization';
 
 interface VoiceInputControlsProps {
   onMessage: (message: {
@@ -203,7 +204,10 @@ export default function VoiceInputControls({
       
       console.log('Transcription:', transcription);
       if (detectedLang) {
-        console.log('Detected language:', detectedLang);
+        console.log('Raw detected language:', detectedLang);
+        // Normalize the language code (e.g., "german" → "de")
+        detectedLang = normalizeLanguageCode(detectedLang);
+        console.log('Normalized language:', detectedLang);
         metricsCollector.setDetectedLanguage(detectedLang);
       }
       
