@@ -45,7 +45,7 @@ export default function ProfileScreen() {
           onPress: async () => {
             try {
               await logout();
-              navigation.navigate('Login' as never);
+              navigation.navigate('Auth');
             } catch (error) {
               Alert.alert('Error', 'Failed to sign out');
             }
@@ -78,7 +78,7 @@ export default function ProfileScreen() {
               if (response.ok) {
                 Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
                 await logout();
-                navigation.navigate('Login' as never);
+                navigation.navigate('Auth');
               } else {
                 throw new Error('Failed to delete account');
               }

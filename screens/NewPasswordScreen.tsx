@@ -17,9 +17,12 @@ import { useTheme } from '../contexts/ThemeContext';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Header from '../components/Header';
 import { resetPassword } from '../api/passwordResetService';
+import type { RootStackParamList } from '../App';
+
+type NewPasswordNavigationProp = StackNavigationProp<RootStackParamList, 'NewPassword'>;
 
 interface NewPasswordScreenProps {
-  navigation: StackNavigationProp<any>;
+  navigation: NewPasswordNavigationProp;
   route: {
     params: {
       token: string;
@@ -113,7 +116,7 @@ export default function NewPasswordScreen({ navigation, route }: NewPasswordScre
           [
             {
               text: 'OK',
-              onPress: () => navigation.navigate('Login' as never),
+              onPress: () => navigation.navigate('Auth'),
             },
           ]
         );
