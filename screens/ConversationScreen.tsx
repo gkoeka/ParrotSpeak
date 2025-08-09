@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, I18nManager, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, I18nManager, ActivityIndicator, Button } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
@@ -16,6 +16,7 @@ import { LanguagePreferencesStorage } from '../utils/languagePreferences';
 import LanguageSelector from '../components/LanguageSelectorMobile';
 import PerformanceIndicator from '../components/PerformanceMonitor';
 import ConversationModeIndicator from '../components/ConversationModeIndicator';
+import { ConversationSessionService } from '../services/ConversationSessionService';
 
 type ConversationNavigationProp = StackNavigationProp<RootStackParamList, 'Conversation'>;
 
@@ -25,6 +26,23 @@ export default function ConversationScreen() {
   const navigation = useNavigation<ConversationNavigationProp>();
   const route = useRoute<any>();
   const conversationId = route.params?.id;
+  
+  // Developer probe function
+  const runProbe = async () => {
+    console.log('[Probe] Starting');
+    try {
+      const service = ConversationSessionService.getInstance();
+      const result = await service.sanityProbeStartStop();
+      
+      if (result) {
+        console.log('[Probe] PASS');
+      } else {
+        console.log('[Probe] FAIL - probe returned false');
+      }
+    } catch (error) {
+      console.log('[Probe] FAIL', error);
+    }
+  };
   
   const [messages, setMessages] = useState<Array<{
     id: string;
@@ -283,6 +301,17 @@ export default function ConversationScreen() {
       
       {/* Conversation Mode indicator */}
       <ConversationModeIndicator />
+      
+      {/* Developer-only probe button */}
+      {__DEV__ && (
+        <View style={{ padding: 10, backgroundColor: isDarkMode ? '#333' : '#f0f0f0' }}>
+          <Button 
+            title="Run Probe" 
+            onPress={runProbe}
+            color={isDarkMode ? '#5c8cff' : '#3366FF'}
+          />
+        </View>
+      )}
       
       <View style={styles.controlsContainer}>
         <VoiceInputControls 
