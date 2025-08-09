@@ -289,15 +289,25 @@ function validateExtraArgs(args: string[], scenarioId: string): { valid: boolean
     '\n', '\r', '\t', '\\'
   ];
   
-  // Valid flag patterns
-  const FLAG_PATTERN = /^--[a-zA-Z0-9-]+(=[a-zA-Z0-9_\-\.\/]+)?$/;
+  // Valid flag patterns - no parent directory traversal allowed
+  const FLAG_PATTERN = /^--[a-zA-Z0-9-]+(=[a-zA-Z0-9_\-\/]+)?$/;  // No dots in values
   const SHORT_FLAG_PATTERN = /^-[a-zA-Z0-9]$/;
-  const FILE_PATH_PATTERN = /^[a-zA-Z0-9_\-\.\/]+$/;
+  const FILE_PATH_PATTERN = /^[a-zA-Z0-9_\-\/]+\.(ts|js|json|mjs|cjs)?$/;  // Only forward paths with extensions
   
   for (const arg of args) {
     // Check length
     if (arg.length > MAX_ARG_LENGTH) {
       return { valid: false, error: `Argument too long: "${arg.substring(0, 50)}..."` };
+    }
+    
+    // Check for path traversal attempts
+    if (arg.includes('../') || arg.includes('..\\')) {
+      return { valid: false, error: `Path traversal attempt blocked: "${arg}"` };
+    }
+    
+    // Check for double slashes (obfuscation attempt)
+    if (arg.includes('//') || arg.includes('\\\\')) {
+      return { valid: false, error: `Double slash obfuscation blocked: "${arg}"` };
     }
     
     // Check for forbidden characters
