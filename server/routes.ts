@@ -1414,6 +1414,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const WS_RATE_LIMIT = 10; // Max attempts per minute
   const WS_RATE_WINDOW = 60 * 1000; // 1 minute
   
+  // Origin/Host allowlist configuration
+  const isProd = process.env.NODE_ENV === 'production';
+  const allowedOrigins = new Set([
+    // Production domains
+    'https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev',
+    'https://parrotspeak.com',
+    'https://www.parrotspeak.com',
+    'https://app.parrotspeak.com',
+    // Development origins (only in non-production)
+    ...(isProd ? [] : [
+      'http://localhost:3000',
+      'http://localhost:5000',
+      'http://localhost:8081', // Expo
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5000',
+      'http://127.0.0.1:8081',
+      'http://10.0.2.2:5000', // Android emulator
+      'http://10.0.3.2:5000', // Android emulator (alternative)
+      'exp://localhost:8081', // Expo development
+      null // Allow no origin in development (for testing)
+    ])
+  ]);
+  
   // Initialize WebSocket server with authentication handling
   const wss = new WebSocketServer({ 
     server: httpServer, 
@@ -1421,7 +1444,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     verifyClient: async (info, cb) => {
       const clientIp = info.req.socket.remoteAddress || 'unknown';
       
-      // Check rate limiting
+      // 1. Check Origin/Host headers
+      const origin = info.origin || info.req.headers.origin;
+      const host = info.req.headers.host;
+      
+      // Parse and validate origin
+      const isValidOrigin = origin === undefined || origin === null 
+        ? !isProd // Allow missing origin only in development
+        : allowedOrigins.has(origin);
+      
+      if (!isValidOrigin) {
+        console.error(`WebSocket rejected - Invalid origin: ${origin} from IP: ${clientIp}, Host: ${host}`);
+        cb(false, 403, 'Forbidden: Invalid origin');
+        return;
+      }
+      
+      // Additional host validation for production
+      if (isProd && host) {
+        const allowedHosts = [
+          '40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev',
+          'parrotspeak.com',
+          'www.parrotspeak.com',
+          'app.parrotspeak.com'
+        ];
+        const hostWithoutPort = host.split(':')[0];
+        if (!allowedHosts.includes(hostWithoutPort)) {
+          console.error(`WebSocket rejected - Invalid host: ${host} from IP: ${clientIp}`);
+          cb(false, 403, 'Forbidden: Invalid host');
+          return;
+        }
+      }
+      
+      console.log(`WebSocket origin check passed - Origin: ${origin || 'none'}, Host: ${host}, IP: ${clientIp}`);
+      
+      // 2. Check rate limiting
       const now = Date.now();
       const rateLimit = wsRateLimiter.get(clientIp);
       if (rateLimit) {
