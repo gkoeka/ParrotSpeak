@@ -50,18 +50,21 @@ export default function SettingsScreen() {
     {
       title: 'Dark Mode',
       icon: 'moon-outline',
+      subtitle: 'Switch to dark theme',
       value: isDarkMode,
       onValueChange: toggleDarkMode,
     },
     {
       title: 'Auto-detect Speakers',
       icon: 'people-outline',
+      subtitle: 'Route turns by the language you speak',
       value: participants.autoDetectSpeakers,
       onValueChange: setAutoDetectSpeakers,
     },
     {
       title: 'Auto-play Translations',
       icon: 'play-circle-outline',
+      subtitle: 'Automatically play translated audio',
       value: autoPlayEnabled,
       onValueChange: setAutoPlayEnabled,
     },
@@ -167,7 +170,12 @@ export default function SettingsScreen() {
                   <View style={[styles.iconContainer, isDarkMode && styles.iconContainerDark]}>
                     <Ionicons name={option.icon as any} size={24} color={isDarkMode ? '#fff' : '#3366FF'} />
                   </View>
-                  <Text style={[styles.optionText, isDarkMode && styles.optionTextDark]}>{option.title}</Text>
+                  <View style={styles.optionTextContainer}>
+                    <Text style={[styles.optionText, isDarkMode && styles.optionTextDark]}>{option.title}</Text>
+                    {option.subtitle && (
+                      <Text style={[styles.optionSubtitle, isDarkMode && styles.optionSubtitleDark]}>{option.subtitle}</Text>
+                    )}
+                  </View>
                 </View>
                 <Switch
                   value={option.value}
