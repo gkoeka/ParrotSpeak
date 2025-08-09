@@ -304,7 +304,11 @@ export default function ConversationScreen() {
       <View style={[
         styles.controlsContainer, 
         isDarkMode && styles.controlsContainerDark,
-        { paddingBottom: insets.bottom }
+        { 
+          paddingBottom: Platform.OS === 'android' 
+            ? Math.max(8, insets.bottom) // Android: ensure gap above system nav
+            : insets.bottom // iOS: use safe area directly
+        }
       ]}>
         <VoiceInputControls 
           onStatusChange={setPipelineStatus}
@@ -497,8 +501,8 @@ const styles = StyleSheet.create({
   },
   controlsContainer: {
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
+    paddingTop: 16,
+    paddingBottom: 16,
     borderTopWidth: 1,
     borderTopColor: '#e9ecef',
     backgroundColor: '#ffffff',
