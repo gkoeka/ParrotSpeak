@@ -252,7 +252,8 @@ export default function VoiceInputControls({
       
       console.log('✅ Pipeline complete');
       
-      // Step 7: Delete recording file to save storage
+      // Step 7: Delete recording file to save storage (after TTS starts)
+      console.log('🧹 [File] Scheduling delete after TTS started');
       await deleteRecordingFile(uri);
       
     } catch (error) {
@@ -267,6 +268,7 @@ export default function VoiceInputControls({
       }, 3000);
       
       // Still try to delete file even on error
+      console.log('🧹 [File] Scheduling delete after error');
       await deleteRecordingFile(uri);
     }
   };

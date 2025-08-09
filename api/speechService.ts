@@ -521,16 +521,23 @@ export async function stopRecording(): Promise<{ uri: string; duration?: number 
  * Delete recording file after processing to save storage
  */
 export async function deleteRecordingFile(uri: string): Promise<void> {
-  if (!uri || !isFileSystemAvailable) return;
+  if (!uri || !isFileSystemAvailable) {
+    console.log('📁 [File] No URI or filesystem - skip delete');
+    return;
+  }
+  
+  console.log('📁 [File] Delete queued for:', uri.substring(uri.length - 30));
   
   try {
     const fileInfo = await FileSystem.getInfoAsync(uri);
     if (fileInfo.exists) {
       await FileSystem.deleteAsync(uri, { idempotent: true });
-      console.log('🗑️ [Legacy] Recording file deleted:', uri.substring(uri.length - 30));
+      console.log('✅ [File] Deleted:', uri.substring(uri.length - 30));
+    } else {
+      console.log('📁 [File] Already gone (ok):', uri.substring(uri.length - 30));
     }
   } catch (error) {
-    console.warn('⚠️ [Legacy] Could not delete recording file:', error);
+    console.warn('⚠️ [File] Delete failed (non-critical):', error);
     // Non-critical - continue without throwing
   }
 }
