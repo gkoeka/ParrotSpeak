@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 
 import { legacyStartRecording, legacyStopRecording, processRecording, speakText, deleteRecordingFile } from '../api/speechService';
 import { translateText } from '../api/languageService';
@@ -63,6 +64,13 @@ export default function VoiceInputControls({
   const handleStartRecording = async () => {
     try {
       console.log('🎤 Starting recording...');
+      console.log('[UX] haptics=start');
+      
+      // Light haptic on start
+      if (Platform.OS !== 'web') {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      
       setIsRecording(true);
       setError(null);
       
@@ -87,6 +95,13 @@ export default function VoiceInputControls({
   const handleStopRecording = async () => {
     try {
       console.log('🛑 Stopping recording...');
+      console.log('[UX] haptics=stop');
+      
+      // Light haptic on stop
+      if (Platform.OS !== 'web') {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      
       setIsRecording(false);
       
       const { uri, duration } = await legacyStopRecording();
@@ -203,6 +218,12 @@ export default function VoiceInputControls({
         console.log('[UI] status=preparingAudio');
         onStatusChange?.('preparingAudio');
         console.log('🔊 Speaking translation...');
+        
+        // Subtle haptic when TTS begins
+        console.log('[UX] haptics=tts');
+        if (Platform.OS !== 'web') {
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
         
         // Set idle when TTS starts
         await speakText(translationResult.translation, actualTargetLang);
@@ -339,9 +360,18 @@ export default function VoiceInputControls({
           styles.recordButton,
           isRecording && styles.recordButtonActive,
           isProcessing && styles.recordButtonProcessing,
-          !isSourceSpeechSupported && styles.recordButtonDisabled
+          !isSourceSpeechSupported && styles.recordButtonDisabled,
+          isDarkMode && styles.recordButtonDark,
+          isRecording && isDarkMode && styles.recordButtonActiveDark,
+          isProcessing && isDarkMode && styles.recordButtonProcessingDark
         ]}
         onPress={isRecording ? handleStopRecording : handleStartRecording}
+        accessibilityLabel={
+          isProcessing ? "Processing" : 
+          isRecording ? "Stop recording" : 
+          "Record"
+        }
+        accessibilityRole="button"
         disabled={isProcessing || !isSourceSpeechSupported}
       >
         <Text style={styles.recordIcon}>
@@ -495,12 +525,28 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+    borderWidth: 3,
+    borderColor: 'transparent',
+  },
+  recordButtonDark: {
+    backgroundColor: '#0051D5',
   },
   recordButtonActive: {
     backgroundColor: '#ff4444',
+    borderColor: '#ff6666',
+  },
+  recordButtonActiveDark: {
+    backgroundColor: '#cc0000',
+    borderColor: '#ff4444',
   },
   recordButtonProcessing: {
     backgroundColor: '#FFA500',
+    borderColor: '#FFB733',
+    opacity: 0.8,
+  },
+  recordButtonProcessingDark: {
+    backgroundColor: '#CC8400',
+    borderColor: '#FFA500',
   },
   recordButtonDisabled: {
     backgroundColor: '#cccccc',

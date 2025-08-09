@@ -53,6 +53,8 @@ export default function UTBTHeader() {
         <TouchableOpacity 
           style={[styles.speakerChip, isDarkMode && styles.chipDark]}
           onPress={() => setShowLanguagePicker('A')}
+          accessibilityLabel="Speaker A language"
+          accessibilityRole="button"
         >
           <Text style={[styles.chipText, isDarkMode && styles.textDark]}>
             A: {participants.A.lang}
@@ -69,6 +71,8 @@ export default function UTBTHeader() {
         <TouchableOpacity 
           style={[styles.speakerChip, isDarkMode && styles.chipDark]}
           onPress={() => setShowLanguagePicker('B')}
+          accessibilityLabel="Speaker B language"
+          accessibilityRole="button"
         >
           <Text style={[styles.chipText, isDarkMode && styles.textDark]}>
             B: {participants.B.lang}
@@ -78,6 +82,8 @@ export default function UTBTHeader() {
         <TouchableOpacity 
           style={[styles.swapButton, isDarkMode && styles.swapButtonDark]}
           onPress={handleSwap}
+          accessibilityLabel="Swap translation direction"
+          accessibilityRole="button"
         >
           <Ionicons name="swap-horizontal" size={18} color="#fff" />
         </TouchableOpacity>
@@ -93,6 +99,8 @@ export default function UTBTHeader() {
           onValueChange={handleAutoDetectToggle}
           trackColor={{ false: '#767577', true: '#81b0ff' }}
           thumbColor={autoDetectSpeakers ? '#007AFF' : '#f4f3f4'}
+          accessibilityLabel="Auto-detect speakers"
+          accessibilityRole="switch"
         />
       </View>
       
