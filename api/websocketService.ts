@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../api/config';
+import { SecureStorage } from '../utils/secureStorage';
 
 export interface WebSocketMessage {
   type: 'translation' | 'transcription' | 'error' | 'connection';
@@ -59,7 +60,7 @@ class WebSocketService {
     }
   }
 
-  connect(config: WebSocketConfig) {
+  async connect(config: WebSocketConfig) {
     if (this.isConnecting || (this.ws && this.ws.readyState === WebSocket.CONNECTING)) {
       return;
     }
@@ -68,9 +69,22 @@ class WebSocketService {
     this.isConnecting = true;
 
     try {
-      // Build WebSocket URL with security defaults
+      // Get authentication token
+      const token = await SecureStorage.getAuthToken();
+      
+      if (!token) {
+        console.error('No authentication token available for WebSocket connection');
+        this.isConnecting = false;
+        this.config?.onError(new Event('auth_error'));
+        return;
+      }
+
+      // Build WebSocket URL with security defaults (no token in URL)
       const wsUrl = this.buildWebSocketURL(API_BASE_URL, '/ws');
-      this.ws = new WebSocket(wsUrl);
+      
+      // Pass token via subprotocol (secure method)
+      // Using subprotocol as it's supported across browsers and React Native
+      this.ws = new WebSocket(wsUrl, [`bearer.${token}`]);
 
       this.ws.onopen = () => {
         this.isConnecting = false;

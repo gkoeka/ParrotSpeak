@@ -1409,12 +1409,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   const httpServer = createServer(app);
   
-  // Initialize WebSocket server
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  // Rate limiting for WebSocket connections
+  const wsRateLimiter = new Map<string, { count: number; resetTime: number }>();
+  const WS_RATE_LIMIT = 10; // Max attempts per minute
+  const WS_RATE_WINDOW = 60 * 1000; // 1 minute
+  
+  // Initialize WebSocket server with authentication handling
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: '/ws',
+    verifyClient: async (info, cb) => {
+      const clientIp = info.req.socket.remoteAddress || 'unknown';
+      
+      // Check rate limiting
+      const now = Date.now();
+      const rateLimit = wsRateLimiter.get(clientIp);
+      if (rateLimit) {
+        if (now < rateLimit.resetTime) {
+          if (rateLimit.count >= WS_RATE_LIMIT) {
+            console.warn(`WebSocket rate limit exceeded for IP: ${clientIp}`);
+            cb(false, 429, 'Too Many Requests');
+            return;
+          }
+          rateLimit.count++;
+        } else {
+          rateLimit.count = 1;
+          rateLimit.resetTime = now + WS_RATE_WINDOW;
+        }
+      } else {
+        wsRateLimiter.set(clientIp, { count: 1, resetTime: now + WS_RATE_WINDOW });
+      }
+      
+      // Extract token from subprotocol
+      const protocols = info.req.headers['sec-websocket-protocol'];
+      if (!protocols) {
+        console.error(`WebSocket auth failed: No subprotocol provided from IP: ${clientIp}`);
+        cb(false, 401, 'Unauthorized: Missing authentication');
+        return;
+      }
+      
+      // Parse bearer token from subprotocol
+      const protocolArray = protocols.split(',').map(p => p.trim());
+      const bearerProtocol = protocolArray.find(p => p.startsWith('bearer.'));
+      
+      if (!bearerProtocol) {
+        console.error(`WebSocket auth failed: No bearer token in subprotocol from IP: ${clientIp}`);
+        cb(false, 401, 'Unauthorized: Invalid authentication format');
+        return;
+      }
+      
+      const token = bearerProtocol.substring(7); // Remove 'bearer.' prefix
+      
+      // Verify JWT token
+      const { verifyToken } = await import('./utils/jwt');
+      const payload = verifyToken(token);
+      
+      if (!payload) {
+        console.error(`WebSocket auth failed: Invalid token from IP: ${clientIp}`);
+        cb(false, 401, 'Unauthorized: Invalid token');
+        return;
+      }
+      
+      // Get user from database
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, payload.userId)
+      });
+      
+      if (!user) {
+        console.error(`WebSocket auth failed: User not found for ID ${payload.userId} from IP: ${clientIp}`);
+        cb(false, 401, 'Unauthorized: User not found');
+        return;
+      }
+      
+      // Store user info on the request for later use
+      (info.req as any).authenticatedUser = user;
+      (info.req as any).authenticatedUserId = user.id;
+      
+      console.log(`WebSocket authenticated for user ${user.email} from IP: ${clientIp}`);
+      
+      // Accept the connection and set the subprotocol
+      cb(true);
+    },
+    handleProtocols: (protocols: Set<string>) => {
+      // Accept the bearer protocol if present
+      const protocolArray = Array.from(protocols);
+      const bearerProtocol = protocolArray.find((p: string) => p.startsWith('bearer.'));
+      return bearerProtocol || false;
+    }
+  });
   
   // Handle WebSocket connections
-  wss.on('connection', (ws: WebSocket) => {
-    console.log('Client connected to WebSocket');
+  wss.on('connection', (ws: WebSocket, req) => {
+    const authenticatedUserId = (req as any).authenticatedUserId;
+    const authenticatedUser = (req as any).authenticatedUser;
+    console.log(`Client connected to WebSocket: User ID ${authenticatedUserId}`);
     
     ws.on('message', async (message: string) => {
       try {
@@ -1422,7 +1510,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('WebSocket message received:', data);
         
         if (data.type === 'translate') {
-          const { conversationId, text, sourceLanguage, targetLanguage, userId } = data;
+          const { conversationId, text, sourceLanguage, targetLanguage } = data;
+          // Use authenticated user ID from the connection, not from the message
+          const userId = authenticatedUserId;
           console.log('Translation request:', { conversationId, text, sourceLanguage, targetLanguage, userId });
           
           try {
