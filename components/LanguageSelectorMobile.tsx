@@ -7,7 +7,6 @@ import {
   Modal, 
   ScrollView, 
   TextInput, 
-  useColorScheme,
   Platform,
   SafeAreaView,
   Dimensions,
@@ -15,6 +14,7 @@ import {
 } from 'react-native';
 import { getSupportedLanguages } from '../constants/languageConfiguration';
 import { isRTLLanguage, rtlStyle, getWritingDirection } from '../utils/rtlSupport';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface LanguageSelectorProps {
   sourceLanguage: string;
@@ -32,8 +32,8 @@ export default function LanguageSelector({
   const [showSourceModal, setShowSourceModal] = useState(false);
   const [showTargetModal, setShowTargetModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const { isDarkMode } = useTheme();
+  const isDark = isDarkMode;
 
   // Get all supported languages, sorted by popularity
   const allLanguages = useMemo(() => {
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#f0f0f0',
     borderRadius: 12,
     marginHorizontal: 16,
     marginVertical: 8,
@@ -349,24 +349,27 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     padding: 12,
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     borderRadius: 8,
     minHeight: 64,
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
   languageButtonDark: {
     backgroundColor: '#3a3a3a',
     shadowColor: '#fff',
     shadowOpacity: 0.05,
+    borderColor: '#4a4a4a',
   },
   languageLabel: {
     fontSize: 12,
-    color: '#666',
+    color: '#606060',
     marginBottom: 4,
     fontWeight: '500',
   },
@@ -376,7 +379,7 @@ const styles = StyleSheet.create({
   languageValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: '#1a1a1a',
     textAlign: 'center',
     lineHeight: 18,
   },

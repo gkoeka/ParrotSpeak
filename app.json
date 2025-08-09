@@ -29,7 +29,9 @@
       },
       "package": "com.parrotspeak.app",
       "versionCode": 1,
-      "permissions": ["RECORD_AUDIO"]
+      "permissions": ["RECORD_AUDIO"],
+      "navigationBarColor": "#ffffff",
+      "navigationBarVisible": true
     },
     "plugins": ["expo-av", "expo-file-system"],
     "experiments": {

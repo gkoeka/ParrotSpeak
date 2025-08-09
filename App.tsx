@@ -3,12 +3,15 @@ import React, { useEffect, useState } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, View, Platform } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { configureNavigationBar, logNavigationBarStatus } from './utils/navigationBarConfig';
 
 // Auth Provider
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
+import { ConversationProvider } from "./contexts/ConversationContext";
+import { ParticipantsProvider } from "./contexts/ParticipantsContext";
 
 // Tab Navigator
 import MainTabNavigator from "./navigation/MainTabNavigator";
@@ -144,9 +147,20 @@ function AuthNavigator() {
 function AppContent() {
   const { isDarkMode } = useTheme();
   
+  // Configure Android navigation bar
+  useEffect(() => {
+    configureNavigationBar(isDarkMode);
+    // Log status for debugging
+    logNavigationBarStatus();
+  }, [isDarkMode]);
+  
   return (
     <>
-      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
+      <StatusBar 
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
+        backgroundColor={isDarkMode ? "#1a1a1a" : "#ffffff"}
+        translucent={false}
+      />
       <NavigationContainer>
         <AuthNavigator />
       </NavigationContainer>
@@ -159,7 +173,11 @@ export default function App() {
     <SafeAreaProvider>
       <AuthProvider>
         <ThemeProvider>
-          <AppContent />
+          <ParticipantsProvider>
+            <ConversationProvider>
+              <AppContent />
+            </ConversationProvider>
+          </ParticipantsProvider>
         </ThemeProvider>
       </AuthProvider>
     </SafeAreaProvider>

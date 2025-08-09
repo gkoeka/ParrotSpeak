@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, I18nManager, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, I18nManager, ActivityIndicator, Button, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
@@ -12,9 +13,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { API_BASE_URL } from '../api/config';
 import { getSupportedLanguages } from '../constants/languageConfiguration';
 import { LanguagePreferencesStorage } from '../utils/languagePreferences';
+import { configureNavigationBar } from '../utils/navigationBarConfig';
 
 import LanguageSelector from '../components/LanguageSelectorMobile';
 import PerformanceIndicator from '../components/PerformanceMonitor';
+import StatusPill, { PipelineStatus } from '../components/StatusPill';
 
 type ConversationNavigationProp = StackNavigationProp<RootStackParamList, 'Conversation'>;
 
@@ -24,6 +27,9 @@ export default function ConversationScreen() {
   const navigation = useNavigation<ConversationNavigationProp>();
   const route = useRoute<any>();
   const conversationId = route.params?.id;
+  const insets = useSafeAreaInsets();
+  
+  // Probe functionality removed - no longer needed after recording fixes
   
   const [messages, setMessages] = useState<Array<{
     id: string;
@@ -40,9 +46,15 @@ export default function ConversationScreen() {
   const [error, setError] = useState<string | null>(null);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState<string | undefined>(conversationId);
+  const [pipelineStatus, setPipelineStatus] = useState<PipelineStatus>('idle');
 
   // Check subscription status
   const hasActiveSubscription = user?.subscriptionStatus === 'active' || user?.subscriptionTier === 'lifetime';
+  
+  // Configure Android navigation bar for this screen
+  useEffect(() => {
+    configureNavigationBar(isDarkMode);
+  }, [isDarkMode]);
 
   // Get all supported languages for flag display
   const allLanguages = getSupportedLanguages();
@@ -209,6 +221,8 @@ export default function ConversationScreen() {
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
       <Header />
       
+      <StatusPill status={pipelineStatus} />
+      
       <LanguageSelector 
         sourceLanguage={sourceLanguage}
         targetLanguage={targetLanguage}
@@ -239,8 +253,13 @@ export default function ConversationScreen() {
           </View>
         ) : messages.length === 0 ? (
           <View style={styles.emptyState}>
+            <Ionicons 
+              name="globe-outline" 
+              size={48} 
+              color={isDarkMode ? '#666' : '#ccc'} 
+            />
             <Text style={[styles.emptyStateText, isDarkMode && styles.emptyStateTextDark]}>
-              {conversationId ? 'No messages in this conversation' : 'Start speaking to begin your conversation'}
+              {conversationId ? 'No messages in this conversation' : 'Welcome! Your translations will appear here'}
             </Text>
           </View>
         ) : (
@@ -249,29 +268,31 @@ export default function ConversationScreen() {
             const isTargetRTL = isRTLLanguage(message.toLanguage);
             
             return (
-              <View key={message.id} style={styles.messageCard}>
+              <View key={message.id} style={[styles.messageCard, isDarkMode && styles.messageCardDark]}>
                 <View style={[
                   styles.originalSection,
                   isSourceRTL && styles.rtlSection
                 ]}>
-                  <Text style={styles.languageLabel}>Original</Text>
+                  <Text style={[styles.languageLabel, isDarkMode && styles.languageLabelDark]}>Original</Text>
                   <Text style={[
                     styles.originalText,
+                    isDarkMode && styles.originalTextDark,
                     isSourceRTL && styles.rtlText
                   ]}>{message.text}</Text>
                 </View>
-                <View style={styles.divider} />
+                <View style={[styles.divider, isDarkMode && styles.dividerDark]} />
                 <View style={[
                   styles.translationSection,
                   isTargetRTL && styles.rtlSection
                 ]}>
-                  <Text style={styles.languageLabel}>Translation</Text>
+                  <Text style={[styles.languageLabel, isDarkMode && styles.languageLabelDark]}>Translation</Text>
                   <Text style={[
                     styles.translatedText,
+                    isDarkMode && styles.translatedTextDark,
                     isTargetRTL && styles.rtlText
                   ]}>{message.translation}</Text>
                 </View>
-                <Text style={styles.languagePair}>
+                <Text style={[styles.languagePair, isDarkMode && styles.languagePairDark]}>
                   {getFlagEmoji(message.fromLanguage)} {message.fromLanguage} → {getFlagEmoji(message.toLanguage)} {message.toLanguage}
                 </Text>
               </View>
@@ -280,8 +301,17 @@ export default function ConversationScreen() {
         )}
       </ScrollView>
       
-      <View style={styles.controlsContainer}>
+      <View style={[
+        styles.controlsContainer, 
+        isDarkMode && styles.controlsContainerDark,
+        { 
+          paddingBottom: Platform.OS === 'android' 
+            ? Math.max(8, insets.bottom) // Android: ensure gap above system nav
+            : insets.bottom // iOS: use safe area directly
+        }
+      ]}>
         <VoiceInputControls 
+          onStatusChange={setPipelineStatus}
           onMessage={async (message) => {
             // Create conversation if it doesn't exist yet and user is authenticated
             if (!currentConversationId && hasActiveSubscription) {
@@ -370,11 +400,12 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: 16,
-    color: '#666',
+    color: '#999',
     textAlign: 'center',
+    marginTop: 12,
   },
   emptyStateTextDark: {
-    color: '#999',
+    color: '#666',
   },
   loadingContainer: {
     flex: 1,
@@ -413,6 +444,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e9ecef',
   },
+  messageCardDark: {
+    backgroundColor: '#2a2a2a',
+    borderColor: '#3a3a3a',
+  },
   originalSection: {
     marginBottom: 12,
   },
@@ -426,11 +461,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     textTransform: 'uppercase',
   },
+  languageLabelDark: {
+    color: '#999',
+  },
   originalText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1a1a1a',
     lineHeight: 22,
+  },
+  originalTextDark: {
+    color: '#fff',
   },
   translatedText: {
     fontSize: 16,
@@ -438,10 +479,16 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontWeight: '500',
   },
+  translatedTextDark: {
+    color: '#5c8cff',
+  },
   divider: {
     height: 1,
     backgroundColor: '#f0f0f0',
     marginVertical: 8,
+  },
+  dividerDark: {
+    backgroundColor: '#3a3a3a',
   },
   languagePair: {
     fontSize: 12,
@@ -449,10 +496,20 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'right',
   },
+  languagePairDark: {
+    color: '#999',
+  },
   controlsContainer: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
     borderTopWidth: 1,
     borderTopColor: '#e9ecef',
+    backgroundColor: '#ffffff',
+  },
+  controlsContainerDark: {
+    borderTopColor: '#3a3a3a',
+    backgroundColor: '#1a1a1a',
   },
   rtlSection: {
     alignItems: 'flex-end',

@@ -148,23 +148,41 @@ export async function recognizeSpeech(
   languageCode: string
 ): Promise<string> {
   try {
+    // Add timeout for Whisper API calls
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    
     const response = await authenticatedFetch(`${API_BASE_URL}/api/transcribe`, {
       method: 'POST',
       body: JSON.stringify({
         audio: audioBase64,
         language: languageCode
-      })
+      }),
+      signal: controller.signal
     });
     
+    clearTimeout(timeoutId);
+    
     if (!response.ok) {
-      throw new Error(`Speech recognition failed: ${response.statusText}`);
+      const errorMsg = `Whisper API error: ${response.status} ${response.statusText}`;
+      console.error(errorMsg);
+      throw new Error(errorMsg);
     }
     
     const data = await response.json();
     return data.text;
-  } catch (error) {
-    console.error('Error in speech recognition:', error);
-    throw error;
+  } catch (error: any) {
+    // Enhanced error logging
+    if (error.name === 'AbortError') {
+      console.error('❌ Whisper API timeout after 30 seconds');
+      throw new Error('Speech recognition timed out. Please try again.');
+    } else if (error.message?.includes('fetch')) {
+      console.error('❌ Whisper API network error:', error.message);
+      throw new Error('Network error during speech recognition. Please check your connection.');
+    } else {
+      console.error('❌ Whisper API error:', error);
+      throw new Error(error.message || 'Speech recognition failed. Please try again.');
+    }
   }
 }
 
@@ -192,6 +210,10 @@ export async function translateText(
     
     console.log(`🌍 Translating "${text}" from ${sourceLanguage} to ${targetLanguage}`);
     
+    // Add timeout for Translation API calls
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 second timeout
+    
     const response = await mobileFetch(`${API_BASE_URL}/api/translate`, {
       method: 'POST',
       headers: jsonHeaders,
@@ -199,11 +221,16 @@ export async function translateText(
         text,
         sourceLanguage,
         targetLanguage
-      })
+      }),
+      signal: controller.signal
     });
     
+    clearTimeout(timeoutId);
+    
     if (!response.ok) {
-      throw new Error(`Translation failed: ${response.statusText}`);
+      const errorMsg = `Translation API error: ${response.status} ${response.statusText}`;
+      console.error(errorMsg);
+      throw new Error(errorMsg);
     }
     
     const data = await response.json();
@@ -214,8 +241,17 @@ export async function translateText(
     await translationCache.set(cacheKey, data.translation);
     
     return data;
-  } catch (error) {
-    console.error('Error translating text:', error);
-    throw error;
+  } catch (error: any) {
+    // Enhanced error logging
+    if (error.name === 'AbortError') {
+      console.error('❌ Translation API timeout after 20 seconds');
+      throw new Error('Translation timed out. Please try again.');
+    } else if (error.message?.includes('fetch')) {
+      console.error('❌ Translation API network error:', error.message);
+      throw new Error('Network error during translation. Please check your connection.');
+    } else {
+      console.error('❌ Translation API error:', error);
+      throw new Error(error.message || 'Translation failed. Please try again.');
+    }
   }
 }

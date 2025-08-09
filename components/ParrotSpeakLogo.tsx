@@ -34,8 +34,8 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   logoImage: {
-    width: 32,
-    height: 32,
+    width: 42,
+    height: 42,
   },
   text: {
     fontSize: 18,

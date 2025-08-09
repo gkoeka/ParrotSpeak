@@ -14,6 +14,16 @@ ParrotSpeak enables seamless cross-language communication through real-time spee
 
 ## 🎉 Recent Updates
 
+### Conversation Mode Feature Complete (February 8, 2025)
+- **✅ Phase 1: Voice Activity Detection** - Real-time audio recording with activity detection, automatic silence trimming, and audio chunk extraction
+- **✅ Phase 2: Speaker Switching Logic** - 7-state conversation state machine with automatic speaker role switching and configurable silence thresholds
+- **✅ Phase 3: AI Pipeline Integration** - Complete OpenAI Whisper transcription, GPT-4 translation, and expo-speech synthesis pipeline
+- **✅ Audio File Management** - Automatic cleanup of temporary files after 30 seconds, file existence validation, and size checks
+- **✅ Enhanced Error Handling** - Categorized logging for mic input, Whisper API, translation timeout, and TTS errors with graceful recovery
+- **✅ Queue Management** - Duplicate chunk prevention, max queue size limits, and processing state tracking
+- **✅ Performance Optimizations** - Translation caching, pending speech cancellation, and comprehensive performance monitoring
+- **✅ Settings Integration** - Conversation Mode toggle moved to Settings screen with AsyncStorage persistence
+
 ### Authentication Persistence & UI Enhancements (February 5, 2025)
 - **✅ JWT Authentication for Mobile** - Implemented JWT token-based auth ensuring reliable session persistence across app restarts with expo-secure-store
 - **✅ Authentication Persistence Verified** - Users remain logged in after app reloads, working correctly for all test accounts including Google/Apple sign-ins
@@ -83,6 +93,7 @@ ParrotSpeak enables seamless cross-language communication through real-time spee
 ## 🌟 Features
 
 ### Core Translation Capabilities
+- **Conversation Mode** - Hands-free continuous conversation mode with automatic speaker detection and switching (enabled by default, configurable in Settings)
 - **Real-time Voice-to-Voice Translation** - Speak naturally and hear translations instantly with WebSocket streaming
 - **Bi-directional Conversations** - Both parties can speak in their native languages seamlessly
 - **Context-Aware Translations** - AI understands context, tone, and cultural nuances

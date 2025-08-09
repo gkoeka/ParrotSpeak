@@ -1,10 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, Platform, Linking } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import * as FileSystem from 'expo-file-system';
 
-import { startRecording, stopRecording, processRecording, speakText } from '../api/speechService';
+import { legacyStartRecording, legacyStopRecording, processRecording, speakText, deleteRecordingFile } from '../api/speechService';
 import { translateText } from '../api/languageService';
 import { getLanguageByCode } from '../constants/languageConfiguration';
-import { performanceMonitor } from '../utils/performanceMonitor';
+import { useTheme } from '../contexts/ThemeContext';
+import { useParticipants } from '../contexts/ParticipantsContext';
+import { determineSpeaker, getTargetLanguage } from '../utils/languageDetection';
+import { PipelineStatus } from './StatusPill';
+import { metricsTracker } from '../utils/metricsTracker';
 
 interface VoiceInputControlsProps {
   onMessage: (message: {
@@ -17,29 +24,37 @@ interface VoiceInputControlsProps {
   }) => void;
   sourceLanguage?: string;
   targetLanguage?: string;
+  showAlwaysListeningToggle?: boolean;
+  onAlwaysListeningToggle?: (enabled: boolean) => void;
+  onStatusChange?: (status: PipelineStatus) => void;
 }
 
 export default function VoiceInputControls({ 
   onMessage, 
   sourceLanguage = 'en-US',
-  targetLanguage = 'es-ES'
+  targetLanguage = 'es-ES',
+  onStatusChange
 }: VoiceInputControlsProps) {
+  const { isDarkMode } = useTheme();
+  const { participants, setLastTurnSpeaker, swapParticipants } = useParticipants();
+  
+  // Recording state
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [recordingUri, setRecordingUri] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   const [textInput, setTextInput] = useState('');
   const [showTextInput, setShowTextInput] = useState(false);
   
+  // Track if long recording banner has been shown this session
+  const [longRecordingBannerShown, setLongRecordingBannerShown] = useState(false);
+
   // Check if source or target language supports speech
-  // Handle language codes that might be passed with regional variants
   const normalizeLanguageCode = (code: string) => {
-    // For language codes like 'en-US', 'es-ES', use the base code for lookup
     if (code.includes('-') && code.length > 3) {
       const baseCode = code.split('-')[0];
-      // Check if we have a specific regional variant first
       const specificLang = getLanguageByCode(code);
       if (specificLang) return specificLang;
-      // Otherwise try the base code
       return getLanguageByCode(baseCode);
     }
     return getLanguageByCode(code);
@@ -50,155 +65,281 @@ export default function VoiceInputControls({
   const isSourceSpeechSupported = sourceLanguageConfig?.speechSupported ?? true;
   const isTargetSpeechSupported = targetLanguageConfig?.speechSupported ?? true;
 
+  // Simple start recording - legacy mode only
   const handleStartRecording = async () => {
     try {
+      console.log('🎤 Starting recording...');
+      console.log('[UX] haptics=start');
+      
+      // Light haptic on start
+      if (Platform.OS !== 'web') {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      
       setIsRecording(true);
-      console.log('Starting recording...');
+      setError(null);
       
-      const result = await startRecording();
-      setRecordingUri(result.uri);
-      console.log('Recording started:', result.uri);
+      await legacyStartRecording();
+      console.log('✅ Recording started - tap again to stop');
       
-    } catch (error) {
-      console.error('Error starting recording:', error);
+    } catch (error: any) {
+      console.error('❌ Failed to start recording:', error);
       setIsRecording(false);
-      Alert.alert('Error', 'Failed to start recording. Please check microphone permissions.');
+      
+      if (error.message?.includes('permission')) {
+        Alert.alert(
+          'Microphone Permission Required',
+          'Please enable microphone access in your device settings to use voice recording.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => {
+              // On iOS, this will open the app settings
+              // On Android, user needs to navigate to permissions manually
+              if (Platform.OS === 'ios') {
+                Linking.openURL('app-settings:');
+              } else {
+                Linking.openSettings();
+              }
+            }}
+          ]
+        );
+      } else if (error.message?.includes('Audio module not available')) {
+        Alert.alert('Error', 'Audio recording is not supported on this device.');
+      } else {
+        setError(error.message || 'Failed to start recording');
+      }
     }
   };
 
+  // Simple stop recording and process
   const handleStopRecording = async () => {
     try {
+      console.log('🛑 Stopping recording...');
+      console.log('[UX] haptics=stop');
+      
+      // Light haptic on stop
+      if (Platform.OS !== 'web') {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      
       setIsRecording(false);
-      setIsProcessing(true);
-      console.log('Stopping recording...');
       
-      const result = await stopRecording();
-      console.log('Recording stopped:', result.uri);
+      const { uri, duration } = await legacyStopRecording();
       
-      // Process the recording
-      await processAudio(result.uri);
-      
+      if (uri && duration > 500) {
+        console.log(`✅ Recording stopped. Duration: ${duration}ms`);
+        
+        // Check for long recording and show banner if needed
+        if (duration > 60000 && !longRecordingBannerShown) {
+          setError('Let\'s try shorter turns (≤60s) for better results');
+          setTimeout(() => setError(null), 5000); // Show for 5 seconds
+          setLongRecordingBannerShown(true);
+        }
+        
+        console.log('🔄 Processing audio for translation...');
+        setIsProcessing(true);
+        
+        // Process the recording through the translation pipeline with duration
+        await processAudio(uri, duration);
+      } else {
+        console.log('⚠️ Recording too short or no URI');
+      }
     } catch (error) {
-      console.error('Error stopping recording:', error);
+      console.error('❌ Failed to stop recording:', error);
+      setError(error instanceof Error ? error.message : 'Failed to stop recording');
+    } finally {
       setIsProcessing(false);
-      Alert.alert('Error', 'Failed to process recording');
     }
   };
 
-  const processAudio = async (uri: string) => {
+  // Process audio through transcription → translation → TTS pipeline
+  const processAudio = async (uri: string, recordingDuration?: number) => {
+    // Start metrics collection for this turn
+    const metricsCollector = metricsTracker.startTurn();
+    
+    // Set recording duration if provided
+    if (recordingDuration) {
+      metricsCollector.setRecordingDuration(recordingDuration);
+    }
+    
     try {
-      // Performance timing
-      const startTime = Date.now();
-      const timings: Record<string, number> = {};
+      // Get file size for metrics
+      try {
+        const fileInfo = await FileSystem.getInfoAsync(uri);
+        if (fileInfo.exists && fileInfo.size) {
+          metricsCollector.setFileSize(fileInfo.size);
+        }
+      } catch (e) {
+        // Non-critical - ignore file size errors
+      }
       
-      console.log('Processing audio...', uri);
+      // Step 1: Upload/Transcribe with language detection
+      console.log('[UI] status=uploading');
+      onStatusChange?.('uploading');
       
-      // Step 1: Transcribe audio to text
-      const transcribeStart = Date.now();
-      const transcription = await processRecording(uri, sourceLanguage);
-      timings.transcription = Date.now() - transcribeStart;
-      console.log(`Transcription (${timings.transcription}ms):`, transcription);
+      // Small delay to show uploading state
+      await new Promise(resolve => setTimeout(resolve, 200));
       
-      // Step 2: Translate the text
-      const translateStart = Date.now();
+      console.log('[UI] status=transcribing');
+      onStatusChange?.('transcribing');
+      console.log('📝 Transcribing audio...');
+      
+      metricsCollector.startTimer('whisper');
+      const transcriptionResult = await processRecording(uri, sourceLanguage);
+      metricsCollector.endTimer('whisper');
+      
+      // Handle both string and object responses
+      let transcription: string;
+      let detectedLang: string | undefined;
+      
+      if (typeof transcriptionResult === 'object' && transcriptionResult !== null) {
+        transcription = (transcriptionResult as any).text || '';
+        detectedLang = (transcriptionResult as any).language;
+      } else {
+        transcription = transcriptionResult;
+      }
+      
+      console.log('Transcription:', transcription);
+      if (detectedLang) {
+        console.log('Detected language:', detectedLang);
+        metricsCollector.setDetectedLanguage(detectedLang);
+      }
+      
+      if (!transcription || transcription.trim() === '') {
+        console.log('⚠️ No transcription received');
+        return;
+      }
+      
+      // Step 2: Determine speaker and target language
+      let actualSourceLang = sourceLanguage;
+      let actualTargetLang = targetLanguage;
+      let speaker: 'A' | 'B' | undefined;
+      
+      if (participants.autoDetectSpeakers && detectedLang) {
+        speaker = determineSpeaker(
+          detectedLang,
+          participants.A,
+          participants.B,
+          participants.lastTurnSpeaker
+        );
+        
+        actualSourceLang = speaker === 'A' ? participants.A.lang : participants.B.lang;
+        actualTargetLang = getTargetLanguage(speaker, participants.A, participants.B);
+        
+        console.log(`🎯 Speaker detected: ${speaker}`);
+        console.log(`    targetLang: ${actualTargetLang}`);
+        console.log(`    Route: ${actualSourceLang} → ${actualTargetLang}`);
+        setLastTurnSpeaker(speaker);
+      } else {
+        // Manual mode: use provided source/target
+        actualSourceLang = sourceLanguage;
+        actualTargetLang = targetLanguage;
+        console.log(`📍 Manual mode: ${actualSourceLang} → ${actualTargetLang}`);
+      }
+      
+      // Set target language for metrics
+      metricsCollector.setTargetLanguage(actualTargetLang);
+      
+      // Step 3: Translate
+      console.log('[UI] status=translating');
+      onStatusChange?.('translating');
+      console.log('🌐 Translating text...');
+      
+      metricsCollector.startTimer('translate');
       const translationResult = await translateText(
         transcription,
-        sourceLanguage,
-        targetLanguage
+        actualSourceLang,
+        actualTargetLang
       );
-      timings.translation = Date.now() - translateStart;
-      console.log(`Translation (${timings.translation}ms):`, translationResult);
+      metricsCollector.endTimer('translate');
       
-      // Step 3: Speak the translation (non-blocking)
-      const speakStart = Date.now();
-      // Don't await speech synthesis to reduce total time
-      speakTranslation(translationResult.translation, targetLanguage)
-        .then(() => {
-          console.log(`Speech synthesis completed (${Date.now() - speakStart}ms)`);
-        })
-        .catch(err => {
-          console.error('Speech synthesis failed:', err);
-        });
+      console.log('Translation:', translationResult.translation);
       
-      // Step 4: Add to conversation
+      // Step 4: Create message with speaker info
       const message = {
         id: Date.now().toString(),
         text: transcription,
         translation: translationResult.translation,
-        fromLanguage: sourceLanguage,
-        toLanguage: targetLanguage,
-        timestamp: new Date()
+        fromLanguage: actualSourceLang,
+        toLanguage: actualTargetLang,
+        timestamp: new Date(),
+        speaker: speaker // Add speaker info
       };
       
+      // Step 5: Add to conversation
       onMessage(message);
-      setIsProcessing(false);
       
-      // Log total time
-      timings.total = Date.now() - startTime;
-      console.log('⏱️ Translation Performance:', {
-        transcription: `${timings.transcription}ms`,
-        translation: `${timings.translation}ms`,
-        total: `${timings.total}ms`,
-        target: '1500ms'
-      });
+      // Step 6: TTS for translation
+      const targetLangConfig = normalizeLanguageCode(actualTargetLang);
+      const isTargetSupported = targetLangConfig?.speechSupported ?? true;
       
-      // Track performance metrics
-      performanceMonitor.addMetric({
-        transcriptionTime: timings.transcription,
-        translationTime: timings.translation,
-        totalTime: timings.total,
-        audioSize: uri.length, // Approximate from URI length
-        textLength: transcription.length,
-        timestamp: new Date(),
-        sourceLanguage,
-        targetLanguage
-      });
-      
-      // Log performance stats periodically
-      if (Math.random() < 0.1) { // 10% of requests
-        const stats = performanceMonitor.getStats();
-        console.log('📊 Performance Stats:', stats);
-        const suggestions = performanceMonitor.getOptimizationSuggestions();
-        if (suggestions.length > 0) {
-          console.log('💡 Optimization suggestions:', suggestions);
+      if (isTargetSupported && translationResult.translation) {
+        console.log('[UI] status=preparingAudio');
+        onStatusChange?.('preparingAudio');
+        
+        // Log TTS voice selection (speakText now handles voice selection and logging)
+        console.log(`🔊 TTS preparing for language: ${actualTargetLang}`);
+        
+        // Subtle haptic when TTS begins
+        console.log('[UX] haptics=tts');
+        if (Platform.OS !== 'web') {
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
+        
+        // Set idle when TTS starts
+        metricsCollector.startTimer('tts');
+        await speakText(translationResult.translation, actualTargetLang);
+        metricsCollector.endTimer('tts');
+        console.log('[UI] status=idle (tts started)');
+        onStatusChange?.('idle');
+      } else {
+        // Set idle if no TTS
+        console.log('[UI] status=idle (no tts)');
+        onStatusChange?.('idle');
       }
       
+      console.log('✅ Pipeline complete');
+      
+      // Complete metrics collection for this turn
+      metricsCollector.complete();
+      
+      // Step 7: Delete recording file to save storage (after TTS starts)
+      console.log('🧹 [File] Scheduling delete after TTS started');
+      await deleteRecordingFile(uri);
+      
     } catch (error) {
-      console.error('Error processing audio:', error);
-      setIsProcessing(false);
-      Alert.alert('Error', 'Failed to process your voice. Please try again.');
+      console.error('❌ Error processing audio:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Failed to process audio';
+      setError(errorMsg);
+      
+      // Complete metrics even on error
+      metricsCollector.complete();
+      
+      // Show error status briefly
+      onStatusChange?.('error');
+      setTimeout(() => {
+        onStatusChange?.('idle');
+      }, 3000);
+      
+      // Still try to delete file even on error
+      console.log('🧹 [File] Scheduling delete after error');
+      await deleteRecordingFile(uri);
     }
   };
 
-  const speakTranslation = async (text: string, languageCode: string) => {
-    try {
-      // Only speak if target language supports speech
-      if (isTargetSpeechSupported) {
-        await speakText(text, languageCode);
-      }
-    } catch (error) {
-      console.error('Error speaking translation:', error);
-      // Don't show error to user for speech synthesis failures
-    }
-  };
-  
+  // Handle text input submission
   const handleTextSubmit = async () => {
     if (!textInput.trim()) return;
     
-    setIsProcessing(true);
     try {
-      // Translate the text
+      setIsProcessing(true);
+      
       const translationResult = await translateText(
         textInput,
         sourceLanguage,
         targetLanguage
       );
       
-      // Speak if supported
-      await speakTranslation(translationResult.translation, targetLanguage);
-      
-      // Add to conversation
       const message = {
         id: Date.now().toString(),
         text: textInput,
@@ -209,35 +350,47 @@ export default function VoiceInputControls({
       };
       
       onMessage(message);
+      
+      if (isTargetSpeechSupported && translationResult.translation) {
+        await speakText(translationResult.translation, targetLanguage);
+      }
+      
       setTextInput('');
       setShowTextInput(false);
     } catch (error) {
       console.error('Error translating text:', error);
-      Alert.alert('Error', 'Failed to translate text. Please try again.');
+      setError(error instanceof Error ? error.message : 'Failed to translate text');
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // Generate dynamic message based on which language is text-only
+  const clearError = () => setError(null);
+
   const getTextOnlyMessage = () => {
-    if (!sourceLanguageConfig || !targetLanguageConfig) return '';
-    
     if (!isSourceSpeechSupported && !isTargetSpeechSupported) {
-      // Both are text-only
-      return `Text-only support: Both ${sourceLanguageConfig.name} and ${targetLanguageConfig.name} are only available as text in this app.`;
+      return 'Text-only mode: Neither language supports speech';
     } else if (!isSourceSpeechSupported) {
-      // Only source is text-only
-      return `Text-only support: You can speak and hear in ${targetLanguageConfig.name}, but ${sourceLanguageConfig.name} is only available as text in this app.`;
-    } else if (!isTargetSpeechSupported) {
-      // Only target is text-only
-      return `Text-only support: You can speak and hear in ${sourceLanguageConfig.name}, but ${targetLanguageConfig.name} is only available as text in this app.`;
+      return `Text-only input: ${sourceLanguageConfig?.name || sourceLanguage} doesn't support speech recognition`;
+    } else {
+      return `Text-only output: ${targetLanguageConfig?.name || targetLanguage} doesn't support speech synthesis`;
     }
-    return '';
   };
 
   return (
     <View style={styles.container}>
+      {/* Error display */}
+      {error && (
+        <View style={styles.errorContainer}>
+          <View style={styles.errorContent}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity onPress={clearError}>
+              <Ionicons name="close" size={16} color="#ff4444" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+      
       {/* Text-only warning if either language doesn't support speech */}
       {(!isSourceSpeechSupported || !isTargetSpeechSupported) && (
         <View style={styles.textOnlyWarning}>
@@ -247,32 +400,42 @@ export default function VoiceInputControls({
         </View>
       )}
       
-      {/* Voice controls - disabled if source doesn't support speech */}
+      {/* Voice controls - compact button with integrated text */}
       <TouchableOpacity
         style={[
-          styles.recordButton,
-          isRecording && styles.recordButtonActive,
-          isProcessing && styles.recordButtonProcessing,
-          !isSourceSpeechSupported && styles.recordButtonDisabled
+          styles.recordButtonCompact,
+          isRecording && styles.recordButtonCompactActive,
+          isProcessing && styles.recordButtonCompactProcessing,
+          !isSourceSpeechSupported && styles.recordButtonCompactDisabled,
+          isDarkMode && styles.recordButtonCompactDark,
+          isRecording && isDarkMode && styles.recordButtonCompactActiveDark,
+          isProcessing && isDarkMode && styles.recordButtonCompactProcessingDark
         ]}
         onPress={isRecording ? handleStopRecording : handleStartRecording}
+        accessibilityLabel={
+          isProcessing ? "Processing" : 
+          isRecording ? "Stop recording" : 
+          "Record"
+        }
+        accessibilityRole="button"
         disabled={isProcessing || !isSourceSpeechSupported}
       >
-        <Text style={styles.recordIcon}>
-          {!isSourceSpeechSupported ? '🚫' : isProcessing ? '⏳' : isRecording ? '⏹️' : '🎤'}
-        </Text>
+        <View style={styles.recordButtonContent}>
+          <Text style={[styles.recordIconCompact, isRecording && styles.recordIconCompactActive]}>
+            {!isSourceSpeechSupported ? '🚫' : isProcessing ? '⏳' : isRecording ? '⏹️' : '🎤'}
+          </Text>
+          <Text style={[styles.recordButtonText, isRecording && styles.recordButtonTextActive, isDarkMode && styles.recordButtonTextDark]}>
+            {!isSourceSpeechSupported
+              ? 'Voice unavailable'
+              : isProcessing 
+              ? 'Processing...' 
+              : isRecording 
+                ? 'Tap to stop' 
+                : 'Tap to speak'
+            }
+          </Text>
+        </View>
       </TouchableOpacity>
-      
-      <Text style={styles.instructionText}>
-        {!isSourceSpeechSupported
-          ? 'Voice input not available for this language'
-          : isProcessing 
-          ? 'Processing...' 
-          : isRecording 
-            ? 'Tap to stop recording' 
-            : 'Tap to start speaking'
-        }
-      </Text>
       
       {/* Text input option for text-only languages */}
       {!isSourceSpeechSupported && (
@@ -295,11 +458,11 @@ export default function VoiceInputControls({
                 onSubmitEditing={handleTextSubmit}
               />
               <TouchableOpacity
-                style={[styles.sendButton, isProcessing && styles.sendButtonDisabled]}
+                style={styles.sendButton}
                 onPress={handleTextSubmit}
-                disabled={isProcessing || !textInput.trim()}
+                disabled={!textInput.trim() || isProcessing}
               >
-                <Text style={styles.sendButtonText}>Send →</Text>
+                <Text style={styles.sendButtonText}>Send</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -312,16 +475,49 @@ export default function VoiceInputControls({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingHorizontal: 12,
+    paddingTop: 0,
+    paddingBottom: 0,
+    backgroundColor: 'transparent',
   },
-  recordButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#3366FF',
-    justifyContent: 'center',
+
+  errorContainer: {
+    marginBottom: 15,
+    backgroundColor: '#ffeeee',
+    borderRadius: 8,
+    padding: 10,
+    width: '100%',
+  },
+  errorContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+  },
+  errorText: {
+    color: '#ff4444',
+    fontSize: 14,
+    flex: 1,
+  },
+  textOnlyWarning: {
+    backgroundColor: '#fff3cd',
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 15,
+    width: '100%',
+  },
+  textOnlyWarningText: {
+    color: '#856404',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  // Compact record button styles
+  recordButtonCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#007AFF',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -330,87 +526,94 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+    minWidth: 160,
+    justifyContent: 'center',
   },
-  recordButtonActive: {
-    backgroundColor: '#ff4757',
-    transform: [{ scale: 1.1 }],
+  recordButtonCompactDark: {
+    backgroundColor: '#0051D5',
   },
-  recordButtonProcessing: {
-    backgroundColor: '#ffa502',
+  recordButtonCompactActive: {
+    backgroundColor: '#ff4444',
   },
-  recordIcon: {
-    fontSize: 32,
+  recordButtonCompactActiveDark: {
+    backgroundColor: '#cc0000',
   },
-  instructionText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
+  recordButtonCompactProcessing: {
+    backgroundColor: '#FFA500',
+    opacity: 0.8,
   },
-  recordButtonDisabled: {
-    backgroundColor: '#ccc',
-    opacity: 0.6,
+  recordButtonCompactProcessingDark: {
+    backgroundColor: '#CC8400',
   },
-  textOnlyWarning: {
-    backgroundColor: '#fff3cd',
-    borderColor: '#ffeaa7',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 16,
-    marginHorizontal: 20,
+  recordButtonCompactDisabled: {
+    backgroundColor: '#cccccc',
+    opacity: 0.5,
   },
-  textOnlyWarningText: {
-    color: '#856404',
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
+  recordButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recordIconCompact: {
+    fontSize: 24,
+    marginRight: 8,
+  },
+  recordIconCompactActive: {
+    marginRight: 8,
+  },
+  recordButtonText: {
+    fontSize: 16,
+    color: '#ffffff',
+    fontWeight: '600',
+  },
+  recordButtonTextActive: {
+    color: '#ffffff',
+  },
+  recordButtonTextDark: {
+    color: '#ffffff',
   },
   textInputButton: {
-    marginTop: 16,
+    backgroundColor: '#007AFF',
     paddingHorizontal: 20,
     paddingVertical: 10,
-    backgroundColor: '#f8f9fa',
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#dee2e6',
+    marginTop: 10,
   },
   textInputButtonText: {
-    fontSize: 14,
-    color: '#495057',
-    fontWeight: '600',
+    color: 'white',
+    fontSize: 16,
   },
   textInputContainer: {
-    marginTop: 16,
-    paddingHorizontal: 20,
     width: '100%',
+    marginTop: 15,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   textInput: {
-    backgroundColor: '#f8f9fa',
-    borderWidth: 1,
-    borderColor: '#dee2e6',
-    borderRadius: 8,
-    padding: 12,
-    minHeight: 80,
+    minHeight: 60,
+    maxHeight: 120,
+    padding: 10,
     fontSize: 16,
-    color: '#333',
-    textAlignVertical: 'top',
+    borderColor: '#ddd',
+    borderWidth: 1,
+    borderRadius: 8,
+    marginBottom: 10,
   },
   sendButton: {
-    backgroundColor: '#3366FF',
-    paddingHorizontal: 20,
+    backgroundColor: '#007AFF',
     paddingVertical: 10,
-    borderRadius: 20,
-    alignSelf: 'flex-end',
-    marginTop: 8,
-  },
-  sendButtonDisabled: {
-    backgroundColor: '#ccc',
-    opacity: 0.6,
+    borderRadius: 8,
+    alignItems: 'center',
   },
   sendButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

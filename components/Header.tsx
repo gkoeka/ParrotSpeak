@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   brandName: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#3366FF',
   },
