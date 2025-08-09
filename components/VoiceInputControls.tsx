@@ -95,7 +95,7 @@ export default function VoiceInputControls({
       try {
         console.log('🎤 Initializing Conversation Session Service...');
         
-        const service = new ConversationSessionService();
+        const service = ConversationSessionService.getInstance();
         sessionServiceRef.current = service;
         
         // Set up callbacks for session events

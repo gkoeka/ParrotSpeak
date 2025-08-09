@@ -619,7 +619,7 @@ export function ConversationProvider({ children }: { children: React.ReactNode }
       
       // Initialize session service if needed
       if (!sessionServiceRef.current) {
-        sessionServiceRef.current = new ConversationSessionService();
+        sessionServiceRef.current = ConversationSessionService.getInstance();
         
         const callbacks: SessionCallbacks = {
           onSessionStart: () => {
