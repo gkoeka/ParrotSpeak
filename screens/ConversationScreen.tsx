@@ -15,6 +15,7 @@ import { LanguagePreferencesStorage } from '../utils/languagePreferences';
 
 import LanguageSelector from '../components/LanguageSelectorMobile';
 import PerformanceIndicator from '../components/PerformanceMonitor';
+import UTBTHeader from '../components/UTBTHeader';
 
 type ConversationNavigationProp = StackNavigationProp<RootStackParamList, 'Conversation'>;
 
@@ -210,6 +211,8 @@ export default function ConversationScreen() {
   return (
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
       <Header />
+      
+      <UTBTHeader />
       
       <LanguageSelector 
         sourceLanguage={sourceLanguage}

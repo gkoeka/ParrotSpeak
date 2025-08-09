@@ -26,7 +26,9 @@ interface ParticipantsContextValue {
   swapParticipants: () => void;
   setLastTurnSpeaker: (speaker: 'A' | 'B') => void;
   setAutoDetectSpeakers: (enabled: boolean) => void;
+  autoDetectSpeakers: boolean;
   resetToDefaults: () => void;
+  setParticipantLanguage: (id: 'A' | 'B', lang: string) => void;
 }
 
 const STORAGE_KEY = 'participants_preferences';
@@ -119,6 +121,13 @@ export function ParticipantsProvider({ children }: { children: React.ReactNode }
   const resetToDefaults = () => {
     setParticipants(defaultState);
   };
+  
+  const setParticipantLanguage = (id: 'A' | 'B', lang: string) => {
+    setParticipants(prev => ({
+      ...prev,
+      [id]: { ...prev[id], lang }
+    }));
+  };
 
   return (
     <ParticipantsContext.Provider value={{
@@ -127,7 +136,9 @@ export function ParticipantsProvider({ children }: { children: React.ReactNode }
       swapParticipants,
       setLastTurnSpeaker,
       setAutoDetectSpeakers,
-      resetToDefaults
+      autoDetectSpeakers: participants.autoDetectSpeakers,
+      resetToDefaults,
+      setParticipantLanguage
     }}>
       {children}
     </ParticipantsContext.Provider>
