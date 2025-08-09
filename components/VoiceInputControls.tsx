@@ -400,16 +400,16 @@ export default function VoiceInputControls({
         </View>
       )}
       
-      {/* Voice controls - simple tap to start/stop */}
+      {/* Voice controls - compact button with integrated text */}
       <TouchableOpacity
         style={[
-          styles.recordButton,
-          isRecording && styles.recordButtonActive,
-          isProcessing && styles.recordButtonProcessing,
-          !isSourceSpeechSupported && styles.recordButtonDisabled,
-          isDarkMode && styles.recordButtonDark,
-          isRecording && isDarkMode && styles.recordButtonActiveDark,
-          isProcessing && isDarkMode && styles.recordButtonProcessingDark
+          styles.recordButtonCompact,
+          isRecording && styles.recordButtonCompactActive,
+          isProcessing && styles.recordButtonCompactProcessing,
+          !isSourceSpeechSupported && styles.recordButtonCompactDisabled,
+          isDarkMode && styles.recordButtonCompactDark,
+          isRecording && isDarkMode && styles.recordButtonCompactActiveDark,
+          isProcessing && isDarkMode && styles.recordButtonCompactProcessingDark
         ]}
         onPress={isRecording ? handleStopRecording : handleStartRecording}
         accessibilityLabel={
@@ -420,21 +420,22 @@ export default function VoiceInputControls({
         accessibilityRole="button"
         disabled={isProcessing || !isSourceSpeechSupported}
       >
-        <Text style={styles.recordIcon}>
-          {!isSourceSpeechSupported ? '🚫' : isProcessing ? '⏳' : isRecording ? '⏹️' : '🎤'}
-        </Text>
+        <View style={styles.recordButtonContent}>
+          <Text style={[styles.recordIconCompact, isRecording && styles.recordIconCompactActive]}>
+            {!isSourceSpeechSupported ? '🚫' : isProcessing ? '⏳' : isRecording ? '⏹️' : '🎤'}
+          </Text>
+          <Text style={[styles.recordButtonText, isRecording && styles.recordButtonTextActive, isDarkMode && styles.recordButtonTextDark]}>
+            {!isSourceSpeechSupported
+              ? 'Voice unavailable'
+              : isProcessing 
+              ? 'Processing...' 
+              : isRecording 
+                ? 'Tap to stop' 
+                : 'Tap to speak'
+            }
+          </Text>
+        </View>
       </TouchableOpacity>
-      
-      <Text style={styles.instructionText}>
-        {!isSourceSpeechSupported
-          ? 'Voice input not available for this language'
-          : isProcessing 
-          ? 'Processing...' 
-          : isRecording 
-            ? 'Tap to stop recording' 
-            : 'Tap to start speaking'
-        }
-      </Text>
       
       {/* Text input option for text-only languages */}
       {!isSourceSpeechSupported && (
@@ -474,7 +475,7 @@ export default function VoiceInputControls({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    padding: 20,
+    padding: 12,
     backgroundColor: 'transparent',
   },
 
@@ -507,14 +508,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
   },
-  recordButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#007AFF',
-    justifyContent: 'center',
+  // Compact record button styles
+  recordButtonCompact: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    backgroundColor: '#007AFF',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -523,41 +524,51 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-    borderWidth: 3,
-    borderColor: 'transparent',
+    minWidth: 160,
+    justifyContent: 'center',
   },
-  recordButtonDark: {
+  recordButtonCompactDark: {
     backgroundColor: '#0051D5',
   },
-  recordButtonActive: {
+  recordButtonCompactActive: {
     backgroundColor: '#ff4444',
-    borderColor: '#ff6666',
   },
-  recordButtonActiveDark: {
+  recordButtonCompactActiveDark: {
     backgroundColor: '#cc0000',
-    borderColor: '#ff4444',
   },
-  recordButtonProcessing: {
+  recordButtonCompactProcessing: {
     backgroundColor: '#FFA500',
-    borderColor: '#FFB733',
     opacity: 0.8,
   },
-  recordButtonProcessingDark: {
+  recordButtonCompactProcessingDark: {
     backgroundColor: '#CC8400',
-    borderColor: '#FFA500',
   },
-  recordButtonDisabled: {
+  recordButtonCompactDisabled: {
     backgroundColor: '#cccccc',
     opacity: 0.5,
   },
-  recordIcon: {
-    fontSize: 32,
+  recordButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  instructionText: {
+  recordIconCompact: {
+    fontSize: 24,
+    marginRight: 8,
+  },
+  recordIconCompactActive: {
+    marginRight: 8,
+  },
+  recordButtonText: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 10,
+    color: '#ffffff',
+    fontWeight: '600',
+  },
+  recordButtonTextActive: {
+    color: '#ffffff',
+  },
+  recordButtonTextDark: {
+    color: '#ffffff',
   },
   textInputButton: {
     backgroundColor: '#007AFF',
