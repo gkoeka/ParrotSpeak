@@ -251,13 +251,22 @@ export default function VoiceInputControls({
         }
         
         if (currentState === SessionState.ARMED_IDLE || sessionServiceRef.current.getState() === SessionState.ARMED_IDLE) {
-          // Start recording
+          // Start recording with source tagging
           console.log('🎤 Starting recording in session...');
           setIsRecording(true);
           isRecordingRef.current = true;
-          await sessionServiceRef.current.startRecording();
-          actions.setListening(true);
-          console.log('✅ Utterance recording started - will auto-stop after 2s of silence');
+          const result = await sessionServiceRef.current.startRecording('micTap');
+          if (result.ok) {
+            actions.setListening(true);
+            console.log('✅ Utterance recording started - will auto-stop after 2s of silence');
+          } else {
+            console.log(`⚠️ Start failed: ${result.reason}`);
+            setIsRecording(false);
+            isRecordingRef.current = false;
+            if (result.reason === 'inflight') {
+              console.log('Recording already in progress');
+            }
+          }
         } else {
           console.log(`⚠️ Cannot start recording in state: ${currentState}`);
         }

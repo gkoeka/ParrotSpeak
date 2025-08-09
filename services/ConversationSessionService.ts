@@ -57,6 +57,10 @@ export class ConversationSessionService {
   // CRITICAL FIX: Track stopping state to prevent race conditions
   private isStoppingRecording: boolean = false;
   
+  // START MUTEX: Prevent overlapping start attempts
+  private startMutex: boolean = false;
+  private startToken: number = 0; // Monotonic counter for start attempts
+  
   // Timers - use ReturnType for cross-platform compatibility
   private silenceTimer: ReturnType<typeof setTimeout> | null = null;
   private maxDurationTimer: ReturnType<typeof setTimeout> | null = null;
@@ -262,43 +266,63 @@ export class ConversationSessionService {
   }
 
   /**
-   * Start recording an utterance
-   * CRITICAL FIX: Platform guards, permission checks, proper createAsync usage
+   * Start recording an utterance with source tracking and single-flight guard
+   * @param source Where the start request originated from
+   * @returns Success/failure with reason
    */
-  public async startRecording(): Promise<void> {
-    // FIX 6: Block start if not in correct state
+  public async startRecording(source: 'micTap' | 'VAD' | 'probe' = 'micTap'): Promise<{ ok: boolean; reason: string }> {
+    // Check state first
     if (this.state !== SessionState.ARMED_IDLE) {
-      console.log(`⚠️ [BLOCKED] Cannot start recording from ${this.state}`);
-      return;
+      console.log(`[START] Ignored (state=${this.state}) from ${source}`);
+      return { ok: false, reason: 'state' };
     }
     
-    // FIX 6: Block start if already stopping
-    if (this.isStoppingRecording) {
-      console.log(`⚠️ [BLOCKED] Cannot start while stopping previous recording`);
-      return;
+    // Single-flight guard - prevent overlapping starts
+    if (this.startMutex) {
+      console.log(`[START] Ignored (in-flight) from ${source}`);
+      return { ok: false, reason: 'inflight' };
     }
+    
+    // Check if already stopping
+    if (this.isStoppingRecording) {
+      console.log(`[START] Ignored (stopping) from ${source}`);
+      return { ok: false, reason: 'stopping' };
+    }
+    
+    // Set mutex and increment token
+    this.startMutex = true;
+    const token = ++this.startToken;
+    console.log(`[START] Attempting start from ${source} (token=${token})`);
+    
+    // Clear any stray timers BEFORE starting to avoid double-start
+    this.clearRecordingTimers();
     
     // FIX 1: Platform guard - only run on native
     if (Platform.OS === 'web') {
-      console.error('❌ [PLATFORM] Recording not supported on web platform');
+      console.error(`[START] Failed - web platform not supported (from ${source})`);
+      this.startMutex = false;
       this.callbacks?.onError(new Error('Recording is only supported on iOS and Android'));
-      return;
+      return { ok: false, reason: 'platform' };
     }
     
-    console.log(`📱 [PLATFORM] Running on ${Platform.OS}`);
+    console.log(`[START] Platform check passed: ${Platform.OS}`);
     
     try {
-      // FIX 4: Request permissions first
-      console.log('🎤 [PERMISSION] Requesting audio permissions...');
+      // Stop any TTS playback FIRST
+      console.log('[START] Stopping TTS...');
+      stopSpeaking();
+      
+      // Request permissions
+      console.log('[START] Requesting permissions...');
       const permission = await Audio.requestPermissionsAsync();
       if (!permission.granted) {
-        console.error('❌ [PERMISSION] Audio permission denied');
+        console.error(`[START] Permission denied (from ${source})`);
+        this.startMutex = false;
         throw new Error('Microphone permission denied');
       }
-      console.log('✅ [PERMISSION] Audio permission granted');
       
-      // FIX 4: Set audio mode before recording
-      console.log('🔊 [AUDIO MODE] Configuring audio mode...');
+      // Set audio mode
+      console.log('[START] Configuring audio mode...');
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
@@ -306,11 +330,6 @@ export class ConversationSessionService {
         shouldDuckAndroid: true,
         playThroughEarpieceAndroid: false,
       });
-      console.log('✅ [AUDIO MODE] Configured successfully');
-      
-      // FIX 4: Stop any TTS playback
-      console.log('🔇 [TTS] Stopping any active speech...');
-      stopSpeaking();
       
       // Update state
       await this.setState(SessionState.RECORDING);
@@ -337,43 +356,60 @@ export class ConversationSessionService {
         throw new Error('Recording instance not properly cleaned up');
       }
       
-      // FIX 3: Use createAsync instead of prepare->start pattern
-      console.log('🎙️ [RECORDING] Creating new recording with createAsync...');
+      // Create recording with createAsync (ONLY place this happens)
+      console.log(`[START] Creating recording with createAsync...`);
       const { recording } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY,
         undefined, // No status update callback needed
         undefined  // No metadata update callback needed
       );
       
+      // Check if another start superseded this one
+      if (token !== this.startToken) {
+        console.log(`[START] Superseded by newer start (token ${token} != ${this.startToken}), cleaning up`);
+        await recording.stopAndUnloadAsync();
+        this.startMutex = false;
+        return { ok: false, reason: 'superseded' };
+      }
+      
+      // Success - save recording and update state
       this.recording = recording;
       this.recordingStartTime = new Date();
       this.utteranceCount++;
       
-      console.log(`✅ [RECORDING] Started utterance #${this.utteranceCount}`);
+      console.log(`[START] Success from ${source} (utterance #${this.utteranceCount}, token=${token})`);
+      
+      // Clear mutex BEFORE setting timers
+      this.startMutex = false;
       
       // Set up timers
       this.resetSilenceTimer();
       this.setMaxDurationTimer();
       
+      return { ok: true, reason: 'started' };
+      
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`❌ [RECORDING] Failed to start: ${errorMessage}`);
+      console.error(`[START] Failed from ${source}: ${errorMessage}`);
       
       // Clean up on error
       this.recording = null;
       this.isStoppingRecording = false;
+      this.startMutex = false;
       await this.setState(SessionState.ARMED_IDLE);
       
-      // FIX 7: Provide explicit error messages
+      // Provide explicit error messages
       if (errorMessage.includes('permission')) {
         this.callbacks?.onError(new Error('Microphone permission denied. Please enable in settings.'));
       } else if (errorMessage.includes('audio mode')) {
         this.callbacks?.onError(new Error('Failed to configure audio mode. Please restart the app.'));
-      } else if (errorMessage.includes('createAsync')) {
-        this.callbacks?.onError(new Error('Failed to create recording. Please try again.'));
+      } else if (errorMessage.includes('createAsync') || errorMessage.includes('Recording object')) {
+        this.callbacks?.onError(new Error('Recording conflict detected. Please try again.'));
       } else {
         this.callbacks?.onError(error instanceof Error ? error : new Error('Failed to start recording'));
       }
+      
+      return { ok: false, reason: 'create-failed' };
     }
   }
 
