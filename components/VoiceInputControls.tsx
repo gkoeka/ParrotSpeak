@@ -132,7 +132,7 @@ export default function VoiceInputControls({
         // Check for long recording and show banner if needed
         if (duration > 60000 && !longRecordingBannerShown) {
           setError('Let\'s try shorter turns (≤60s) for better results');
-          setTimeout(() => setError(null), 5000); // Show for 5 seconds
+          // User must manually close - no auto-dismiss
           setLongRecordingBannerShown(true);
         }
         
@@ -249,9 +249,9 @@ export default function VoiceInputControls({
           // If they spoke the target language, suggest enabling auto-detect
           if (detectedLang === actualTargetLang) {
             console.log(`💡 User spoke target language (${detectedLang}). Consider enabling auto-detect for better results.`);
-            // Show a helpful message to the user
+            // Show a helpful message to the user (user must manually close)
             setError('Tip: Enable "Auto-detect speakers" in Settings for automatic language switching');
-            setTimeout(() => setError(null), 5000);
+            // No auto-dismiss - user controls when to close the tip
           }
           // Still proceed with translation but it may not make sense
           console.log(`📍 Forcing ${actualSourceLang} → ${actualTargetLang} translation anyway`);

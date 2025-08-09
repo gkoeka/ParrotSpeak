@@ -11,7 +11,8 @@ When auto-detect is OFF and user speaks the "wrong" language:
 ### 1. Smart Nudging (Implemented)
 - Detect when user speaks target language with auto-detect OFF
 - Show contextual tip suggesting to enable auto-detect
-- Non-intrusive: 5-second banner that auto-dismisses
+- User-controlled: Manual close button (X) for immediate dismissal
+- Persistent: Stays visible until user acknowledges it
 
 ### 2. Default Setting
 - Auto-detect is ON by default (already implemented)
