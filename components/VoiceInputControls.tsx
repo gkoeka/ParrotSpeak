@@ -185,7 +185,9 @@ export default function VoiceInputControls({
       console.log('📝 Transcribing audio...');
       
       metricsCollector.startTimer('whisper');
-      const transcriptionResult = await processRecording(uri, sourceLanguage);
+      // Don't pass language hint to allow Whisper to auto-detect the spoken language
+      // This enables proper detection for the auto-detect feature
+      const transcriptionResult = await processRecording(uri, undefined);
       metricsCollector.endTimer('whisper');
       
       // Handle both string and object responses
