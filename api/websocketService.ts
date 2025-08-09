@@ -21,25 +21,41 @@ class WebSocketService {
   private maxReconnectAttempts = 5;
   private reconnectInterval = 1000;
   private isConnecting = false;
+  private hasLoggedInsecureWarning = false;
 
-  private createSecureWebSocketUrl(baseUrl: string): string {
+  private buildWebSocketURL(baseHttpUrl: string, path: string = '', opts?: { forceInsecure?: boolean }): string {
     try {
-      const url = new URL(baseUrl);
+      const url = new URL(baseHttpUrl);
       
-      // Always use secure WebSocket protocol (wss://) for security
-      // This ensures encrypted connections even in development
-      url.protocol = 'wss:';
+      // Environment checks
+      const isProd = process.env.NODE_ENV === 'production';
+      const allowDevInsecure = !isProd && process.env.ALLOW_INSECURE_WS === 'true';
+      
+      // Development-only allowlist for insecure connections
+      const devAllowlist = new Set(['127.0.0.1', 'localhost', '10.0.2.2', '10.0.3.2']);
+      
+      // Determine WebSocket scheme
+      const shouldUseInsecure = allowDevInsecure && devAllowlist.has(url.hostname) && opts?.forceInsecure !== false;
+      const scheme = shouldUseInsecure ? 'ws' : 'wss';
+      
+      // Log warning once per session for insecure connections
+      if (scheme === 'ws' && !this.hasLoggedInsecureWarning) {
+        console.warn('⚠️ WARNING: Using insecure WebSocket connection (ws://). This should only be used in development.');
+        this.hasLoggedInsecureWarning = true;
+      }
+      
+      // Build the WebSocket URL
+      url.protocol = scheme + ':';
+      if (path) {
+        url.pathname = url.pathname.replace(/\/$/, '') + '/' + path.replace(/^\//, '');
+      }
       
       return url.toString();
     } catch (error) {
-      // Fallback for malformed URLs - always use secure protocol
-      console.error('Error parsing WebSocket URL:', error);
-      // If URL doesn't start with protocol, prepend wss://
-      if (!baseUrl.match(/^wss?:\/\/|^https?:\/\//i)) {
-        return `wss://${baseUrl}`;
-      }
-      // Always replace any protocol with wss://
-      return baseUrl.replace(/^(https?|wss?):\/\//i, 'wss://');
+      console.error('Error building WebSocket URL:', error);
+      // Fallback - always use secure protocol
+      const fallbackUrl = baseHttpUrl.replace(/^(https?|wss?):\/\//i, 'wss://');
+      return path ? `${fallbackUrl}/${path.replace(/^\//, '')}` : fallbackUrl;
     }
   }
 
@@ -52,8 +68,8 @@ class WebSocketService {
     this.isConnecting = true;
 
     try {
-      // Convert HTTP URL to secure WebSocket URL
-      const wsUrl = this.createSecureWebSocketUrl(API_BASE_URL);
+      // Build WebSocket URL with security defaults
+      const wsUrl = this.buildWebSocketURL(API_BASE_URL, '/ws');
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {

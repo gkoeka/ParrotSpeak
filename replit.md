@@ -46,6 +46,7 @@ ParrotSpeak is built as a mobile-first TypeScript application with a clean API b
 - **File Handling**: Multer for secure file uploads.
 - **Enhanced Voice Selection**: Logic for improved cross-language support, timeout detection, and graceful fallbacks.
 - **Security**: Comprehensive security headers, API rate limiting, server-side input validation, and secure session configuration.
+- **WebSocket Security (Jan 2025)**: Enhanced WebSocket URL builder with secure-by-default approach. Always uses wss:// protocol except in development with explicit opt-in (NODE_ENV=development AND ALLOW_INSECURE_WS=true AND allowlisted host). Development allowlist limited to 127.0.0.1, localhost, 10.0.2.2, 10.0.3.2. Logs warning for insecure connections.
 - **Version Compatibility**: React and React Native versions (currently React 19.0.0, React Native 0.79.5 for Expo SDK 53) must be kept in sync.
 - **Profile Management**: Sign Out, Delete Account, and GDPR Export functionality with API integration, confirmation dialogs, and loading states.
 - **Welcome Screen**: First-time launch detection and welcome screen flow for new users.
