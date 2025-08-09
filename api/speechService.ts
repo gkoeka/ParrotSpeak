@@ -2,11 +2,15 @@ import { Audio } from 'expo-av';
 import * as Speech from 'expo-speech';
 import * as FileSystem from 'expo-file-system';
 import { recognizeSpeech } from './languageService';
+import { AppState } from 'react-native';
 
 // Mobile-only speech service with module availability checks
 const isSpeechAvailable = !!Speech;
 const isAudioAvailable = !!Audio;
 const isFileSystemAvailable = !!FileSystem;
+
+// FOREGROUND-ONLY: All recording stops when app backgrounds
+const FOREGROUND_ONLY = true; // Enforces recording only when app is in foreground
 
 // Interface for voice profile
 export interface VoiceProfile {
@@ -200,6 +204,25 @@ export interface SpeechRecognitionResult {
 let legacyRecording: Audio.Recording | null = null;
 let legacyRecordingActive: boolean = false;
 
+// AppState listener for legacy mode
+let appStateSubscription: any = null;
+
+// Initialize AppState listener for legacy mode
+function initializeLegacyAppStateListener() {
+  if (appStateSubscription) return; // Already initialized
+  
+  appStateSubscription = AppState.addEventListener('change', (nextAppState) => {
+    if (nextAppState === 'background' || nextAppState === 'inactive') {
+      if (legacyRecordingActive && legacyRecording) {
+        console.log('📱 [Legacy] App backgrounded → stopping recording');
+        // Force stop recording when app goes to background
+        legacyStopRecording({ reason: 'background' });
+      }
+    }
+  });
+  console.log('✅ [Legacy] AppState listener initialized for foreground-only recording');
+}
+
 // Low-bitrate M4A preset for 16kHz mono recording (~24 kbps)
 const LOW_BITRATE_M4A = {
   isMeteringEnabled: true,
@@ -240,20 +263,35 @@ export async function legacyStartRecording(): Promise<void> {
       throw new Error('Audio module not available on this platform');
     }
     
+    // Check if app is in foreground (FOREGROUND-ONLY enforcement)
+    const currentAppState = AppState.currentState;
+    if (currentAppState !== 'active') {
+      console.warn('⚠️ [Legacy Start] blocked: app not foreground');
+      throw new Error('Cannot start recording when app is not in foreground');
+    }
+    
     // Prevent multiple recordings
     if (legacyRecordingActive || legacyRecording) {
       console.warn('⚠️ [Legacy] Recording already in progress');
       return;
     }
     
-    // Configure audio mode
-    await Audio.setAudioModeAsync({
+    // Initialize AppState listener if not already done
+    initializeLegacyAppStateListener();
+    
+    // Configure audio mode - FOREGROUND-ONLY configuration
+    const audioModeConfig = {
       allowsRecordingIOS: true,
       playsInSilentModeIOS: true,
-      staysActiveInBackground: false, // Foreground only for privacy
+      staysActiveInBackground: false, // Foreground-only. Backgrounding stops recording/session.
       shouldDuckAndroid: true,
       playThroughEarpieceAndroid: false,
-    });
+      interruptionModeIOS: Audio.InterruptionModeIOS.DoNotMix,
+      interruptionModeAndroid: Audio.InterruptionModeAndroid.DoNotMix,
+    };
+    
+    console.log('🔊 [Legacy] Audio mode config:', audioModeConfig);
+    await Audio.setAudioModeAsync(audioModeConfig);
     
     // Request permissions
     const { status } = await Audio.requestPermissionsAsync();
@@ -280,9 +318,10 @@ export async function legacyStartRecording(): Promise<void> {
  * Legacy recording stop for OFF mode (standard single-tap recording)
  * Used when Conversation Mode is disabled
  */
-export async function legacyStopRecording(): Promise<{ uri: string; duration: number }> {
+export async function legacyStopRecording(options?: { reason?: string }): Promise<{ uri: string; duration: number }> {
   try {
-    console.log('🛑 [Legacy] Stopping legacy recording...');
+    const reason = options?.reason || 'manual';
+    console.log(`🛑 [Legacy] Stopping legacy recording (reason: ${reason})...`);
     
     if (!legacyRecording || !legacyRecordingActive) {
       console.warn('⚠️ [Legacy] No active recording to stop - ignoring');

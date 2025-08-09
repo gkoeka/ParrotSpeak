@@ -10,7 +10,7 @@
 
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
-import { Platform } from 'react-native';
+import { Platform, AppState } from 'react-native';
 import { stopSpeaking } from '../api/speechService';
 
 // Session states for explicit lifecycle
@@ -76,9 +76,29 @@ export class ConversationSessionService {
   
   // Atomic operation flags
   private isTransitioning: boolean = false;
+  
+  // AppState listener for FOREGROUND-ONLY enforcement
+  private appStateSubscription: any = null;
 
   constructor() {
     console.log('🎯 ConversationSessionService: Created');
+    this.initializeAppStateListener();
+  }
+  
+  /**
+   * Initialize AppState listener for FOREGROUND-ONLY enforcement
+   */
+  private initializeAppStateListener(): void {
+    this.appStateSubscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'background' || nextAppState === 'inactive') {
+        // Force disarm when app goes to background
+        if (this.state !== SessionState.DISARMED) {
+          console.log('📱 [CM] App backgrounded → DISARMED');
+          this.forceDisarm('App backgrounded');
+        }
+      }
+    });
+    console.log('✅ [CM] AppState listener initialized for foreground-only sessions');
   }
   
   /**
@@ -191,6 +211,13 @@ export class ConversationSessionService {
    * Start a conversation session (tap to arm)
    */
   public async startSession(): Promise<void> {
+    // Check if app is in foreground (FOREGROUND-ONLY enforcement)
+    const currentAppState = AppState.currentState;
+    if (currentAppState !== 'active') {
+      console.warn('⚠️ [CM Start] blocked: app not foreground');
+      throw new Error('Cannot start session when app is not in foreground');
+    }
+    
     if (this.state !== SessionState.DISARMED) {
       console.log(`⚠️ Session already active (${this.state})`);
       return;
@@ -199,14 +226,19 @@ export class ConversationSessionService {
     console.log('🚀 Starting Conversation Mode session...');
     
     try {
-      // Configure audio for recording
-      await Audio.setAudioModeAsync({
+      // Configure audio for recording - FOREGROUND-ONLY configuration
+      const audioModeConfig = {
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
         shouldDuckAndroid: true,
-        staysActiveInBackground: false, // Foreground only
+        staysActiveInBackground: false, // Foreground-only. Backgrounding stops recording/session.
         playThroughEarpieceAndroid: false,
-      });
+        interruptionModeIOS: Audio.InterruptionModeIOS.DoNotMix,
+        interruptionModeAndroid: Audio.InterruptionModeAndroid.DoNotMix,
+      };
+      
+      console.log('🔊 [CM] Audio mode config:', audioModeConfig);
+      await Audio.setAudioModeAsync(audioModeConfig);
       
       this.sessionStartTime = new Date();
       this.lastActivityTime = new Date();
@@ -671,6 +703,32 @@ export class ConversationSessionService {
     }, SESSION_CONFIG.FILE_CLEANUP_DELAY_MS);
     
     this.fileCleanupTimers.set(uri, timer);
+  }
+
+  /**
+   * Force disarm the session (used when app backgrounds)
+   */
+  private async forceDisarm(reason: string): void {
+    console.log(`⚠️ Force disarming session: ${reason}`);
+    
+    // Clear all timers immediately
+    this.clearAllTimers();
+    
+    // Stop recording if active
+    if (this.recording) {
+      try {
+        await this.recording.stopAndUnloadAsync();
+      } catch (error) {
+        console.error('Error stopping recording during force disarm:', error);
+      }
+      this.recording = null;
+    }
+    
+    // Reset state
+    this.state = SessionState.DISARMED;
+    this.callbacks?.onStateChange(SessionState.DISARMED);
+    this.callbacks?.onSessionEnd();
+    this.callbacks?.onAutoDisarm?.(reason);
   }
 
   /**
