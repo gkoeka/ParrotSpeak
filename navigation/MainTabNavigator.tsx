@@ -25,10 +25,10 @@ import { AnalyticsPrivacyScreen } from '../screens/AnalyticsPrivacyScreen';
 
 // Tab types
 export type TabParamList = {
-  ChatTab: undefined;
-  HistoryTab: undefined;
-  FeedbackTab: undefined;
-  SettingsTab: undefined;
+  ChatTab: { screen?: keyof ChatStackParamList; params?: any } | undefined;
+  HistoryTab: { screen?: keyof HistoryStackParamList; params?: any } | undefined;
+  FeedbackTab: { screen?: keyof FeedbackStackParamList; params?: any } | undefined;
+  SettingsTab: { screen?: keyof SettingsStackParamList; params?: any } | undefined;
 };
 
 // Stack types for each tab

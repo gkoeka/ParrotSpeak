@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
+import { NavigationProp } from '@react-navigation/native';
+import { TabParamList } from '../navigation/MainTabNavigator';
 
 interface PreviewExpiryWarningProps {
   hoursRemaining: number;
@@ -11,10 +13,10 @@ interface PreviewExpiryWarningProps {
 
 export default function PreviewExpiryWarning({ hoursRemaining, onDismiss }: PreviewExpiryWarningProps) {
   const { isDarkMode } = useTheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<TabParamList>>();
 
   const handleSubscribe = () => {
-    navigation.navigate('Pricing' as never);
+    navigation.navigate('SettingsTab', { screen: 'Pricing' });
     onDismiss();
   };
 

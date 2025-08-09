@@ -265,7 +265,7 @@ export default function SettingsScreen() {
             {user?.email === 'greg@parrotspeak.com' && (
               <TouchableOpacity 
                 style={styles.appInfoItem}
-                onPress={() => navigation.navigate('PerformanceTest' as any)}
+                onPress={() => navigation.navigate('PerformanceTest')}
               >
                 <Text style={[styles.optionText, isDarkMode && styles.optionTextDark]}>Performance Testing</Text>
                 <Ionicons name="chevron-forward" size={20} color={isDarkMode ? '#999' : '#666'} />

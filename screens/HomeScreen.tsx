@@ -4,15 +4,14 @@ import { useNavigation } from '@react-navigation/native';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { TabParamList } from '../navigation/MainTabNavigator';
-import { HomeStackParamList } from '../navigation/MainTabNavigator';
+import { TabParamList, ChatStackParamList } from '../navigation/MainTabNavigator';
 import Header from '../components/Header';
 import PreviewExpiryWarning from '../components/PreviewExpiryWarning';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
-  StackNavigationProp<HomeStackParamList, 'Home'>,
+  StackNavigationProp<ChatStackParamList, 'Home'>,
   BottomTabNavigationProp<TabParamList>
 >;
 
@@ -74,7 +73,7 @@ export default function HomeScreen() {
         <View style={styles.featuresGrid}>
           <TouchableOpacity 
             style={[styles.featureCard, isDarkMode && styles.featureCardDark]}
-            onPress={() => navigation.navigate('ConversationsTab')}
+            onPress={() => navigation.navigate('HistoryTab')}
           >
             <Text style={[styles.featureTitle, isDarkMode && styles.featureTitleDark]}>My Conversations</Text>
             <Text style={[styles.featureDescription, isDarkMode && styles.featureDescriptionDark]}>View past conversations</Text>

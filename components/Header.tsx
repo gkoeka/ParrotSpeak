@@ -1,13 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { NavigationProp } from '@react-navigation/native';
 import { useTheme } from '../contexts/ThemeContext';
 import ParrotSpeakLogo from './ParrotSpeakLogo';
 import PreviewStatusPill from './PreviewStatusPill';
 import { Ionicons } from '@expo/vector-icons';
+import { TabParamList } from '../navigation/MainTabNavigator';
 
 export default function Header() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<TabParamList>>();
   const { isDarkMode } = useTheme();
 
   return (
@@ -15,7 +17,7 @@ export default function Header() {
       <View style={styles.content}>
         {/* Left section with logo */}
         <View style={styles.leftSection}>
-          <TouchableOpacity onPress={() => navigation.navigate('Home' as never)}>
+          <TouchableOpacity onPress={() => navigation.navigate('ChatTab', { screen: 'Home' })}>
             <ParrotSpeakLogo showText={false} />
           </TouchableOpacity>
         </View>
