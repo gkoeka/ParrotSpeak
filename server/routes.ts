@@ -73,6 +73,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       version: '1.0.0'
     });
   });
+  
+  // Test audio endpoint for debugging
+  app.get('/api/test-audio', (req: Request, res: Response) => {
+    res.json({
+      message: 'Audio test endpoint is working',
+      timestamp: new Date().toISOString(),
+      audioModuleInfo: {
+        expoAvVersion: '15.1.7',
+        recordingMethod: 'startAsync is the correct method name',
+        debugging: 'Check mobile app console for actual runtime errors'
+      }
+    });
+  });
 
   // Static files and uploads
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));

@@ -47,11 +47,11 @@ export class ConversationSessionService {
   private callbacks: SessionCallbacks | null = null;
   private recording: Audio.Recording | null = null;
   
-  // Timers
-  private silenceTimer: NodeJS.Timeout | null = null;
-  private maxDurationTimer: NodeJS.Timeout | null = null;
-  private autoDisarmTimer: NodeJS.Timeout | null = null;
-  private fileCleanupTimers: Map<string, NodeJS.Timeout> = new Map();
+  // Timers - use ReturnType for cross-platform compatibility
+  private silenceTimer: ReturnType<typeof setTimeout> | null = null;
+  private maxDurationTimer: ReturnType<typeof setTimeout> | null = null;
+  private autoDisarmTimer: ReturnType<typeof setTimeout> | null = null;
+  private fileCleanupTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
   
   // Tracking
   private sessionStartTime: Date | null = null;
