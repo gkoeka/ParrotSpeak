@@ -6,6 +6,8 @@ import { legacyStartRecording, legacyStopRecording, processRecording, speakText 
 import { translateText } from '../api/languageService';
 import { getLanguageByCode } from '../constants/languageConfiguration';
 import { useTheme } from '../contexts/ThemeContext';
+import { useParticipants } from '../contexts/ParticipantsContext';
+import { determineSpeaker, getTargetLanguage } from '../utils/languageDetection';
 
 interface VoiceInputControlsProps {
   onMessage: (message: {
@@ -28,6 +30,7 @@ export default function VoiceInputControls({
   targetLanguage = 'es-ES'
 }: VoiceInputControlsProps) {
   const { isDarkMode } = useTheme();
+  const { participants, setLastTurnSpeaker, swapParticipants } = useParticipants();
   
   // Recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -106,42 +109,86 @@ export default function VoiceInputControls({
   // Process audio through transcription → translation → TTS pipeline
   const processAudio = async (uri: string) => {
     try {
-      // Step 1: Transcribe
+      // Step 1: Transcribe with language detection
       console.log('📝 Transcribing audio...');
-      const transcription = await processRecording(uri, sourceLanguage);
+      const transcriptionResult = await processRecording(uri, sourceLanguage);
+      
+      // Handle both string and object responses
+      let transcription: string;
+      let detectedLang: string | undefined;
+      
+      if (typeof transcriptionResult === 'object' && transcriptionResult !== null) {
+        transcription = (transcriptionResult as any).text || '';
+        detectedLang = (transcriptionResult as any).language;
+      } else {
+        transcription = transcriptionResult;
+      }
+      
       console.log('Transcription:', transcription);
+      if (detectedLang) {
+        console.log('Detected language:', detectedLang);
+      }
       
       if (!transcription || transcription.trim() === '') {
         console.log('⚠️ No transcription received');
         return;
       }
       
-      // Step 2: Translate
+      // Step 2: Determine speaker and target language
+      let actualSourceLang = sourceLanguage;
+      let actualTargetLang = targetLanguage;
+      let speaker: 'A' | 'B' | undefined;
+      
+      if (participants.autoDetectSpeakers && detectedLang) {
+        speaker = determineSpeaker(
+          detectedLang,
+          participants.A,
+          participants.B,
+          participants.lastTurnSpeaker
+        );
+        
+        actualSourceLang = speaker === 'A' ? participants.A.lang : participants.B.lang;
+        actualTargetLang = getTargetLanguage(speaker, participants.A, participants.B);
+        
+        console.log(`🎯 Speaker detected: ${speaker} (${actualSourceLang} → ${actualTargetLang})`);
+        setLastTurnSpeaker(speaker);
+      } else {
+        // Manual mode: use provided source/target
+        actualSourceLang = sourceLanguage;
+        actualTargetLang = targetLanguage;
+        console.log(`📍 Manual mode: ${actualSourceLang} → ${actualTargetLang}`);
+      }
+      
+      // Step 3: Translate
       console.log('🌐 Translating text...');
       const translationResult = await translateText(
         transcription,
-        sourceLanguage,
-        targetLanguage
+        actualSourceLang,
+        actualTargetLang
       );
       console.log('Translation:', translationResult.translation);
       
-      // Step 3: Create message
+      // Step 4: Create message with speaker info
       const message = {
         id: Date.now().toString(),
         text: transcription,
         translation: translationResult.translation,
-        fromLanguage: sourceLanguage,
-        toLanguage: targetLanguage,
-        timestamp: new Date()
+        fromLanguage: actualSourceLang,
+        toLanguage: actualTargetLang,
+        timestamp: new Date(),
+        speaker: speaker // Add speaker info
       };
       
-      // Step 4: Add to conversation
+      // Step 5: Add to conversation
       onMessage(message);
       
-      // Step 5: TTS for translation
-      if (isTargetSpeechSupported && translationResult.translation) {
+      // Step 6: TTS for translation
+      const targetLangConfig = normalizeLanguageCode(actualTargetLang);
+      const isTargetSupported = targetLangConfig?.speechSupported ?? true;
+      
+      if (isTargetSupported && translationResult.translation) {
         console.log('🔊 Speaking translation...');
-        await speakText(translationResult.translation, targetLanguage);
+        await speakText(translationResult.translation, actualTargetLang);
       }
       
       console.log('✅ Pipeline complete');
@@ -204,6 +251,31 @@ export default function VoiceInputControls({
 
   return (
     <View style={styles.container}>
+      {/* Participants display and controls */}
+      <View style={styles.participantsContainer}>
+        <View style={styles.participantInfo}>
+          <Text style={styles.participantLabel}>A: {participants.A.lang}</Text>
+          <Text style={styles.directionArrow}>→</Text>
+          <Text style={styles.participantLabel}>B: {participants.B.lang}</Text>
+        </View>
+        
+        <View style={styles.controlsRow}>
+          <TouchableOpacity 
+            style={styles.swapButton}
+            onPress={swapParticipants}
+          >
+            <Ionicons name="swap-horizontal" size={20} color="#007AFF" />
+            <Text style={styles.swapButtonText}>Swap</Text>
+          </TouchableOpacity>
+          
+          <View style={styles.autoDetectContainer}>
+            <Text style={styles.autoDetectLabel}>
+              {participants.autoDetectSpeakers ? '🟢 Auto' : '🔴 Manual'}
+            </Text>
+          </View>
+        </View>
+      </View>
+
       {/* Error display */}
       {error && (
         <View style={styles.errorContainer}>
@@ -292,6 +364,55 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     backgroundColor: 'transparent',
+  },
+  participantsContainer: {
+    width: '100%',
+    marginBottom: 15,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: 10,
+    padding: 10,
+  },
+  participantInfo: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  participantLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  directionArrow: {
+    fontSize: 18,
+    marginHorizontal: 10,
+    color: '#666',
+  },
+  controlsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  swapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+  },
+  swapButtonText: {
+    color: '#007AFF',
+    marginLeft: 5,
+    fontSize: 14,
+  },
+  autoDetectContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  autoDetectLabel: {
+    fontSize: 14,
+    color: '#666',
   },
   errorContainer: {
     marginBottom: 15,
