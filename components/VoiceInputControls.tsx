@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingTop: 4,
+    paddingTop: 0,
     paddingBottom: 0,
     backgroundColor: 'transparent',
   },
