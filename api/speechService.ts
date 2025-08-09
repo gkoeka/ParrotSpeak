@@ -13,6 +13,9 @@ const isFileSystemAvailable = !!FileSystem;
 // FOREGROUND-ONLY: All recording stops when app backgrounds
 const FOREGROUND_ONLY = true; // Enforces recording only when app is in foreground (docs: privacy protection)
 
+// Track which languages have already logged fallback (once per app launch)
+const loggedFallbacks = new Set<string>();
+
 // Interface for voice profile
 export interface VoiceProfile {
   id: string;
@@ -21,6 +24,90 @@ export interface VoiceProfile {
   pitch: number;
   rate: number;
   isDefault?: boolean;
+}
+
+// Voice selection result
+interface VoiceSelectionResult {
+  requested: string;
+  chosen: string;
+  fallbackLevel: 'none' | 'base' | 'default';
+}
+
+// Pick preferred voice with fallback logic
+export async function pickPreferredVoice(langCodeFull: string): Promise<VoiceSelectionResult> {
+  try {
+    // Check if speech module is available
+    if (!isSpeechAvailable) {
+      return {
+        requested: langCodeFull,
+        chosen: 'system',
+        fallbackLevel: 'default'
+      };
+    }
+
+    // Get available voices
+    const voices = await Speech.getAvailableVoicesAsync();
+    
+    // 1. Try exact match (e.g., "pt-BR", "en-AU")
+    const exactMatch = voices.find(voice => 
+      voice.language.toLowerCase() === langCodeFull.toLowerCase()
+    );
+    
+    if (exactMatch) {
+      return {
+        requested: langCodeFull,
+        chosen: exactMatch.identifier || exactMatch.language,
+        fallbackLevel: 'none'
+      };
+    }
+    
+    // 2. Try base language match (e.g., "pt" for "pt-BR")
+    const baseLang = langCodeFull.split('-')[0].toLowerCase();
+    const baseMatch = voices.find(voice => 
+      voice.language.toLowerCase().startsWith(baseLang)
+    );
+    
+    if (baseMatch) {
+      // Log fallback once per language per app launch
+      const fallbackKey = `${langCodeFull}_base`;
+      if (!loggedFallbacks.has(fallbackKey)) {
+        console.log(`[TTS] fallback {requested=${langCodeFull}, chosen=${baseMatch.identifier || baseMatch.language}, level=base}`);
+        loggedFallbacks.add(fallbackKey);
+      }
+      
+      return {
+        requested: langCodeFull,
+        chosen: baseMatch.identifier || baseMatch.language,
+        fallbackLevel: 'base'
+      };
+    }
+    
+    // 3. Use system default (usually English)
+    const defaultVoice = voices.find(voice => 
+      voice.language.toLowerCase().startsWith('en')
+    ) || voices[0]; // Fallback to first available voice
+    
+    // Log fallback once per language per app launch
+    const fallbackKey = `${langCodeFull}_default`;
+    if (!loggedFallbacks.has(fallbackKey)) {
+      console.log(`[TTS] fallback {requested=${langCodeFull}, chosen=${defaultVoice?.identifier || 'system'}, level=default}`);
+      loggedFallbacks.add(fallbackKey);
+    }
+    
+    return {
+      requested: langCodeFull,
+      chosen: defaultVoice?.identifier || 'en-US',
+      fallbackLevel: 'default'
+    };
+    
+  } catch (error) {
+    console.error('Error selecting voice:', error);
+    return {
+      requested: langCodeFull,
+      chosen: 'en-US',
+      fallbackLevel: 'default'
+    };
+  }
 }
 
 // Text-to-speech functionality with voice profile support
@@ -47,13 +134,17 @@ export async function speakText(
         'fil': 'fil-PH', // Filipino
         'yue': 'yue-HK', // Cantonese
         'en': 'en-US',
+        'en-AU': 'en-AU',  // Australian English
+        'en-GB': 'en-GB',  // British English
         'es': 'es-ES',
         'es-ES': 'es-ES',
         'es-419': 'es-MX',
         'fr': 'fr-FR',
         'de': 'de-DE',
         'it': 'it-IT',
-        'pt-BR': 'pt-BR',
+        'pt': 'pt-BR',      // Default Portuguese to Brazilian
+        'pt-BR': 'pt-BR',   // Brazilian Portuguese
+        'pt-PT': 'pt-PT',   // European Portuguese
         'ja': 'ja-JP',
         'zh': 'zh-CN',
         'ru': 'ru-RU',
@@ -105,9 +196,17 @@ export async function speakText(
       // Use mapped language code or fallback to provided code
       const mappedLanguageCode = speechLanguageMap[languageCode] || languageCode;
       
+      // Use pickPreferredVoice to select best available voice
+      const voiceSelection = await pickPreferredVoice(mappedLanguageCode);
+      
+      // Log voice selection (always log for debugging, but fallbacks are logged once)
+      if (voiceSelection.fallbackLevel === 'none') {
+        console.log(`[TTS] voice {requested=${mappedLanguageCode}, chosen=${voiceSelection.chosen}, level=none}`);
+      }
+      
       // Use voice profile settings if provided, otherwise use defaults
       const options = {
-        language: mappedLanguageCode,
+        language: voiceSelection.fallbackLevel === 'default' ? 'en-US' : mappedLanguageCode,
         pitch: voiceProfile?.pitch ?? 1.0,
         rate: voiceProfile?.rate ?? 0.9,
         onDone: () => {
@@ -124,17 +223,6 @@ export async function speakText(
           }
         }
       };
-      
-      // Check if the device supports the language
-      const voices = await Speech.getAvailableVoicesAsync();
-      const supportedVoice = voices.find(voice => 
-        voice.language.toLowerCase().startsWith(mappedLanguageCode.toLowerCase().split('-')[0])
-      );
-      
-      if (!supportedVoice && languageCode !== 'en') {
-        console.warn(`Language ${mappedLanguageCode} not supported by device, falling back to English`);
-        options.language = 'en-US';
-      }
       
       // Start speaking with the given options
       Speech.speak(text, options);

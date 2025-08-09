@@ -220,17 +220,8 @@ export default function VoiceInputControls({
         console.log('[UI] status=preparingAudio');
         onStatusChange?.('preparingAudio');
         
-        // Log TTS voice selection
-        console.log(`🔊 TTS Voice Selection:`);
-        console.log(`    chosenTTSVoice: ${actualTargetLang}`);
-        
-        // Check if we have a specific voice for the regional variant
-        const hasRegionalVoice = actualTargetLang.includes('-');
-        if (hasRegionalVoice) {
-          console.log(`    Using regional voice: ${actualTargetLang}`);
-        } else {
-          console.log(`    Using base language voice: ${actualTargetLang}`);
-        }
+        // Log TTS voice selection (speakText now handles voice selection and logging)
+        console.log(`🔊 TTS preparing for language: ${actualTargetLang}`);
         
         // Subtle haptic when TTS begins
         console.log('[UX] haptics=tts');
