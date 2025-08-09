@@ -57,7 +57,10 @@ export default function SettingsScreen() {
       title: 'Auto-detect Speakers',
       icon: 'people-outline',
       value: participants.autoDetectSpeakers,
-      onValueChange: setAutoDetectSpeakers,
+      onValueChange: (value: boolean) => {
+        console.log(`[Settings] Auto-detect speakers toggled: ${value}`);
+        setAutoDetectSpeakers(value);
+      },
     },
     {
       title: 'Auto-play Translations',

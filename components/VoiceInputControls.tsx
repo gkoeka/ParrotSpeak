@@ -221,6 +221,8 @@ export default function VoiceInputControls({
       let actualTargetLang = targetLanguage;
       let speaker: 'A' | 'B' | undefined;
       
+      console.log(`[AutoDetect] enabled=${participants.autoDetectSpeakers}, detectedLang=${detectedLang}`);
+      
       if (participants.autoDetectSpeakers && detectedLang) {
         speaker = determineSpeaker(
           detectedLang,
@@ -238,8 +240,10 @@ export default function VoiceInputControls({
         setLastTurnSpeaker(speaker);
       } else {
         // Manual mode: force A→B (or B→A if swapped) regardless of detected language
+        console.log(`📍 Manual mode activated`);
         actualSourceLang = sourceLanguage;
         actualTargetLang = targetLanguage;
+        console.log(`    Source: ${actualSourceLang}, Target: ${actualTargetLang}`);
         
         // Determine speaker based on configured source
         if (sourceLanguage === participants.A.lang) {
