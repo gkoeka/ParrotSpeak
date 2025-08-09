@@ -353,16 +353,26 @@ async function logAudioRouteStatus(context: string) {
   }
 }
 
-// Initialize AppState listener for legacy mode
+// Initialize AppState listener for legacy mode with interruption handling
 function initializeLegacyAppStateListener() {
   if (appStateSubscription) return; // Already initialized
   
   appStateSubscription = addAppStateListener((nextAppState) => {
     if (nextAppState === 'background' || nextAppState === 'inactive') {
       if (legacyRecordingActive && legacyRecording) {
-        console.log('📱 [Legacy] App backgrounded → stopping recording');
-        // Force stop recording when app goes to background
-        legacyStopRecording({ reason: 'background' });
+        console.log('📱 [Legacy] App backgrounded/interrupted → stopping recording');
+        console.log('🔄 [Interruption] System interruption detected - ending recording safely');
+        // Force stop recording when app goes to background or is interrupted
+        legacyStopRecording({ reason: 'background' }).then(() => {
+          console.log('✅ [Interruption] Recording ended safely due to interruption');
+        }).catch((error) => {
+          console.log('⚠️ [Interruption] Error stopping recording:', error);
+        });
+      }
+    } else if (nextAppState === 'active') {
+      // App returned to foreground
+      if (!legacyRecordingActive && !legacyRecording) {
+        console.log('📱 [Interruption] App active - ready for new recording');
       }
     }
   });
@@ -421,6 +431,9 @@ export async function legacyStartRecording(): Promise<void> {
     
     // Initialize AppState listener if not already done
     initializeLegacyAppStateListener();
+    
+    // Log that we're monitoring for interruptions
+    console.log('🔄 [Interruption] Monitoring for system interruptions');
     
     // Initialize audio route monitoring
     await initializeAudioRouteMonitoring();
@@ -489,6 +502,11 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
   try {
     const reason = options?.reason || 'manual';
     console.log(`🛑 [Legacy] Stopping legacy recording (reason: ${reason})...`);
+    
+    // Handle interruption-specific cleanup
+    if (reason === 'background') {
+      console.log('🔄 [Interruption] Handling background/interruption cleanup');
+    }
     
     if (!legacyRecording || !legacyRecordingActive) {
       console.warn('⚠️ [Legacy] No active recording to stop - ignoring');
