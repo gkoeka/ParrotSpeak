@@ -402,14 +402,13 @@ export class ConversationSessionService {
       
       console.log('🛑 [STOP] Stopping recording...');
       
-      // FIX 6: Stop and unload first, THEN get URI
+      // FIX: Get URI BEFORE stopAndUnload (unloading destroys the recorder)
+      const uri = this.recording.getURI();
+      console.log(`📁 [STOP] Got recording URI: ${uri ? 'Valid' : 'NULL'}`);
+      
+      // Now stop and unload
       await this.recording.stopAndUnloadAsync();
       console.log('✅ [STOP] Recording stopped and unloaded');
-      
-      // FIX 6: Only get URI after stop is complete
-      const uri = this.recording.getURI();
-      console.log(`📁 [STOP] Recording URI: ${uri ? 'Valid' : 'NULL'}`);
-      
       if (!uri) {
         throw new Error('No URI from recording');
       }
@@ -506,12 +505,12 @@ export class ConversationSessionService {
         console.warn('⚠️ [PROBE] Warning - URI exists during recording');
       }
       
+      // Get URI before stop (unloading destroys the recorder)
+      const finalUri = recording.getURI();
+      
       // Stop recording
       console.log('🛑 [PROBE] Stopping recording...');
       await recording.stopAndUnloadAsync();
-      
-      // Check URI after stop
-      const finalUri = recording.getURI();
       if (!finalUri) {
         console.error('❌ [PROBE] FAIL - No URI after stop');
         return false;
