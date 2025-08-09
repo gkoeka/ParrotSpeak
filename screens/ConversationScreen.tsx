@@ -253,8 +253,13 @@ export default function ConversationScreen() {
           </View>
         ) : messages.length === 0 ? (
           <View style={styles.emptyState}>
+            <Ionicons 
+              name="mic-outline" 
+              size={48} 
+              color={isDarkMode ? '#666' : '#ccc'} 
+            />
             <Text style={[styles.emptyStateText, isDarkMode && styles.emptyStateTextDark]}>
-              {conversationId ? 'No messages in this conversation' : 'Start speaking to begin your conversation'}
+              {conversationId ? 'No messages in this conversation' : 'Tap the mic button below to start'}
             </Text>
           </View>
         ) : (
@@ -391,11 +396,12 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: 16,
-    color: '#666',
+    color: '#999',
     textAlign: 'center',
+    marginTop: 12,
   },
   emptyStateTextDark: {
-    color: '#999',
+    color: '#666',
   },
   loadingContainer: {
     flex: 1,
