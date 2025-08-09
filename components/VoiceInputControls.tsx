@@ -271,16 +271,43 @@ export default function VoiceInputControls({
           console.log(`⚠️ Cannot start recording in state: ${currentState}`);
         }
       } else {
-        // FIX 2: Direct recording disabled - only Conversation Mode is supported
-        console.error('Direct recording disabled. Conversation Mode must be enabled.');
-        Alert.alert(
-          'Conversation Mode Required',
-          'Please enable Conversation Mode in Settings to use voice recording.',
-          [{ text: 'OK' }]
-        );
-        setIsRecording(false);
-        isRecordingRef.current = false;
-        return;
+        // Fallback to standard tap-and-hold recording when Conversation Mode is disabled
+        console.log('📱 Using standard tap-and-hold recording (Conversation Mode disabled)');
+        
+        // Create a minimal recording session for standard mode
+        if (!sessionServiceRef.current) {
+          console.log('⚠️ Creating temporary session service for standard recording');
+          const { ConversationSessionService } = await import('../services/ConversationSessionService');
+          sessionServiceRef.current = ConversationSessionService.getInstance();
+          sessionServiceRef.current.setCallbacks({
+            onSessionStart: () => console.log('Standard recording session started'),
+            onSessionEnd: () => console.log('Standard recording session ended'),
+            onUtteranceReady: handleUtteranceReady,
+            onError: (error) => {
+              console.error('Session error:', error);
+              actions.setError(error.message);
+            },
+          });
+        }
+        
+        // Start a temporary session for this recording
+        const currentState = sessionServiceRef.current.getState();
+        if (currentState === SessionState.DISARMED) {
+          await sessionServiceRef.current.startSession();
+        }
+        
+        // Start recording
+        setIsRecording(true);
+        isRecordingRef.current = true;
+        const result = await sessionServiceRef.current.startRecording('micTap');
+        if (result.ok) {
+          actions.setListening(true);
+          console.log('✅ Standard recording started - release button to stop');
+        } else {
+          console.log(`⚠️ Start failed: ${result.reason}`);
+          setIsRecording(false);
+          isRecordingRef.current = false;
+        }
       }
       
     } catch (error) {
@@ -299,15 +326,26 @@ export default function VoiceInputControls({
       setIsRecording(false);
       isRecordingRef.current = false;
       
-      // Use session service if available
-      if (sessionServiceRef.current && state.sessionState === SessionState.RECORDING) {
-        console.log('🛑 Stopping session recording manually...');
-        // Request stop through the idempotent method
-        await sessionServiceRef.current.requestStop('manual-release');
-        actions.setListening(false);
-        console.log('✅ Recording stop requested');
+      // Check if we have an active session service
+      if (sessionServiceRef.current) {
+        const currentState = sessionServiceRef.current.getState();
+        if (currentState === SessionState.RECORDING) {
+          console.log('🛑 Stopping recording manually...');
+          // Request stop through the idempotent method
+          await sessionServiceRef.current.requestStop('manual-release');
+          actions.setListening(false);
+          console.log('✅ Recording stop requested');
+          
+          // If not in Conversation Mode, also disarm the session
+          if (!state.conversationModeEnabled) {
+            console.log('📴 Disarming temporary session (standard mode)');
+            setTimeout(() => {
+              sessionServiceRef.current?.disarmSession('manual');
+            }, 100);
+          }
+        }
       } else if (recordingRef.current) {
-        // FIX 2: Direct recording disabled - this shouldn't happen
+        // Legacy fallback - shouldn't happen anymore
         console.error('Direct recording not supported');
         recordingRef.current = null;
       }
