@@ -362,19 +362,18 @@ export function isLegacyRecordingActive(): boolean {
 export let recording: Audio.Recording | null = null;
 
 /**
- * @deprecated Use ConversationSessionService for CM mode or legacyStartRecording for OFF mode
+ * Start recording audio - alias for legacy recording
  */
 export async function startRecording(): Promise<{ uri: string }> {
-  console.warn('⚠️ [speechService] startRecording is deprecated - use legacyStartRecording or ConversationSessionService');
-  throw new Error('Use legacyStartRecording for OFF mode or ConversationSessionService for CM mode');
+  await legacyStartRecording();
+  return { uri: '' }; // URI is returned by stopRecording
 }
 
 /**
- * @deprecated Use ConversationSessionService for CM mode or legacyStopRecording for OFF mode
+ * Stop recording and return the audio file URI - alias for legacy recording
  */
 export async function stopRecording(): Promise<{ uri: string; duration?: number }> {
-  console.warn('⚠️ [speechService] stopRecording is deprecated - use legacyStopRecording or ConversationSessionService');
-  throw new Error('Use legacyStopRecording for OFF mode or ConversationSessionService for CM mode');
+  return legacyStopRecording();
 }
 
 // Convert audio file to Base64 for API transmission

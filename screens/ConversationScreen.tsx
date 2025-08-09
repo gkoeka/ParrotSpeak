@@ -15,8 +15,6 @@ import { LanguagePreferencesStorage } from '../utils/languagePreferences';
 
 import LanguageSelector from '../components/LanguageSelectorMobile';
 import PerformanceIndicator from '../components/PerformanceMonitor';
-import ConversationModeIndicator from '../components/ConversationModeIndicator';
-import { ConversationSessionService } from '../services/ConversationSessionService';
 
 type ConversationNavigationProp = StackNavigationProp<RootStackParamList, 'Conversation'>;
 
