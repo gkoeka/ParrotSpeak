@@ -70,7 +70,7 @@ export async function transcribeAudioOptimized(
         'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
         ...form.getHeaders()
       },
-      body: form
+      body: form as any
     });
 
     if (!response.ok) {

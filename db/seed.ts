@@ -1,6 +1,7 @@
 import { db } from "./index";
 import * as schema from "@shared/schema";
 import { v4 as uuidv4 } from "uuid";
+import { eq, and } from "drizzle-orm";
 
 async function seed() {
   try {
@@ -29,10 +30,11 @@ async function seed() {
     for (const conversation of conversations) {
       // Check if conversation already exists
       const existing = await db.query.conversations.findFirst({
-        where: (conv) => 
-          conv.title === conversation.title && 
-          conv.sourceLanguage === conversation.sourceLanguage && 
-          conv.targetLanguage === conversation.targetLanguage
+        where: and(
+          eq(schema.conversations.title, conversation.title),
+          eq(schema.conversations.sourceLanguage, conversation.sourceLanguage),
+          eq(schema.conversations.targetLanguage, conversation.targetLanguage)
+        )
       });
 
       if (!existing) {
@@ -45,7 +47,7 @@ async function seed() {
 
     // Add sample messages to the first conversation
     const sampleConversation = await db.query.conversations.findFirst({
-      where: (conv) => conv.title === "English to Spanish"
+      where: eq(schema.conversations.title, "English to Spanish")
     });
 
     if (sampleConversation) {
@@ -90,7 +92,7 @@ async function seed() {
 
       // Check if messages already exist for this conversation
       const existingMessages = await db.query.messages.findMany({
-        where: (msg) => msg.conversationId === sampleConversation.id
+        where: eq(schema.messages.conversationId, sampleConversation.id)
       });
 
       if (existingMessages.length === 0) {
@@ -109,8 +111,8 @@ async function seed() {
         id: uuidv4(),
         name: "Default",
         languageCode: "en-US",
-        pitch: 1.0,
-        rate: 1.0,
+        pitch: "1.0",
+        rate: "1.0",
         isDefault: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -119,8 +121,8 @@ async function seed() {
         id: uuidv4(),
         name: "Slow and Clear",
         languageCode: "en-US",
-        pitch: 0.9,
-        rate: 0.8,
+        pitch: "0.9",
+        rate: "0.8",
         isDefault: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -129,8 +131,8 @@ async function seed() {
         id: uuidv4(),
         name: "Spanish Voice",
         languageCode: "es-ES",
-        pitch: 1.0,
-        rate: 1.0,
+        pitch: "1.0",
+        rate: "1.0",
         isDefault: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -139,8 +141,8 @@ async function seed() {
         id: uuidv4(),
         name: "French Voice",
         languageCode: "fr-FR",
-        pitch: 1.0,
-        rate: 1.0,
+        pitch: "1.0",
+        rate: "1.0",
         isDefault: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -150,7 +152,10 @@ async function seed() {
     for (const profile of voiceProfiles) {
       // Check if profile already exists with same name and language
       const existingProfile = await db.query.voiceProfiles.findFirst({
-        where: (p) => p.name === profile.name && p.languageCode === profile.languageCode
+        where: and(
+          eq(schema.voiceProfiles.name, profile.name),
+          eq(schema.voiceProfiles.languageCode, profile.languageCode)
+        )
       });
 
       if (!existingProfile) {
@@ -163,14 +168,12 @@ async function seed() {
 
     // Get the default profile for speech settings
     const defaultProfile = await db.query.voiceProfiles.findFirst({
-      where: (p) => p.isDefault === true
+      where: eq(schema.voiceProfiles.isDefault, true)
     });
 
     if (defaultProfile) {
       // Add global speech settings
-      const existingSettings = await db.query.speechSettings.findFirst({
-        where: () => true
-      });
+      const existingSettings = await db.query.speechSettings.findFirst();
 
       if (!existingSettings) {
         await db.insert(schema.speechSettings).values({

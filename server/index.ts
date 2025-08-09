@@ -19,7 +19,7 @@ app.use(compression({
   filter: (req, res) => {
     // Compress all JSON and text responses
     const type = res.getHeader('Content-Type');
-    if (type && (type.includes('json') || type.includes('text'))) {
+    if (type && (typeof type === 'string' && (type.includes('json') || type.includes('text')))) {
       return true;
     }
     return compression.filter(req, res);

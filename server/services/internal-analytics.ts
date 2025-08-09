@@ -47,18 +47,18 @@ export class InternalAnalyticsService {
       }
 
       const updates: any = {
-        totalMessages: existing.totalMessages + 1,
+        totalMessages: (existing.totalMessages || 0) + 1,
         lastActivityAt: new Date(),
         updatedAt: new Date()
       };
 
       if (messageData.isUser) {
-        updates.userMessages = existing.userMessages + 1;
+        updates.userMessages = (existing.userMessages || 0) + 1;
       } else {
-        updates.translatedMessages = existing.translatedMessages + 1;
+        updates.translatedMessages = (existing.translatedMessages || 0) + 1;
         
         // Track if we're seeing back-and-forth conversation
-        if (existing.userMessages > 0 && existing.translatedMessages > 0) {
+        if ((existing.userMessages || 0) > 0 && (existing.translatedMessages || 0) > 0) {
           updates.hadBackAndForth = true;
         }
       }
@@ -72,11 +72,11 @@ export class InternalAnalyticsService {
       }
 
       if (messageData.failed) {
-        updates.failedTranslations = existing.failedTranslations + 1;
+        updates.failedTranslations = (existing.failedTranslations || 0) + 1;
       }
 
       if (messageData.retried) {
-        updates.retriedTranslations = existing.retriedTranslations + 1;
+        updates.retriedTranslations = (existing.retriedTranslations || 0) + 1;
       }
 
       await db.update(conversationMetrics)
@@ -104,7 +104,7 @@ export class InternalAnalyticsService {
           .set({
             wasCompleted: true,
             durationMinutes: duration.toString(),
-            reachedConversationGoal: existing.hadBackAndForth && existing.totalMessages >= 4,
+            reachedConversationGoal: existing.hadBackAndForth && (existing.totalMessages || 0) >= 4,
             updatedAt: new Date()
           })
           .where(eq(conversationMetrics.conversationId, conversationId));

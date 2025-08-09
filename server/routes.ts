@@ -679,7 +679,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Generate JWT token for mobile persistence
       const { generateToken } = await import('./utils/jwt');
-      const token = generateToken(sessionUser);
+      const token = generateToken({ ...sessionUser, password: null });
       
       req.logIn(sessionUser as Express.User, (err) => {
         if (err) {

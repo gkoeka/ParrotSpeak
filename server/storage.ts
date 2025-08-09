@@ -348,11 +348,19 @@ export const storage = {
     }
     
     // Update with new values
+    const updateData: any = {
+      updatedAt: new Date().toISOString()
+    };
+    
+    if (updates.name !== undefined) updateData.name = updates.name;
+    if (updates.languageCode !== undefined) updateData.languageCode = updates.languageCode;
+    if (updates.pitch !== undefined) updateData.pitch = updates.pitch?.toString();
+    if (updates.rate !== undefined) updateData.rate = updates.rate?.toString();
+    if (updates.voiceType !== undefined) updateData.voiceType = updates.voiceType;
+    if (updates.isDefault !== undefined) updateData.isDefault = updates.isDefault;
+    
     const [updated] = await db.update(voiceProfiles)
-      .set({
-        ...updates,
-        updatedAt: new Date().toISOString()
-      })
+      .set(updateData)
       .where(eq(voiceProfiles.id, id))
       .returning();
     

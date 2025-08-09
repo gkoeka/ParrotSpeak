@@ -14,7 +14,7 @@ interface TokenPayload {
 export function generateToken(user: User): string {
   const payload: TokenPayload = {
     userId: user.id,
-    email: user.email,
+    email: user.email || '',
   };
   
   return jwt.sign(payload, JWT_SECRET, {
