@@ -39,19 +39,32 @@ class WebSocketService {
       const shouldUseInsecure = allowDevInsecure && devAllowlist.has(url.hostname) && opts?.forceInsecure !== false;
       const scheme = shouldUseInsecure ? 'ws' : 'wss';
       
+      // CRITICAL: Prevent ws:// in production - fail fast
+      if (isProd && scheme === 'ws') {
+        const error = new Error('SECURITY ERROR: Insecure WebSocket (ws://) is forbidden in production');
+        console.error(error.message);
+        throw error;
+      }
+      
       // Log warning once per session for insecure connections
       if (scheme === 'ws' && !this.hasLoggedInsecureWarning) {
         console.warn('⚠️ WARNING: Using insecure WebSocket connection (ws://). This should only be used in development.');
         this.hasLoggedInsecureWarning = true;
       }
       
-      // Build the WebSocket URL
+      // Build the WebSocket URL - NEVER include tokens in URL
       url.protocol = scheme + ':';
       if (path) {
         url.pathname = url.pathname.replace(/\/$/, '') + '/' + path.replace(/^\//, '');
       }
       
-      return url.toString();
+      // Security check: Ensure no token in URL
+      const finalUrl = url.toString();
+      if (finalUrl.includes('token=') || finalUrl.includes('jwt=') || finalUrl.includes('auth=')) {
+        throw new Error('SECURITY ERROR: Authentication tokens must not be included in WebSocket URLs');
+      }
+      
+      return finalUrl;
     } catch (error) {
       console.error('Error building WebSocket URL:', error);
       // Fallback - always use secure protocol
