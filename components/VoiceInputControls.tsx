@@ -379,31 +379,6 @@ export default function VoiceInputControls({
 
   return (
     <View style={styles.container}>
-      {/* Participants display and controls */}
-      <View style={styles.participantsContainer}>
-        <View style={styles.participantInfo}>
-          <Text style={styles.participantLabel}>A: {participants.A.lang}</Text>
-          <Text style={styles.directionArrow}>→</Text>
-          <Text style={styles.participantLabel}>B: {participants.B.lang}</Text>
-        </View>
-        
-        <View style={styles.controlsRow}>
-          <TouchableOpacity 
-            style={styles.swapButton}
-            onPress={swapParticipants}
-          >
-            <Ionicons name="swap-horizontal" size={20} color="#007AFF" />
-            <Text style={styles.swapButtonText}>Swap</Text>
-          </TouchableOpacity>
-          
-          <View style={styles.autoDetectContainer}>
-            <Text style={styles.autoDetectLabel}>
-              {participants.autoDetectSpeakers ? '🟢 Auto' : '🔴 Manual'}
-            </Text>
-          </View>
-        </View>
-      </View>
-
       {/* Error display */}
       {error && (
         <View style={styles.errorContainer}>
@@ -502,55 +477,7 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: 'transparent',
   },
-  participantsContainer: {
-    width: '100%',
-    marginBottom: 15,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 10,
-    padding: 10,
-  },
-  participantInfo: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  participantLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  directionArrow: {
-    fontSize: 18,
-    marginHorizontal: 10,
-    color: '#666',
-  },
-  controlsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  swapButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
-  },
-  swapButtonText: {
-    color: '#007AFF',
-    marginLeft: 5,
-    fontSize: 14,
-  },
-  autoDetectContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  autoDetectLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
+
   errorContainer: {
     marginBottom: 15,
     backgroundColor: '#ffeeee',
