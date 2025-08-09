@@ -242,11 +242,19 @@ export default function VoiceInputControls({
           speaker = 'B';
         }
         
-        // Log if detected language doesn't match expected source
+        // Check if detected language doesn't match expected source
         if (detectedLang && detectedLang !== actualSourceLang) {
-          console.log(`📍 Manual mode: Detected ${detectedLang} but forcing ${actualSourceLang} → ${actualTargetLang}`);
-          // Important: We still translate from configured source to target
-          // even if the detected language is different
+          console.log(`📍 Manual mode: Detected ${detectedLang} but expecting ${actualSourceLang}`);
+          
+          // If they spoke the target language, suggest enabling auto-detect
+          if (detectedLang === actualTargetLang) {
+            console.log(`💡 User spoke target language (${detectedLang}). Consider enabling auto-detect for better results.`);
+            // Show a helpful message to the user
+            setError('Tip: Enable "Auto-detect speakers" in Settings for automatic language switching');
+            setTimeout(() => setError(null), 5000);
+          }
+          // Still proceed with translation but it may not make sense
+          console.log(`📍 Forcing ${actualSourceLang} → ${actualTargetLang} translation anyway`);
         } else {
           console.log(`📍 Manual mode: ${actualSourceLang} → ${actualTargetLang}`);
         }
