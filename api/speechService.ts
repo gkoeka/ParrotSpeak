@@ -435,10 +435,22 @@ export async function legacyStartRecording(): Promise<void> {
       shouldDuckAndroid: true 
     });
     
-    // Request permissions
-    const { status } = await Audio.requestPermissionsAsync();
-    if (status !== 'granted') {
-      throw new Error('Microphone permission denied');
+    // Check and request permissions every time
+    console.log('🎤 [Perms] Checking microphone permission...');
+    const permissionResponse = await Audio.getPermissionsAsync();
+    
+    if (permissionResponse.status !== 'granted') {
+      console.log('⚠️ [Perms] Permission not granted, requesting...');
+      const { status } = await Audio.requestPermissionsAsync();
+      
+      if (status !== 'granted') {
+        console.log('❌ [Perms] Permission denied → prompting user to enable in settings');
+        throw new Error('Microphone permission denied. Please enable it in settings.');
+      } else {
+        console.log('✅ [Perms] Permission granted after prompt');
+      }
+    } else {
+      console.log('✅ [Perms] Permission already granted');
     }
     
     // Create and start recording with error handling

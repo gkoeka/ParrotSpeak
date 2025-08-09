@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, Platform, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
@@ -85,7 +85,22 @@ export default function VoiceInputControls({
       setIsRecording(false);
       
       if (error.message?.includes('permission')) {
-        Alert.alert('Error', 'Microphone permission denied. Please enable it in settings.');
+        Alert.alert(
+          'Microphone Permission Required',
+          'Please enable microphone access in your device settings to use voice recording.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => {
+              // On iOS, this will open the app settings
+              // On Android, user needs to navigate to permissions manually
+              if (Platform.OS === 'ios') {
+                Linking.openURL('app-settings:');
+              } else {
+                Linking.openSettings();
+              }
+            }}
+          ]
+        );
       } else if (error.message?.includes('Audio module not available')) {
         Alert.alert('Error', 'Audio recording is not supported on this device.');
       } else {
