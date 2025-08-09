@@ -5,6 +5,7 @@ ParrotSpeak is a mobile-only voice-to-voice translation platform built with Reac
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
+Recording Behavior: Single tap to start recording, automatic stop after 2 seconds of silence. Never had tap-and-hold functionality.
 Preferred preview mode: Mobile app preview only (not web app preview).
 Dark mode preference: Should persist when selected.
 Change Management: Always check with user before making extensive changes, especially to core functionality. No rapid bulk changes without approval.

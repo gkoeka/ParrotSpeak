@@ -271,8 +271,8 @@ export default function VoiceInputControls({
           console.log(`⚠️ Cannot start recording in state: ${currentState}`);
         }
       } else {
-        // Fallback to standard tap-and-hold recording when Conversation Mode is disabled
-        console.log('📱 Using standard tap-and-hold recording (Conversation Mode disabled)');
+        // Fallback to standard single-tap recording when Conversation Mode is disabled
+        console.log('📱 Using standard single-tap recording (Conversation Mode disabled)');
         
         // Create a minimal recording session for standard mode
         if (!sessionServiceRef.current) {
@@ -302,7 +302,7 @@ export default function VoiceInputControls({
         const result = await sessionServiceRef.current.startRecording('micTap');
         if (result.ok) {
           actions.setListening(true);
-          console.log('✅ Standard recording started - release button to stop');
+          console.log('✅ Standard recording started - will auto-stop after 2s of silence');
         } else {
           console.log(`⚠️ Start failed: ${result.reason}`);
           setIsRecording(false);
