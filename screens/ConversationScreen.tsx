@@ -304,7 +304,7 @@ export default function ConversationScreen() {
       <View style={[
         styles.controlsContainer, 
         isDarkMode && styles.controlsContainerDark,
-        { paddingBottom: Math.max(4, insets.bottom) }
+        { paddingBottom: insets.bottom }
       ]}>
         <VoiceInputControls 
           onStatusChange={setPipelineStatus}
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
   controlsContainer: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 4,
+    paddingBottom: 12,
     borderTopWidth: 1,
     borderTopColor: '#e9ecef',
     backgroundColor: '#ffffff',
