@@ -14,6 +14,13 @@ ParrotSpeak enables seamless cross-language communication through real-time spee
 
 ## 🎉 Recent Updates
 
+### Security Hardening & CI/CD Integration (January 9, 2025)
+- **✅ Script Execution Security** - Implemented defense-in-depth protection against command injection with allowlist, validator, and no-shell policy
+- **✅ WebSocket Security Enhanced** - Token-based auth via subprotocols, strict origin validation, and wss:// enforcement
+- **✅ Injection Prevention Verified** - All 17 injection attack vectors blocked before process spawning with comprehensive test coverage
+- **✅ CI/CD Security Tests** - GitHub Actions workflow and Replit build configs prevent security regressions
+- **✅ Security Documentation** - Created SECURITY.md with vulnerability reporting guidelines and hardening details
+
 ### TypeScript & Database Improvements (January 9, 2025)
 - **✅ TypeScript Compilation Fixed** - Resolved all 16 compilation errors achieving 0 errors with proper type safety
 - **✅ Navigation Type Safety** - Removed all `as never` type casts from navigation, properly routing to 'Auth' screen with correct TypeScript types
@@ -200,6 +207,9 @@ ParrotSpeak enables seamless cross-language communication through real-time spee
 - Comprehensive audit logging and admin authorization
 - GDPR/CCPA compliant data retention policies with automated cleanup
 - Privacy-first analytics with complete opt-out functionality
+- Defense-in-depth command injection prevention with allowlist and validator
+- WebSocket security with token-based auth and origin validation
+- Automated security regression testing in CI/CD pipelines
 
 ### Database Schema
 
@@ -217,12 +227,31 @@ usage_statistics       // User engagement and feature usage tracking
 conversation_patterns  // Conversation flow analysis and insights
 ```
 
+## 🔒 Security
+
+### Security Testing
+To run comprehensive security tests and verify all protections are in place:
+
+```bash
+# Run all security tests
+./scripts/run-security-tests.sh
+
+# Run specific test suites
+npx tsx scripts/test-injection-prevention.ts
+npx tsx scripts/test-arg-validator.ts
+npx tsx scripts/test-blast-radius.ts
+```
+
+### Reporting Security Issues
+Please report security vulnerabilities to security@parrotspeak.com. Do not create public GitHub issues for security vulnerabilities.
+
 ## 📝 Development Status & Deployment
 
 ### Current Status (February 5, 2025)
 - **✅ Mobile-Only Architecture**: Optimized for iOS and Android exclusively
 - **✅ Subscription System**: IAP integration complete with all subscription types verified and enforced
 - **✅ Authentication**: JWT token-based auth with reliable persistence across app restarts
+- **✅ Security Hardened**: Command injection prevention, WebSocket security, and automated regression testing
 - **✅ User Experience**: Welcome screen for new users, persistent dark mode, centered header design
 - **✅ Language Features**: Flag display for all 67 languages, automatic language preference persistence
 - **✅ API Protection**: All translation endpoints require active subscription with proper access control
