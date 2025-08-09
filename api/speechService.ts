@@ -196,93 +196,28 @@ export interface SpeechRecognitionResult {
   confidence: number;
 }
 
+// CRITICAL FIX 2: Recording is now centralized in ConversationSessionService
+// This export is kept for backward compatibility but should not be used
 export let recording: Audio.Recording | null = null;
 
+/**
+ * @deprecated Recording is now managed by ConversationSessionService
+ * This function is disabled to prevent multiple Recording instances
+ */
 export async function startRecording(): Promise<{ uri: string }> {
-  try {
-    // Check if Audio module is available for recording
-    if (!isAudioAvailable) {
-      console.log('Audio module not available for recording');
-      throw new Error('Audio recording not available');
-    }
-    
-    // Request permissions
-    const permission = await Audio.requestPermissionsAsync();
-    if (!permission.granted) {
-      throw new Error('Audio recording permission not granted');
-    }
-    
-    // CRITICAL: Clean up any existing recording first
-    if (recording) {
-      console.log('⚠️ [speechService] Cleaning up existing recording before starting new one');
-      try {
-        const status = await recording.getStatusAsync();
-        if (status.isRecording) {
-          await recording.stopAndUnloadAsync();
-        }
-      } catch (e) {
-        console.log('[speechService] Previous recording cleanup error (safe to ignore):', e);
-      }
-      recording = null;
-    }
-    
-    // Configure audio mode for recording
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: true,
-      playsInSilentModeIOS: true,
-      playThroughEarpieceAndroid: false,
-      staysActiveInBackground: false,
-    });
-    
-    // Create and start recording
-    recording = new Audio.Recording();
-    
-    // Use Expo's HIGH_QUALITY preset for production compatibility
-    // This creates M4A files on both iOS and Android
-    await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-    await recording.startAsync();
-    
-    console.log('Recording started successfully');
-    return { uri: recording.getURI() || '' };
-    
-  } catch (error) {
-    console.error('Error starting recording:', error);
-    throw error;
-  }
+  // FIX 2: Disable recording creation here - all recording control is in ConversationSessionService
+  console.warn('⚠️ [speechService] startRecording is DISABLED - use ConversationSessionService');
+  throw new Error('Recording is managed by ConversationSessionService. Do not call speechService.startRecording()');
 }
 
+/**
+ * @deprecated Recording is now managed by ConversationSessionService
+ * This function is disabled to prevent multiple Recording instances
+ */
 export async function stopRecording(): Promise<{ uri: string; duration?: number }> {
-  try {
-    if (!recording) {
-      throw new Error('No recording in progress');
-    }
-    
-    await recording.stopAndUnloadAsync();
-    const uri = recording.getURI();
-    const status = await recording.getStatusAsync();
-    
-    // Reset recording instance
-    recording = null;
-    
-    // Reset audio mode
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS: false,
-      playsInSilentModeIOS: true,
-      playThroughEarpieceAndroid: false,
-      staysActiveInBackground: false,
-    });
-    
-    console.log('Recording stopped successfully:', uri);
-    return { 
-      uri: uri || '', 
-      duration: status && status.durationMillis ? status.durationMillis : undefined 
-    };
-    
-  } catch (error) {
-    console.error('Error stopping recording:', error);
-    recording = null;
-    throw error;
-  }
+  // FIX 2: Disable recording stop here - all recording control is in ConversationSessionService
+  console.warn('⚠️ [speechService] stopRecording is DISABLED - use ConversationSessionService');
+  throw new Error('Recording is managed by ConversationSessionService. Do not call speechService.stopRecording()');
 }
 
 // Convert audio file to Base64 for API transmission

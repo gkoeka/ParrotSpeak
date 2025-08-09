@@ -4,10 +4,14 @@
  * Purpose: Session-based Conversation Mode with explicit tap-to-arm lifecycle.
  * Privacy-forward: No passive listening, foreground-only, auto-disarm on inactivity.
  * Battery-optimized: Single recording per utterance, auto-cleanup, configurable timeouts.
+ * 
+ * CRITICAL FIX: Centralized recording control with platform guards and proper Audio.Recording.createAsync usage
  */
 
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
+import { Platform } from 'react-native';
+import { stopSpeaking } from '../api/speechService';
 
 // Session states for explicit lifecycle
 export enum SessionState {
@@ -46,6 +50,9 @@ export class ConversationSessionService {
   private state: SessionState = SessionState.DISARMED;
   private callbacks: SessionCallbacks | null = null;
   private recording: Audio.Recording | null = null;
+  
+  // CRITICAL FIX: Track stopping state to prevent race conditions
+  private isStoppingRecording: boolean = false;
   
   // Timers - use ReturnType for cross-platform compatibility
   private silenceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -240,56 +247,137 @@ export class ConversationSessionService {
 
   /**
    * Start recording an utterance
+   * CRITICAL FIX: Platform guards, permission checks, proper createAsync usage
    */
   public async startRecording(): Promise<void> {
+    // FIX 6: Block start if not in correct state
     if (this.state !== SessionState.ARMED_IDLE) {
-      console.log(`⚠️ Cannot start recording from ${this.state}`);
+      console.log(`⚠️ [BLOCKED] Cannot start recording from ${this.state}`);
       return;
     }
     
+    // FIX 6: Block start if already stopping
+    if (this.isStoppingRecording) {
+      console.log(`⚠️ [BLOCKED] Cannot start while stopping previous recording`);
+      return;
+    }
+    
+    // FIX 1: Platform guard - only run on native
+    if (Platform.OS === 'web') {
+      console.error('❌ [PLATFORM] Recording not supported on web platform');
+      this.callbacks?.onError(new Error('Recording is only supported on iOS and Android'));
+      return;
+    }
+    
+    console.log(`📱 [PLATFORM] Running on ${Platform.OS}`);
+    
     try {
+      // FIX 4: Request permissions first
+      console.log('🎤 [PERMISSION] Requesting audio permissions...');
+      const permission = await Audio.requestPermissionsAsync();
+      if (!permission.granted) {
+        console.error('❌ [PERMISSION] Audio permission denied');
+        throw new Error('Microphone permission denied');
+      }
+      console.log('✅ [PERMISSION] Audio permission granted');
+      
+      // FIX 4: Set audio mode before recording
+      console.log('🔊 [AUDIO MODE] Configuring audio mode...');
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false, // Privacy: foreground only
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+      });
+      console.log('✅ [AUDIO MODE] Configured successfully');
+      
+      // FIX 4: Stop any TTS playback
+      console.log('🔇 [TTS] Stopping any active speech...');
+      stopSpeaking();
+      
+      // Update state
       await this.setState(SessionState.RECORDING);
       
-      // Clean up any stale recording
+      // FIX 4: Clean up any stale recording with detailed logging
       if (this.recording) {
+        console.log('⚠️ [CLEANUP] Found existing recording, cleaning up...');
         try {
           const status = await this.recording.getStatusAsync();
+          console.log(`📊 [CLEANUP] Existing recording status: ${status.isRecording ? 'RECORDING' : 'STOPPED'}`);
           if (status.isRecording) {
             await this.recording.stopAndUnloadAsync();
+            console.log('✅ [CLEANUP] Stopped and unloaded existing recording');
           }
         } catch (e) {
-          // Ignore cleanup errors
+          console.log('⚠️ [CLEANUP] Error during cleanup (safe to ignore):', e);
         }
         this.recording = null;
       }
       
-      // Create new recording
-      this.recording = new Audio.Recording();
-      await this.recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
-      await this.recording.startAsync();
+      // FIX 6: Assert single instance
+      if (this.recording !== null) {
+        console.error('❌ [ASSERT] Recording should be null after cleanup');
+        throw new Error('Recording instance not properly cleaned up');
+      }
       
+      // FIX 3: Use createAsync instead of prepare->start pattern
+      console.log('🎙️ [RECORDING] Creating new recording with createAsync...');
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY,
+        undefined, // No status update callback needed
+        undefined  // No metadata update callback needed
+      );
+      
+      this.recording = recording;
       this.recordingStartTime = new Date();
       this.utteranceCount++;
       
-      console.log(`🎤 Recording utterance #${this.utteranceCount}`);
+      console.log(`✅ [RECORDING] Started utterance #${this.utteranceCount}`);
       
       // Set up timers
       this.resetSilenceTimer();
       this.setMaxDurationTimer();
       
     } catch (error) {
-      console.error('❌ Failed to start recording:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`❌ [RECORDING] Failed to start: ${errorMessage}`);
+      
+      // Clean up on error
+      this.recording = null;
+      this.isStoppingRecording = false;
       await this.setState(SessionState.ARMED_IDLE);
-      this.callbacks?.onError(error instanceof Error ? error : new Error('Failed to start recording'));
+      
+      // FIX 7: Provide explicit error messages
+      if (errorMessage.includes('permission')) {
+        this.callbacks?.onError(new Error('Microphone permission denied. Please enable in settings.'));
+      } else if (errorMessage.includes('audio mode')) {
+        this.callbacks?.onError(new Error('Failed to configure audio mode. Please restart the app.'));
+      } else if (errorMessage.includes('createAsync')) {
+        this.callbacks?.onError(new Error('Failed to create recording. Please try again.'));
+      } else {
+        this.callbacks?.onError(error instanceof Error ? error : new Error('Failed to start recording'));
+      }
     }
   }
 
   /**
    * Stop recording and get URI
+   * CRITICAL FIX: Prevent race conditions, only get URI after stop
    */
   private async stopRecording(): Promise<void> {
-    if (this.state !== SessionState.RECORDING) return;
+    if (this.state !== SessionState.RECORDING) {
+      console.log(`⚠️ [STOP] Not recording, current state: ${this.state}`);
+      return;
+    }
     
+    // FIX 6: Prevent concurrent stop operations
+    if (this.isStoppingRecording) {
+      console.log('⚠️ [STOP] Already stopping recording');
+      return;
+    }
+    
+    this.isStoppingRecording = true;
     await this.setState(SessionState.STOPPING);
     
     try {
@@ -300,9 +388,15 @@ export class ConversationSessionService {
         throw new Error('No recording to stop');
       }
       
-      // Stop and get URI
+      console.log('🛑 [STOP] Stopping recording...');
+      
+      // FIX 6: Stop and unload first, THEN get URI
       await this.recording.stopAndUnloadAsync();
+      console.log('✅ [STOP] Recording stopped and unloaded');
+      
+      // FIX 6: Only get URI after stop is complete
       const uri = this.recording.getURI();
+      console.log(`📁 [STOP] Recording URI: ${uri ? 'Valid' : 'NULL'}`);
       
       if (!uri) {
         throw new Error('No URI from recording');
@@ -313,11 +407,13 @@ export class ConversationSessionService {
         ? Date.now() - this.recordingStartTime.getTime()
         : 0;
       
-      console.log(`📦 Utterance #${this.utteranceCount} stopped (${duration}ms)`);
+      console.log(`✅ [STOP] Utterance #${this.utteranceCount} stopped (${duration}ms)`);
       
       // Check minimum duration
       if (duration < SESSION_CONFIG.MIN_SPEECH_MS) {
-        console.log(`⚠️ Utterance too short (${duration}ms < ${SESSION_CONFIG.MIN_SPEECH_MS}ms), discarding`);
+        console.log(`⚠️ [STOP] Too short (${duration}ms < ${SESSION_CONFIG.MIN_SPEECH_MS}ms), discarding`);
+        this.recording = null;
+        this.isStoppingRecording = false;
         await this.setState(SessionState.ARMED_IDLE);
         return;
       }
@@ -331,14 +427,101 @@ export class ConversationSessionService {
       
       // Clean up recording reference
       this.recording = null;
+      this.isStoppingRecording = false;
       
     } catch (error) {
-      console.error('❌ Error stopping recording:', error);
-      this.callbacks?.onError(error instanceof Error ? error : new Error('Failed to stop recording'));
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`❌ [STOP] Failed: ${errorMessage}`);
+      
+      // Clean up on error
+      this.recording = null;
+      this.isStoppingRecording = false;
+      
+      // FIX 7: Explicit error messages
+      if (errorMessage.includes('stopAndUnloadAsync')) {
+        this.callbacks?.onError(new Error('Failed to stop recording. Please try again.'));
+      } else {
+        this.callbacks?.onError(error instanceof Error ? error : new Error('Failed to stop recording'));
+      }
+      
       await this.setState(SessionState.ARMED_IDLE);
     }
   }
 
+  /**
+   * Sanity probe for testing recording functionality
+   * FIX 5: Test recording start/stop with verification
+   */
+  public async sanityProbeStartStop(): Promise<boolean> {
+    console.log('🧪 [PROBE] Starting sanity probe...');
+    
+    // Check platform
+    if (Platform.OS === 'web') {
+      console.error('❌ [PROBE] FAIL - Web platform not supported');
+      return false;
+    }
+    
+    try {
+      // Request permissions
+      const permission = await Audio.requestPermissionsAsync();
+      if (!permission.granted) {
+        console.error('❌ [PROBE] FAIL - No audio permission');
+        return false;
+      }
+      
+      // Set audio mode
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+      });
+      console.log('✅ [PROBE] Audio mode configured');
+      
+      // Create and start recording
+      console.log('🎙️ [PROBE] Creating recording...');
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      
+      // Wait 500ms
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Check URI exists (should be null while recording)
+      const midUri = recording.getURI();
+      if (midUri) {
+        console.warn('⚠️ [PROBE] Warning - URI exists during recording');
+      }
+      
+      // Stop recording
+      console.log('🛑 [PROBE] Stopping recording...');
+      await recording.stopAndUnloadAsync();
+      
+      // Check URI after stop
+      const finalUri = recording.getURI();
+      if (!finalUri) {
+        console.error('❌ [PROBE] FAIL - No URI after stop');
+        return false;
+      }
+      
+      console.log(`✅ [PROBE] PASS - Valid URI: ${finalUri.substring(0, 50)}...`);
+      
+      // Clean up file
+      try {
+        await FileSystem.deleteAsync(finalUri, { idempotent: true });
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+      
+      return true;
+      
+    } catch (error) {
+      console.error('❌ [PROBE] FAIL - Error:', error);
+      return false;
+    }
+  }
+  
   /**
    * Mark processing as complete and return to armed state
    */

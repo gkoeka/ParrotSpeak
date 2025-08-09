@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { startRecording, stopRecording, processRecording, speakText } from '../api/speechService';
+import { processRecording, speakText } from '../api/speechService';
+// FIX 2: Recording functions removed - now managed by ConversationSessionService
 import { translateText } from '../api/languageService';
 import { getLanguageByCode } from '../constants/languageConfiguration';
 import { performanceMonitor } from '../utils/performanceMonitor';
@@ -261,14 +262,16 @@ export default function VoiceInputControls({
           console.log(`⚠️ Cannot start recording in state: ${currentState}`);
         }
       } else {
-        // Fallback to regular recording if session not initialized or conversation mode disabled
-        setIsRecording(true);
-        isRecordingRef.current = true;
-        console.log('Starting regular recording (Conversation Mode disabled or session not available)...');
-        
-        const result = await startRecording();
-        recordingRef.current = result;
-        console.log('Recording started with URI:', result.uri);
+        // FIX 2: Direct recording disabled - only Conversation Mode is supported
+        console.error('Direct recording disabled. Conversation Mode must be enabled.');
+        Alert.alert(
+          'Conversation Mode Required',
+          'Please enable Conversation Mode in Settings to use voice recording.',
+          [{ text: 'OK' }]
+        );
+        setIsRecording(false);
+        isRecordingRef.current = false;
+        return;
       }
       
     } catch (error) {
@@ -294,16 +297,9 @@ export default function VoiceInputControls({
         actions.setListening(false);
         console.log('✅ Recording stop requested');
       } else if (recordingRef.current) {
-        // Fallback to regular recording stop
-        setIsProcessing(true);
-        console.log('Stopping regular recording...');
-        
-        const result = await stopRecording();
-        console.log('Recording stopped:', result.uri);
+        // FIX 2: Direct recording disabled - this shouldn't happen
+        console.error('Direct recording not supported');
         recordingRef.current = null;
-        
-        // Process the recording
-        await processAudio(result.uri);
       }
       
     } catch (error) {
