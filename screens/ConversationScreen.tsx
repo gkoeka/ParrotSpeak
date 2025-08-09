@@ -214,18 +214,7 @@ export default function ConversationScreen() {
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
       <Header />
       
-      <UTBTHeader />
-      
       <StatusPill status={pipelineStatus} />
-      
-      <LanguageSelector 
-        sourceLanguage={sourceLanguage}
-        targetLanguage={targetLanguage}
-        onSourceLanguageChange={setSourceLanguage}
-        onTargetLanguageChange={setTargetLanguage}
-      />
-      
-      <PerformanceIndicator showDetails={false} />
       
       <ScrollView style={styles.messagesContainer}>
         {isLoading ? (
@@ -258,29 +247,31 @@ export default function ConversationScreen() {
             const isTargetRTL = isRTLLanguage(message.toLanguage);
             
             return (
-              <View key={message.id} style={styles.messageCard}>
+              <View key={message.id} style={[styles.messageCard, isDarkMode && styles.messageCardDark]}>
                 <View style={[
                   styles.originalSection,
                   isSourceRTL && styles.rtlSection
                 ]}>
-                  <Text style={styles.languageLabel}>Original</Text>
+                  <Text style={[styles.languageLabel, isDarkMode && styles.languageLabelDark]}>Original</Text>
                   <Text style={[
                     styles.originalText,
+                    isDarkMode && styles.originalTextDark,
                     isSourceRTL && styles.rtlText
                   ]}>{message.text}</Text>
                 </View>
-                <View style={styles.divider} />
+                <View style={[styles.divider, isDarkMode && styles.dividerDark]} />
                 <View style={[
                   styles.translationSection,
                   isTargetRTL && styles.rtlSection
                 ]}>
-                  <Text style={styles.languageLabel}>Translation</Text>
+                  <Text style={[styles.languageLabel, isDarkMode && styles.languageLabelDark]}>Translation</Text>
                   <Text style={[
                     styles.translatedText,
+                    isDarkMode && styles.translatedTextDark,
                     isTargetRTL && styles.rtlText
                   ]}>{message.translation}</Text>
                 </View>
-                <Text style={styles.languagePair}>
+                <Text style={[styles.languagePair, isDarkMode && styles.languagePairDark]}>
                   {getFlagEmoji(message.fromLanguage)} {message.fromLanguage} → {getFlagEmoji(message.toLanguage)} {message.toLanguage}
                 </Text>
               </View>
@@ -289,7 +280,7 @@ export default function ConversationScreen() {
         )}
       </ScrollView>
       
-      <View style={styles.controlsContainer}>
+      <View style={[styles.controlsContainer, isDarkMode && styles.controlsContainerDark]}>
         <VoiceInputControls 
           onStatusChange={setPipelineStatus}
           onMessage={async (message) => {
@@ -371,6 +362,7 @@ const styles = StyleSheet.create({
   messagesContainer: {
     flex: 1,
     padding: 16,
+    paddingTop: 8, // Reduced top padding since headers are removed
   },
   emptyState: {
     flex: 1,
@@ -423,6 +415,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e9ecef',
   },
+  messageCardDark: {
+    backgroundColor: '#2a2a2a',
+    borderColor: '#3a3a3a',
+  },
   originalSection: {
     marginBottom: 12,
   },
@@ -436,11 +432,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     textTransform: 'uppercase',
   },
+  languageLabelDark: {
+    color: '#999',
+  },
   originalText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1a1a1a',
     lineHeight: 22,
+  },
+  originalTextDark: {
+    color: '#fff',
   },
   translatedText: {
     fontSize: 16,
@@ -448,10 +450,16 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontWeight: '500',
   },
+  translatedTextDark: {
+    color: '#5c8cff',
+  },
   divider: {
     height: 1,
     backgroundColor: '#f0f0f0',
     marginVertical: 8,
+  },
+  dividerDark: {
+    backgroundColor: '#3a3a3a',
   },
   languagePair: {
     fontSize: 12,
@@ -459,10 +467,19 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'right',
   },
+  languagePairDark: {
+    color: '#999',
+  },
   controlsContainer: {
     padding: 16,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#e9ecef',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  controlsContainerDark: {
+    borderTopColor: '#3a3a3a',
   },
   rtlSection: {
     alignItems: 'flex-end',
