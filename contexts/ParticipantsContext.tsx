@@ -58,8 +58,10 @@ export function ParticipantsProvider({ children }: { children: React.ReactNode }
   const loadPreferences = async () => {
     try {
       const saved = await AsyncStorage.getItem(STORAGE_KEY);
+      console.log('[ParticipantsContext] Loading preferences, saved data:', saved);
       if (saved) {
         const parsed = JSON.parse(saved);
+        console.log('[ParticipantsContext] Parsed preferences:', parsed);
         setParticipants({
           ...defaultState,
           ...parsed,
@@ -112,10 +114,15 @@ export function ParticipantsProvider({ children }: { children: React.ReactNode }
   };
 
   const setAutoDetectSpeakers = (enabled: boolean) => {
-    setParticipants(prev => ({
-      ...prev,
-      autoDetectSpeakers: enabled
-    }));
+    console.log(`[ParticipantsContext] Setting autoDetectSpeakers to: ${enabled}`);
+    setParticipants(prev => {
+      const newState = {
+        ...prev,
+        autoDetectSpeakers: enabled
+      };
+      console.log(`[ParticipantsContext] New state will be:`, newState);
+      return newState;
+    });
   };
 
   const resetToDefaults = () => {
