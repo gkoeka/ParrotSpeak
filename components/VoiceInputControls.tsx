@@ -252,11 +252,15 @@ export default function VoiceInputControls({
           if (detectedLang === actualTargetLang) {
             console.log(`💡 User spoke target language (${detectedLang}). Consider enabling auto-detect for better results.`);
             // Show a helpful message to the user (user must manually close)
-            setError('Tip: Enable "Auto-detect speakers" in Settings for automatic language switching');
+            setError('Wrong language! Enable "Auto-detect speakers" in Settings for automatic language switching');
             // No auto-dismiss - user controls when to close the tip
+            
+            // Don't proceed with translation - just show the tip
+            onStatusChange?.('error');
+            return;
           }
-          // Still proceed with translation but it may not make sense
-          console.log(`📍 Forcing ${actualSourceLang} → ${actualTargetLang} translation anyway`);
+          // For other language mismatches, still show a warning but proceed
+          console.log(`⚠️ Language mismatch but proceeding: ${actualSourceLang} → ${actualTargetLang}`);
         } else {
           console.log(`📍 Manual mode: ${actualSourceLang} → ${actualTargetLang}`);
         }
@@ -280,23 +284,11 @@ export default function VoiceInputControls({
         metricsCollector.startTimer('translate');
         metricsCollector.endTimer('translate');
       } else {
-        // In manual mode, if detected language matches target language, 
-        // we should use the detected language as source for proper translation
-        let effectiveSourceLang = actualSourceLang;
-        let effectiveTargetLang = actualTargetLang;
-        
-        if (!participants.autoDetectSpeakers && detectedLang && detectedLang === actualTargetLang) {
-          // User spoke the target language - swap the translation direction
-          console.log(`🔄 Manual mode correction: Using detected ${detectedLang} as source`);
-          effectiveSourceLang = detectedLang;
-          effectiveTargetLang = actualSourceLang; // Swap to translate back to expected source
-        }
-        
         metricsCollector.startTimer('translate');
         translationResult = await translateText(
           transcription,
-          effectiveSourceLang,
-          effectiveTargetLang
+          actualSourceLang,
+          actualTargetLang
         );
         metricsCollector.endTimer('translate');
       }
