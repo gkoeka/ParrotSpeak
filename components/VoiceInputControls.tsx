@@ -220,8 +220,11 @@ export default function VoiceInputControls({
       let actualSourceLang = sourceLanguage;
       let actualTargetLang = targetLanguage;
       let speaker: 'A' | 'B' | undefined;
+      let routeMode: 'auto' | 'manual';
       
       if (participants.autoDetectSpeakers && detectedLang) {
+        // Auto-detect mode: determine speaker by detected language
+        routeMode = 'auto';
         speaker = determineSpeaker(
           detectedLang,
           participants.A,
@@ -231,17 +234,26 @@ export default function VoiceInputControls({
         
         actualSourceLang = speaker === 'A' ? participants.A.lang : participants.B.lang;
         actualTargetLang = getTargetLanguage(speaker, participants.A, participants.B);
-        
-        console.log(`🎯 Speaker detected: ${speaker}`);
-        console.log(`    targetLang: ${actualTargetLang}`);
-        console.log(`    Route: ${actualSourceLang} → ${actualTargetLang}`);
         setLastTurnSpeaker(speaker);
       } else {
-        // Manual mode: use provided source/target
+        // Manual mode: force A→B direction (or B→A if swapped)
+        routeMode = 'manual';
+        // Use the source/target from dropdowns which respect swap
         actualSourceLang = sourceLanguage;
         actualTargetLang = targetLanguage;
-        console.log(`📍 Manual mode: ${actualSourceLang} → ${actualTargetLang}`);
+        // Determine speaker based on source language matching
+        if (sourceLanguage === participants.A.lang) {
+          speaker = 'A';
+        } else if (sourceLanguage === participants.B.lang) {
+          speaker = 'B';
+        } else {
+          // Fallback to A if no match
+          speaker = 'A';
+        }
       }
+      
+      // Log routing decision
+      console.log(`[Route] mode=${routeMode} detected=${detectedLang || 'none'} chosenSpeaker=${speaker} target=${actualTargetLang}`);
       
       // Set target language for metrics
       metricsCollector.setTargetLanguage(actualTargetLang);
