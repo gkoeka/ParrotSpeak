@@ -37,7 +37,7 @@ router.post('/validate', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Invalid platform' });
     }
 
-    if (validationResult.valid) {
+    if (validationResult.valid && validationResult.expiresAt) {
       // Update user subscription in database
       await updateUserSubscription(userId, productId, validationResult.expiresAt);
       
@@ -133,7 +133,7 @@ async function validateGooglePlayReceipt(receipt: string, productId: string, pur
     console.error('Google Play validation error:', error);
     
     // If credentials not set up yet, fall back to development mode
-    if (error.message?.includes('credentials') || error.message?.includes('auth')) {
+    if (error instanceof Error && (error.message?.includes('credentials') || error.message?.includes('auth'))) {
       console.log('Falling back to development mode - set up Google Play credentials for production');
       return createMockValidation('google');
     }
@@ -206,7 +206,7 @@ async function validateAppStoreReceipt(receipt: string, productId: string): Prom
 
     // Find the subscription in the receipt
     const latestReceiptInfo = data.latest_receipt_info || [];
-    const subscription = latestReceiptInfo.find(item => item.product_id === productId);
+    const subscription = latestReceiptInfo.find((item: any) => item.product_id === productId);
 
     if (!subscription) {
       return {
@@ -233,7 +233,7 @@ async function validateAppStoreReceipt(receipt: string, productId: string): Prom
     console.error('App Store validation error:', error);
     
     // If credentials not set up yet, fall back to development mode
-    if (error.message?.includes('password') || error.message?.includes('secret')) {
+    if (error instanceof Error && (error.message?.includes('password') || error.message?.includes('secret'))) {
       console.log('Falling back to development mode - set up App Store shared secret for production');
       return createMockValidation('apple');
     }
@@ -273,7 +273,7 @@ async function validateAppStoreReceiptWithUrl(receipt: string, productId: string
   }
 
   const latestReceiptInfo = data.latest_receipt_info || [];
-  const subscription = latestReceiptInfo.find(item => item.product_id === productId);
+  const subscription = latestReceiptInfo.find((item: any) => item.product_id === productId);
 
   if (!subscription) {
     return {

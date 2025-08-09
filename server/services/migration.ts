@@ -75,7 +75,7 @@ export async function migrateToEncryption() {
     
   } catch (error) {
     console.error('Encryption migration failed:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
@@ -105,6 +105,6 @@ export async function checkMigrationStatus() {
     };
   } catch (error) {
     console.error('Error checking migration status:', error);
-    return { needsMigration: false, error: error.message };
+    return { needsMigration: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }

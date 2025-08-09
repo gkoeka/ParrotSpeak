@@ -198,8 +198,8 @@ export class InternalAnalyticsService {
 
       const dailyMessages = await db.query.messages.findMany({
         where: and(
-          gte(messages.createdAt, today),
-          lte(messages.createdAt, tomorrow)
+          gte(messages.createdAt, today.toISOString()),
+          lte(messages.createdAt, tomorrow.toISOString())
         )
       });
 
@@ -290,8 +290,8 @@ export class InternalAnalyticsService {
           total: count()
         }).from(messages).where(
           and(
-            gte(messages.createdAt, today),
-            lte(messages.createdAt, tomorrow),
+            gte(messages.createdAt, today.toISOString()),
+            lte(messages.createdAt, tomorrow.toISOString()),
             eq(messages.isUser, false)
           )
         )
@@ -335,7 +335,7 @@ export class InternalAnalyticsService {
           totalConversations: metrics.reduce((sum, day) => sum + (day.totalConversations || 0), 0),
           averageCompletionRate: metrics.length > 0 ? 
             metrics.reduce((sum, day) => {
-              const rate = day.totalConversations > 0 ? 
+              const rate = (day.totalConversations && day.totalConversations > 0 && day.completedConversations) ? 
                 (day.completedConversations / day.totalConversations) * 100 : 0;
               return sum + rate;
             }, 0) / metrics.length : 0
