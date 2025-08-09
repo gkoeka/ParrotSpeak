@@ -282,11 +282,6 @@ export default function ConversationScreen() {
         )}
       </ScrollView>
       
-      {/* Conversation Mode indicator */}
-      <ConversationModeIndicator />
-      
-
-      
       <View style={styles.controlsContainer}>
         <VoiceInputControls 
           onMessage={async (message) => {
