@@ -159,6 +159,8 @@ export class ConversationSessionService {
     }
     
     this.isTransitioning = true;
+    // DIAGNOSTIC LOGGING: State transitions
+    console.log(`[STATE] ${oldState}→${newState}`);
     console.log(`🔄 Session State: ${oldState} → ${newState}`);
     
     try {
@@ -211,6 +213,9 @@ export class ConversationSessionService {
    * Start a conversation session (tap to arm)
    */
   public async startSession(): Promise<void> {
+    // DIAGNOSTIC LOGGING
+    console.log(`[CM] startSession (state=${this.state})`);
+    
     // Check if app is in foreground (FOREGROUND-ONLY enforcement)
     const currentAppState = AppState.currentState;
     if (currentAppState !== 'active') {
@@ -301,6 +306,9 @@ export class ConversationSessionService {
    * @returns Success/failure with reason
    */
   public async startRecording(source: 'micTap' | 'VAD' | 'probe' = 'micTap'): Promise<{ ok: boolean; reason: string }> {
+    // DIAGNOSTIC LOGGING
+    console.log(`[CM] startRecording (state=${this.state}, source=${source})`);
+    
     // Check state first
     if (this.state !== SessionState.ARMED_IDLE) {
       console.log(`[START] Ignored (state=${this.state}) from ${source}`);
@@ -458,6 +466,8 @@ export class ConversationSessionService {
    * This is the ONLY public way to stop recording - all UI and timers use this
    */
   public async requestStop(reason: string = 'manual'): Promise<void> {
+    // DIAGNOSTIC LOGGING
+    console.log(`[CM] requestStop (state=${this.state}, reason=${reason})`);
     console.log(`📨 [STOP] Request received (reason: ${reason})`);
     
     // Clear any pending debounced stop

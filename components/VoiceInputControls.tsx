@@ -243,6 +243,16 @@ export default function VoiceInputControls({
 
   const handleStartRecording = async () => {
     try {
+      // DIAGNOSTIC LOGGING
+      const sessionState = sessionServiceRef.current?.getState() || 'no-service';
+      const isForeground = AppState.currentState === 'active';
+      console.log('[UI] tap', {
+        cmEnabled: state.conversationModeEnabled,
+        sessionState,
+        isForeground,
+        isRecording: isRecordingRef.current
+      });
+      
       console.log('📱 handleStartRecording called');
       console.log('   conversationModeEnabled:', state.conversationModeEnabled);
       console.log('   sessionInitialized:', sessionInitialized);
