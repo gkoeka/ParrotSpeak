@@ -8,6 +8,7 @@ import { getLanguageByCode } from '../constants/languageConfiguration';
 import { useTheme } from '../contexts/ThemeContext';
 import { useParticipants } from '../contexts/ParticipantsContext';
 import { determineSpeaker, getTargetLanguage } from '../utils/languageDetection';
+import { PipelineStatus } from './StatusPill';
 
 interface VoiceInputControlsProps {
   onMessage: (message: {
@@ -22,12 +23,14 @@ interface VoiceInputControlsProps {
   targetLanguage?: string;
   showAlwaysListeningToggle?: boolean;
   onAlwaysListeningToggle?: (enabled: boolean) => void;
+  onStatusChange?: (status: PipelineStatus) => void;
 }
 
 export default function VoiceInputControls({ 
   onMessage, 
   sourceLanguage = 'en-US',
-  targetLanguage = 'es-ES'
+  targetLanguage = 'es-ES',
+  onStatusChange
 }: VoiceInputControlsProps) {
   const { isDarkMode } = useTheme();
   const { participants, setLastTurnSpeaker, swapParticipants } = useParticipants();
@@ -109,7 +112,15 @@ export default function VoiceInputControls({
   // Process audio through transcription → translation → TTS pipeline
   const processAudio = async (uri: string) => {
     try {
-      // Step 1: Transcribe with language detection
+      // Step 1: Upload/Transcribe with language detection
+      console.log('[UI] status=uploading');
+      onStatusChange?.('uploading');
+      
+      // Small delay to show uploading state
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      console.log('[UI] status=transcribing');
+      onStatusChange?.('transcribing');
       console.log('📝 Transcribing audio...');
       const transcriptionResult = await processRecording(uri, sourceLanguage);
       
@@ -160,6 +171,8 @@ export default function VoiceInputControls({
       }
       
       // Step 3: Translate
+      console.log('[UI] status=translating');
+      onStatusChange?.('translating');
       console.log('🌐 Translating text...');
       const translationResult = await translateText(
         transcription,
@@ -187,8 +200,18 @@ export default function VoiceInputControls({
       const isTargetSupported = targetLangConfig?.speechSupported ?? true;
       
       if (isTargetSupported && translationResult.translation) {
+        console.log('[UI] status=preparingAudio');
+        onStatusChange?.('preparingAudio');
         console.log('🔊 Speaking translation...');
+        
+        // Set idle when TTS starts
         await speakText(translationResult.translation, actualTargetLang);
+        console.log('[UI] status=idle (tts started)');
+        onStatusChange?.('idle');
+      } else {
+        // Set idle if no TTS
+        console.log('[UI] status=idle (no tts)');
+        onStatusChange?.('idle');
       }
       
       console.log('✅ Pipeline complete');
@@ -198,7 +221,14 @@ export default function VoiceInputControls({
       
     } catch (error) {
       console.error('❌ Error processing audio:', error);
-      setError(error instanceof Error ? error.message : 'Failed to process audio');
+      const errorMsg = error instanceof Error ? error.message : 'Failed to process audio';
+      setError(errorMsg);
+      
+      // Show error status briefly
+      onStatusChange?.('error');
+      setTimeout(() => {
+        onStatusChange?.('idle');
+      }, 3000);
       
       // Still try to delete file even on error
       await deleteRecordingFile(uri);

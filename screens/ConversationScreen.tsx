@@ -16,6 +16,7 @@ import { LanguagePreferencesStorage } from '../utils/languagePreferences';
 import LanguageSelector from '../components/LanguageSelectorMobile';
 import PerformanceIndicator from '../components/PerformanceMonitor';
 import UTBTHeader from '../components/UTBTHeader';
+import StatusPill, { PipelineStatus } from '../components/StatusPill';
 
 type ConversationNavigationProp = StackNavigationProp<RootStackParamList, 'Conversation'>;
 
@@ -43,6 +44,7 @@ export default function ConversationScreen() {
   const [error, setError] = useState<string | null>(null);
   const [preferencesLoaded, setPreferencesLoaded] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState<string | undefined>(conversationId);
+  const [pipelineStatus, setPipelineStatus] = useState<PipelineStatus>('idle');
 
   // Check subscription status
   const hasActiveSubscription = user?.subscriptionStatus === 'active' || user?.subscriptionTier === 'lifetime';
@@ -214,6 +216,8 @@ export default function ConversationScreen() {
       
       <UTBTHeader />
       
+      <StatusPill status={pipelineStatus} />
+      
       <LanguageSelector 
         sourceLanguage={sourceLanguage}
         targetLanguage={targetLanguage}
@@ -287,6 +291,7 @@ export default function ConversationScreen() {
       
       <View style={styles.controlsContainer}>
         <VoiceInputControls 
+          onStatusChange={setPipelineStatus}
           onMessage={async (message) => {
             // Create conversation if it doesn't exist yet and user is authenticated
             if (!currentConversationId && hasActiveSubscription) {
