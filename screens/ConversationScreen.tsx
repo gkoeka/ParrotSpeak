@@ -27,22 +27,7 @@ export default function ConversationScreen() {
   const route = useRoute<any>();
   const conversationId = route.params?.id;
   
-  // Developer probe function
-  const runProbe = async () => {
-    console.log('[Probe] Starting');
-    try {
-      const service = ConversationSessionService.getInstance();
-      const result = await service.sanityProbeStartStop();
-      
-      if (result) {
-        console.log('[Probe] PASS');
-      } else {
-        console.log('[Probe] FAIL - probe returned false');
-      }
-    } catch (error) {
-      console.log('[Probe] FAIL', error);
-    }
-  };
+  // Probe functionality removed - no longer needed after recording fixes
   
   const [messages, setMessages] = useState<Array<{
     id: string;
@@ -302,16 +287,7 @@ export default function ConversationScreen() {
       {/* Conversation Mode indicator */}
       <ConversationModeIndicator />
       
-      {/* Developer-only probe button */}
-      {__DEV__ && (
-        <View style={{ padding: 10, backgroundColor: isDarkMode ? '#333' : '#f0f0f0' }}>
-          <Button 
-            title="Run Probe" 
-            onPress={runProbe}
-            color={isDarkMode ? '#5c8cff' : '#3366FF'}
-          />
-        </View>
-      )}
+
       
       <View style={styles.controlsContainer}>
         <VoiceInputControls 
