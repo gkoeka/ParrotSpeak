@@ -14,6 +14,14 @@ ParrotSpeak enables seamless cross-language communication through real-time spee
 
 ## 🎉 Recent Updates
 
+### Enhanced Recording with Hysteresis & No-Speech Guard (January 10, 2025)
+- **✅ Dual-Threshold Hysteresis System** - Implements SPEECH_DB=-50 for speech detection and SILENCE_DB=-55 for timer clearing with 400ms consecutive silence requirement
+- **✅ Prevents Premature Auto-Stops** - Any sound above -55dB clears armed timer, eliminating false stops during natural speech pauses
+- **✅ No-Speech Guard** - Smart filtering prevents silent recordings from being transcribed, saving API costs with hadSpeech flag tracking
+- **✅ Trustworthy Duration Calculation** - Uses status.durationMillis or timestamp fallback for accurate recording length with <500ms filtering
+- **✅ Sampler Logging** - Real-time monitoring every 1000ms showing RMS values, consecutive speech/silence durations, and timer state
+- **✅ Device Compatibility** - Automatic fallback disables auto-stop on Android devices without audio metering support
+
 ### Security Hardening & CI/CD Integration (January 9, 2025)
 - **✅ Script Execution Security** - Implemented defense-in-depth protection against command injection with allowlist, validator, and no-shell policy
 - **✅ WebSocket Security Enhanced** - Token-based auth via subprotocols, strict origin validation, and wss:// enforcement
