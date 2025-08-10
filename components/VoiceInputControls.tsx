@@ -41,6 +41,7 @@ export default function VoiceInputControls({
   
   // Recording state
   const [isRecording, setIsRecording] = useState(false);
+  const isRecordingRef = useRef(false); // Ref to access current state in callbacks
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,13 +82,40 @@ export default function VoiceInputControls({
       }
       
       setIsRecording(true);
+      isRecordingRef.current = true; // Update ref
       setError(null);
       
       console.log('[VoiceInputControls] Calling legacyStartRecording with onAutoStop callback...');
       await legacyStartRecording({
-        onAutoStop: () => {
-          console.log('🔄 Auto-stop notification received from service');
-          handleStopRecording('silence-detected');
+        onAutoStop: (payload: { reason: string; uri: string; durationMs: number }) => {
+          console.log('🔄 Auto-stop notification received from service with payload');
+          
+          // Guard: if not recording, ignore
+          if (!isRecordingRef.current) {
+            console.log('[UI] auto-stop ignored (not recording)');
+            return;
+          }
+          
+          // Set recording state to false
+          setIsRecording(false);
+          isRecordingRef.current = false; // Update ref
+          
+          // If we have a valid URI, process it directly (don't call stop again)
+          if (payload.uri) {
+            console.log('[UI] Processing auto-stopped recording directly');
+            
+            // Light haptic on auto-stop
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
+            
+            // Process the recording directly with the provided data
+            handleAutoStopProcessing(payload.uri, payload.durationMs);
+          } else {
+            // No URI means recording failed somehow
+            console.log('[UI] Auto-stop with no URI - showing error');
+            setError('Recording stopped but no audio captured');
+          }
         }
       });
       console.log('✅ Recording started - tap again to stop or wait for 2s silence');
@@ -100,6 +128,7 @@ export default function VoiceInputControls({
         name: error.name
       });
       setIsRecording(false);
+      isRecordingRef.current = false; // Update ref
       
       if (error.message?.includes('permission')) {
         Alert.alert(
@@ -126,6 +155,41 @@ export default function VoiceInputControls({
     }
   };
 
+  // Handle auto-stop processing without calling stop again
+  const handleAutoStopProcessing = async (uri: string, durationMs: number) => {
+    try {
+      // Guard 1: Minimum duration check (600ms)
+      if (!uri || durationMs < 600) {
+        console.log(`[Filter] short recording (${durationMs}ms), skipping`);
+        setError('No speech detected');
+        return;
+      }
+      
+      if (uri && durationMs > 1000) {
+        console.log(`✅ Auto-stopped recording. Duration: ${durationMs}ms`);
+        
+        // Check for long recording and show banner if needed
+        if (durationMs > 60000 && !longRecordingBannerShown) {
+          setError('Let\'s try shorter turns (≤60s) for better results');
+          setLongRecordingBannerShown(true);
+        }
+        
+        console.log('🔄 Processing audio for translation...');
+        setIsProcessing(true);
+        
+        // Process the recording through the translation pipeline with duration
+        await processAudio(uri, durationMs);
+      } else {
+        console.log('⚠️ Recording too short or no URI');
+      }
+    } catch (error) {
+      console.error('❌ Failed to process auto-stopped recording:', error);
+      setError(error instanceof Error ? error.message : 'Failed to process recording');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   // Simple stop recording and process (supports auto-stop from silence timer)
   const handleStopRecording = async (reason?: string) => {
     try {
@@ -138,6 +202,7 @@ export default function VoiceInputControls({
       }
       
       setIsRecording(false);
+      isRecordingRef.current = false; // Update ref
       
       const { uri, duration, hadSpeechEnergy } = await legacyStopRecording({ reason });
       

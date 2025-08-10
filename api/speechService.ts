@@ -330,7 +330,7 @@ const SILENCE_DB = -40; // was -35
 let silenceTimer: NodeJS.Timeout | null = null;
 let inSilence: boolean = false;
 let recId: number = 0; // increment when a new recording starts
-let onAutoStopCallback: (() => void) | undefined = undefined; // Callback for auto-stop notification
+let onAutoStopCallback: ((payload: { reason: string; uri: string; durationMs: number }) => void) | undefined = undefined; // Callback for auto-stop notification
 let globalHadSpeechEnergy: boolean = false; // Track speech energy across recording session
 
 /**
@@ -839,11 +839,11 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
       console.log(`📈 [Metric] Recording turn: {durationMs: ${duration}}`);
     }
     
-    // If this was an auto-stop, invoke the callback to notify UI
+    // If this was an auto-stop, invoke the callback to notify UI with data
     if (reason === 'auto' && onAutoStopCallback) {
       try {
-        console.log('📞 [Callback] Notifying UI of auto-stop');
-        onAutoStopCallback();
+        console.log('[Callback] auto-stop delivered');
+        onAutoStopCallback({ reason: 'auto', uri, durationMs: duration });
       } catch (callbackError) {
         console.warn('⚠️ [Callback] Error in onAutoStop callback:', callbackError);
       }
