@@ -87,7 +87,7 @@ export default function VoiceInputControls({
       
       console.log('[VoiceInputControls] Calling legacyStartRecording with onAutoStop callback...');
       await legacyStartRecording({
-        onAutoStop: (payload: { reason: string; uri: string; durationMs: number }) => {
+        onAutoStop: (payload: { reason: string; uri: string; durationMs: number; hadSpeech?: boolean; speechFrames?: number }) => {
           console.log('🔄 Auto-stop notification received from service with payload');
           
           // Guard: if not recording, ignore
@@ -110,7 +110,7 @@ export default function VoiceInputControls({
             }
             
             // Process the recording directly with the provided data
-            handleAutoStopProcessing(payload.uri, payload.durationMs);
+            handleAutoStopProcessing(payload.uri, payload.durationMs, payload.hadSpeech, payload.speechFrames);
           } else {
             // No URI means recording failed somehow
             console.log('[UI] Auto-stop with no URI - showing error');
@@ -156,11 +156,18 @@ export default function VoiceInputControls({
   };
 
   // Handle auto-stop processing without calling stop again
-  const handleAutoStopProcessing = async (uri: string, durationMs: number) => {
+  const handleAutoStopProcessing = async (uri: string, durationMs: number, hadSpeech?: boolean, speechFrames?: number) => {
     try {
       // Guard 1: Minimum duration check (500ms) or no URI
       if (!uri || durationMs < 500) {
         console.log(`[Filter] short (<500ms) recording (${durationMs}ms), skipping`);
+        setError('No speech detected');
+        return;
+      }
+      
+      // Guard 2: No-speech guard - skip if no speech was detected
+      if (hadSpeech === false || (speechFrames !== undefined && speechFrames < 3)) {
+        console.log('[Filter] no speech energy detected, skipping');
         setError('No speech detected');
         return;
       }
@@ -201,7 +208,7 @@ export default function VoiceInputControls({
       setIsRecording(false);
       isRecordingRef.current = false; // Update ref
       
-      const { uri, duration, hadSpeechEnergy } = await legacyStopRecording({ reason });
+      const { uri, duration, hadSpeechEnergy, hadSpeech, speechFrames } = await legacyStopRecording({ reason });
       
       // Guard 1: Minimum duration check (500ms) or no URI
       if (!uri || duration < 500) {
@@ -210,9 +217,16 @@ export default function VoiceInputControls({
         return;
       }
       
+      // Guard 2: No-speech guard - skip if no speech was detected
+      if (hadSpeech === false || (speechFrames !== undefined && speechFrames < 3)) {
+        console.log('[Filter] no speech energy detected, skipping');
+        setError('No speech detected');
+        return;
+      }
+      
       // Guard 3: Energy heuristic (if metering was available)
       if (hadSpeechEnergy === false) {
-        console.log('[Filter] no speech energy detected, skipping');
+        console.log('[Filter] no speech energy detected (legacy), skipping');
         setError('No speech detected');
         return;
       }

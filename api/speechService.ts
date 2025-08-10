@@ -319,6 +319,10 @@ let isStopping: boolean = false; // Guard flag for stop operations
 let legacyRecordingStartTime: number | null = null; // Track when recording started for duration fallback
 let hasStopped: boolean = false; // Track if stop was already handled for this turn
 
+// Speech activity tracking for no-speech guard
+let hadSpeech: boolean = false; // Whether any speech was detected during recording
+let speechFrames: number = 0; // Count of frames with speech detected
+
 // AppState listener for legacy mode
 let appStateSubscription: any = null;
 
@@ -596,6 +600,8 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
       }
       inSilence = false;
       globalHadSpeechEnergy = false; // Reset for new recording
+      hadSpeech = false; // Reset speech tracking for new recording
+      speechFrames = 0; // Reset speech frame counter
       
       // Track if we've seen the recording become active
       let seenActive = false;
@@ -663,6 +669,15 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
           // Track if we've seen any speech energy
           if (rmsValue > -45) {
             globalHadSpeechEnergy = true;
+          }
+          
+          // Track speech activity for no-speech guard
+          if (isSpeech) {
+            if (!hadSpeech) {
+              console.log('[Filter] speech detected');
+              hadSpeech = true;
+            }
+            speechFrames++;
           }
           
           // Handle transitions
@@ -835,6 +850,7 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
     isStoppingRecording = false; // Reset guard flag
     
     console.log(`✅ [Legacy] Recording stopped. Duration: ${duration}ms, URI: ${uri ? uri.substring(uri.length - 30) : 'none'}`);
+    console.log(`[Filter] hadSpeech=${hadSpeech} frames=${speechFrames} duration=${duration}ms`);
     
     // Check for long recording (> 60 seconds)
     if (duration > 60000) {
@@ -857,13 +873,24 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
     if (reason === 'auto' && onAutoStopCallback) {
       try {
         console.log('[Callback] auto-stop delivered');
-        onAutoStopCallback({ reason: 'auto', uri, durationMs: duration });
+        onAutoStopCallback({ 
+          reason: 'auto', 
+          uri, 
+          durationMs: duration,
+          hadSpeech,
+          speechFrames
+        });
       } catch (callbackError) {
         console.warn('⚠️ [Callback] Error in onAutoStop callback:', callbackError);
       }
     }
     
-    return { uri, duration, hadSpeechEnergy: globalHadSpeechEnergy };
+    // Reset speech tracking after stop
+    const result = { uri, duration, hadSpeechEnergy: globalHadSpeechEnergy, hadSpeech, speechFrames };
+    hadSpeech = false;
+    speechFrames = 0;
+    
+    return result;
   } catch (error) {
     console.error('❌ [Legacy] Error during stop (non-fatal):', error);
     // Clean up regardless of error
@@ -871,6 +898,8 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
     legacyRecordingActive = false;
     legacyRecordingStartTime = null; // Reset start time
     isStoppingRecording = false; // Reset guard flag
+    hadSpeech = false; // Reset speech tracking on error
+    speechFrames = 0;
     // Clear timer on error
     if (silenceTimer) {
       clearTimeout(silenceTimer);
