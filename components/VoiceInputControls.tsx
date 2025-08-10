@@ -71,7 +71,7 @@ export default function VoiceInputControls({
   useEffect(() => {
     if (isRecording && !isProcessing) {
       // Poll every 100ms to check if recording was auto-stopped
-      checkInterval.current = setInterval(async () => {
+      checkInterval.current = setInterval(() => {
         if (!isLegacyRecordingActive()) {
           // Clear interval immediately to prevent multiple triggers
           if (checkInterval.current) {
@@ -79,31 +79,9 @@ export default function VoiceInputControls({
             checkInterval.current = null;
           }
           
-          // Recording was stopped by silence timer
+          // Recording was stopped by silence timer - just trigger the stop handler
           console.log('🔄 Auto-stop detected from silence timer');
-          setIsRecording(false);
-          
-          // Process the audio automatically
-          setIsProcessing(true);
-          try {
-            const { uri, duration } = await legacyStopRecording({ reason: 'silence' });
-            if (uri && duration > 500) {
-              console.log(`✅ Auto-stopped recording. Duration: ${duration}ms`);
-              
-              // Check for long recording
-              if (duration > 60000 && !longRecordingBannerShown) {
-                setError('Let\'s try shorter turns (≤60s) for better results');
-                setLongRecordingBannerShown(true);
-              }
-              
-              await processAudio(uri, duration);
-            }
-          } catch (error) {
-            console.error('❌ Failed to process auto-stopped recording:', error);
-            setError(error instanceof Error ? error.message : 'Failed to process recording');
-          } finally {
-            setIsProcessing(false);
-          }
+          handleStopRecording('silence-detected');
         }
       }, 100);
     } else {
