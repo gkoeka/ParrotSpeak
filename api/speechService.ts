@@ -326,10 +326,12 @@ let speechFrames: number = 0; // Count of frames with speech detected
 // AppState listener for legacy mode
 let appStateSubscription: any = null;
 
-// Silence detection threshold in dB - adjust for different environments
-// Lower values = more sensitive (e.g., -45 for quiet rooms)
-// Higher values = less sensitive (e.g., -35 for noisy environments)
-const SILENCE_DB = -40; // was -35
+// Silence detection thresholds with hysteresis
+const SPEECH_DB = -50;     // speech if rms > -50 dB
+const SILENCE_DB = -55;    // clear-armed if rms > -55 dB (hysteresis)
+const ARM_SILENCE_MS = 2000;           // auto-stop after 2s of silence
+const REQUIRE_SILENCE_BEFORE_ARM_MS = 400;  // need ~0.4s continuous silence before arming
+const FRAME_MIN_MS = 60;   // ignore ultra-fast flicker
 
 // Silence timer for auto-stop (2 seconds) - single timer per recording
 let silenceTimer: NodeJS.Timeout | null = null;
@@ -337,6 +339,11 @@ let inSilence: boolean = false;
 let recId: number = 0; // increment when a new recording starts
 let onAutoStopCallback: ((payload: { reason: string; uri: string; durationMs: number }) => void) | undefined = undefined; // Callback for auto-stop notification
 let globalHadSpeechEnergy: boolean = false; // Track speech energy across recording session
+
+// Consecutive silence/speech tracking for hysteresis
+let consecutiveSilentMs: number = 0;
+let consecutiveSpeechMs: number = 0;
+let lastStatusMs: number = 0;
 
 /**
  * Helper to resolve interruption mode constants safely across Expo AV versions
@@ -602,6 +609,9 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
       globalHadSpeechEnergy = false; // Reset for new recording
       hadSpeech = false; // Reset speech tracking for new recording
       speechFrames = 0; // Reset speech frame counter
+      consecutiveSilentMs = 0; // Reset consecutive silence tracker
+      consecutiveSpeechMs = 0; // Reset consecutive speech tracker
+      lastStatusMs = 0; // Reset last status timestamp
       
       // Track if we've seen the recording become active
       let seenActive = false;
@@ -650,53 +660,62 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
             console.log('[SilenceTimer] unsupported (no metering)');
           } else {
             console.log('[SilenceTimer] metering active (rms dB available)');
-            console.log(`[SilenceTimer] threshold=${SILENCE_DB}dB`);
+            console.log(`[SilenceTimer] thresholds SPEECH_DB=${SPEECH_DB} SILENCE_DB=${SILENCE_DB} requireSilence=${REQUIRE_SILENCE_BEFORE_ARM_MS}ms`);
           }
         }
         
         // Only process silence detection if metering is supported
         if (meteringSupported) {
-          // Compute if speech is detected (lower threshold for better detection)
+          // Compute time delta
+          const delta = recordingDurationMillis - lastStatusMs;
+          if (delta <= 0 || delta < FRAME_MIN_MS) {
+            return; // Ignore ultra-fast flicker or invalid delta
+          }
+          lastStatusMs = recordingDurationMillis;
+          
+          // Get RMS value and determine if this is a speech frame
           const rmsValue = status.metering!;
-          const isSpeech = rmsValue > SILENCE_DB; // Use configurable threshold
+          const isSpeechFrame = rmsValue > SPEECH_DB;
           
           // Log RMS values for first 3 seconds to help debug
           if (recordingDurationMillis <= 3000) {
             const isArmed = silenceTimer !== null;
-            console.log(`[SilenceTimer] rms=${rmsValue}dB, isSpeech=${isSpeech}, armed=${isArmed}`);
+            console.log(`[SilenceTimer] rms=${rmsValue}dB, isSpeech=${isSpeechFrame}, armed=${isArmed}`);
           }
           
-          // Track if we've seen any speech energy
+          // Track if we've seen any speech energy (legacy)
           if (rmsValue > -45) {
             globalHadSpeechEnergy = true;
           }
           
-          // Track speech activity for no-speech guard
-          if (isSpeech) {
-            if (!hadSpeech) {
+          // Update consecutive tracking
+          if (isSpeechFrame) {
+            // Speech frame detected
+            consecutiveSpeechMs += delta;
+            consecutiveSilentMs = 0;
+            
+            // Track speech activity for no-speech guard
+            if (!hadSpeech && consecutiveSpeechMs >= 150) {
               console.log('[Filter] speech detected');
               hadSpeech = true;
             }
-            speechFrames++;
-          }
-          
-          // Handle transitions
-          if (isSpeech) {
-            // Speech detected - clear any existing timer
-            if (silenceTimer) {
+            if (hadSpeech) {
+              speechFrames++;
+            }
+            
+            // Hysteresis: ANY value above SILENCE_DB clears the timer
+            if (silenceTimer && rmsValue > SILENCE_DB) {
               clearTimeout(silenceTimer);
               silenceTimer = null;
               console.log('[SilenceTimer] reset (speech)');
             }
-            // Log state change only when it actually changes
-            if (inSilence !== false && lastSilenceState !== false) {
-              console.log('[SilenceTimer] state -> speech');
-              lastSilenceState = false;
-            }
-            inSilence = false;
           } else {
-            // Silence detected - arm timer if not already armed
-            if (!silenceTimer) {
+            // Silent frame detected
+            consecutiveSilentMs += delta;
+            consecutiveSpeechMs = 0;
+            
+            // Arm timer only after continuous silence requirement is met
+            if (!silenceTimer && consecutiveSilentMs >= REQUIRE_SILENCE_BEFORE_ARM_MS) {
               silenceTimer = setTimeout(() => {
                 // Guard against late fires with recId check
                 if (myId !== recId) {
@@ -706,16 +725,8 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
                 // Call the single stop path (idempotent)
                 console.log('[SilenceTimer] elapsed → auto-stop');
                 legacyStopRecording({ reason: 'auto' });
-              }, 2000);
+              }, ARM_SILENCE_MS);
               console.log('[SilenceTimer] armed (2000ms)');
-            }
-            // Log state change to silence only when it actually changes
-            if (!inSilence) {
-              if (lastSilenceState !== true) {
-                console.log('[SilenceTimer] state -> silence');
-                lastSilenceState = true;
-              }
-              inSilence = true;
             }
           }
         }
@@ -889,6 +900,9 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
     const result = { uri, duration, hadSpeechEnergy: globalHadSpeechEnergy, hadSpeech, speechFrames };
     hadSpeech = false;
     speechFrames = 0;
+    consecutiveSilentMs = 0;
+    consecutiveSpeechMs = 0;
+    lastStatusMs = 0;
     
     return result;
   } catch (error) {
@@ -900,6 +914,9 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
     isStoppingRecording = false; // Reset guard flag
     hadSpeech = false; // Reset speech tracking on error
     speechFrames = 0;
+    consecutiveSilentMs = 0;
+    consecutiveSpeechMs = 0;
+    lastStatusMs = 0;
     // Clear timer on error
     if (silenceTimer) {
       clearTimeout(silenceTimer);
