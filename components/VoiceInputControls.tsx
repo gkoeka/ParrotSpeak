@@ -317,8 +317,9 @@ export default function VoiceInputControls({
             onStatusChange?.('error');
             return;
           }
-          // For other language mismatches, still show a warning but proceed
-          console.log(`⚠️ Language mismatch but proceeding: ${actualSourceLang} → ${actualTargetLang}`);
+          // For other language mismatches, use the DETECTED language as source for translation
+          console.log(`⚠️ Language mismatch: Using detected ${detectedLang} → ${actualTargetLang}`);
+          actualSourceLang = detectedLang; // Use what was actually spoken
         } else {
           console.log(`📍 Manual mode: ${actualSourceLang} → ${actualTargetLang}`);
         }
