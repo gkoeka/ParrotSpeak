@@ -619,6 +619,7 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
       let lastSilenceState: boolean | null = null; // Track last state to avoid spam
       let graceEnded = false; // Track if grace period has ended
       let meteringSupported: boolean | null = null; // Track if metering is supported for this recording
+      let lastSampleLog = 0; // For sampler logging
       
       // Start monitoring for silence - do NOT arm timer yet, wait for status updates
       recording.setOnRecordingStatusUpdate((status) => {
@@ -681,6 +682,12 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
           if (recordingDurationMillis <= 3000) {
             const isArmed = silenceTimer !== null;
             console.log(`[SilenceTimer] rms=${rmsValue}dB, isSpeech=${isSpeechFrame}, armed=${isArmed}`);
+          }
+          
+          // Sampler logging - at most once per 1000ms
+          if (recordingDurationMillis - lastSampleLog >= 1000) {
+            console.log(`[SilenceTimer] sample rms=${Math.round(rmsValue)} speechMs=${consecutiveSpeechMs} silentMs=${consecutiveSilentMs} armed=${!!silenceTimer}`);
+            lastSampleLog = recordingDurationMillis;
           }
           
           // Track if we've seen any speech energy (legacy)
