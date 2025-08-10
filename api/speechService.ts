@@ -317,6 +317,10 @@ let legacyRecordingActive: boolean = false;
 // AppState listener for legacy mode
 let appStateSubscription: any = null;
 
+// Silence timer for auto-stop (2 seconds)
+let silenceTimer: NodeJS.Timeout | null = null;
+let lastSpeechTime: number = Date.now();
+
 /**
  * Helper to resolve interruption mode constants safely across Expo AV versions
  * Some SDK versions may not have all constants defined
@@ -506,6 +510,64 @@ export async function legacyStartRecording(): Promise<void> {
       
       // Log initial audio route
       await logAudioRouteStatus('recording start');
+      
+      // Set up silence detection with status updates
+      console.log('[SilenceTimer] armed (2000ms)');
+      lastSpeechTime = Date.now();
+      
+      // Clear any existing timer
+      if (silenceTimer) {
+        clearTimeout(silenceTimer);
+        silenceTimer = null;
+      }
+      
+      // Start monitoring for silence
+      recording.setOnRecordingStatusUpdate((status) => {
+        if (!legacyRecordingActive) return; // Skip if not recording
+        
+        // Check if metering is available
+        if (status.metering != null && status.metering !== undefined) {
+          // Metering available: use -35 dB threshold
+          if (status.metering > -35) {
+            // Speech detected
+            console.log('[SilenceTimer] reset (speech)');
+            lastSpeechTime = Date.now();
+            
+            // Reset the timer
+            if (silenceTimer) clearTimeout(silenceTimer);
+            silenceTimer = setTimeout(() => {
+              if (legacyRecordingActive) {
+                console.log('[SilenceTimer] elapsed → auto-stop');
+                legacyStopRecording({ reason: 'silence' });
+              }
+            }, 2000);
+          }
+        } else if (status.durationMillis && status.durationMillis > 0) {
+          // Fallback: reset timer when duration increases
+          const now = Date.now();
+          if (now - lastSpeechTime > 500) { // Only reset if significant time passed
+            console.log('[SilenceTimer] reset (fallback)');
+            lastSpeechTime = now;
+            
+            // Reset the timer
+            if (silenceTimer) clearTimeout(silenceTimer);
+            silenceTimer = setTimeout(() => {
+              if (legacyRecordingActive) {
+                console.log('[SilenceTimer] elapsed → auto-stop');
+                legacyStopRecording({ reason: 'silence' });
+              }
+            }, 2000);
+          }
+        }
+      });
+      
+      // Start the initial silence timer
+      silenceTimer = setTimeout(() => {
+        if (legacyRecordingActive) {
+          console.log('[SilenceTimer] elapsed → auto-stop');
+          legacyStopRecording({ reason: 'silence' });
+        }
+      }, 2000);
     } catch (createError: any) {
       // Handle specific error types with user-friendly messages
       if (createError.message?.includes('permission')) {
@@ -528,10 +590,22 @@ export async function legacyStartRecording(): Promise<void> {
  * Legacy recording stop for OFF mode (standard single-tap recording)
  * Used when Conversation Mode is disabled
  */
+// Export function to check if legacy recording is active
+export function isLegacyRecordingActive(): boolean {
+  return legacyRecordingActive;
+}
+
 export async function legacyStopRecording(options?: { reason?: string }): Promise<{ uri: string; duration: number }> {
   try {
     const reason = options?.reason || 'manual';
     console.log(`🛑 [Legacy] Stopping legacy recording (reason: ${reason})...`);
+    
+    // Clear silence timer on any stop
+    if (silenceTimer) {
+      clearTimeout(silenceTimer);
+      silenceTimer = null;
+      console.log('[SilenceTimer] cleared');
+    }
     
     // Handle interruption-specific cleanup
     if (reason === 'background') {

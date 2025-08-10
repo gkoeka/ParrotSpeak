@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, Platform, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as FileSystem from 'expo-file-system';
 
-import { legacyStartRecording, legacyStopRecording, processRecording, speakText, deleteRecordingFile } from '../api/speechService';
+import { legacyStartRecording, legacyStopRecording, processRecording, speakText, deleteRecordingFile, isLegacyRecordingActive } from '../api/speechService';
 import { translateText } from '../api/languageService';
 import { getLanguageByCode } from '../constants/languageConfiguration';
 import { useTheme } from '../contexts/ThemeContext';
@@ -43,6 +43,7 @@ export default function VoiceInputControls({
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const checkInterval = useRef<NodeJS.Timeout | null>(null);
 
   const [textInput, setTextInput] = useState('');
   const [showTextInput, setShowTextInput] = useState(false);
@@ -66,6 +67,51 @@ export default function VoiceInputControls({
   const isSourceSpeechSupported = sourceLanguageConfig?.speechSupported ?? true;
   const isTargetSpeechSupported = targetLanguageConfig?.speechSupported ?? true;
 
+  // Check for auto-stop from silence timer
+  useEffect(() => {
+    if (isRecording && !isProcessing) {
+      // Poll every 100ms to check if recording was auto-stopped
+      checkInterval.current = setInterval(async () => {
+        if (!isLegacyRecordingActive()) {
+          // Recording was stopped by silence timer
+          console.log('🔄 Auto-stop detected from silence timer');
+          setIsRecording(false);
+          if (checkInterval.current) {
+            clearInterval(checkInterval.current);
+            checkInterval.current = null;
+          }
+          // Process the audio automatically
+          setIsProcessing(true);
+          try {
+            const { uri, duration } = await legacyStopRecording({ reason: 'silence' });
+            if (uri && duration > 500) {
+              console.log(`✅ Auto-stopped recording. Duration: ${duration}ms`);
+              await processAudio(uri, duration);
+            }
+          } catch (error) {
+            console.error('❌ Failed to process auto-stopped recording:', error);
+            setError(error instanceof Error ? error.message : 'Failed to process recording');
+          } finally {
+            setIsProcessing(false);
+          }
+        }
+      }, 100);
+    } else {
+      // Clear interval when not recording
+      if (checkInterval.current) {
+        clearInterval(checkInterval.current);
+        checkInterval.current = null;
+      }
+    }
+    
+    return () => {
+      if (checkInterval.current) {
+        clearInterval(checkInterval.current);
+        checkInterval.current = null;
+      }
+    };
+  }, [isRecording, isProcessing]);
+
   // Simple start recording - legacy mode only
   const handleStartRecording = async () => {
     try {
@@ -81,7 +127,7 @@ export default function VoiceInputControls({
       setError(null);
       
       await legacyStartRecording();
-      console.log('✅ Recording started - tap again to stop');
+      console.log('✅ Recording started - tap again to stop or wait for 2s silence');
       
     } catch (error: any) {
       console.error('❌ Failed to start recording:', error);
@@ -112,10 +158,10 @@ export default function VoiceInputControls({
     }
   };
 
-  // Simple stop recording and process
-  const handleStopRecording = async () => {
+  // Simple stop recording and process (supports auto-stop from silence timer)
+  const handleStopRecording = async (reason?: string) => {
     try {
-      console.log('🛑 Stopping recording...');
+      console.log(`🛑 Stopping recording... (reason: ${reason || 'manual'})`);
       console.log('[UX] haptics=stop');
       
       // Light haptic on stop
@@ -125,7 +171,7 @@ export default function VoiceInputControls({
       
       setIsRecording(false);
       
-      const { uri, duration } = await legacyStopRecording();
+      const { uri, duration } = await legacyStopRecording({ reason });
       
       if (uri && duration > 500) {
         console.log(`✅ Recording stopped. Duration: ${duration}ms`);
