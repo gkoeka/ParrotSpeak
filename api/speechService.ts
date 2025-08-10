@@ -326,6 +326,7 @@ let silenceTimer: NodeJS.Timeout | null = null;
 let inSilence: boolean = false;
 let recId: number = 0; // increment when a new recording starts
 let onAutoStopCallback: (() => void) | undefined = undefined; // Callback for auto-stop notification
+let globalHadSpeechEnergy: boolean = false; // Track speech energy across recording session
 
 /**
  * Helper to resolve interruption mode constants safely across Expo AV versions
@@ -573,6 +574,7 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
         silenceTimer = null;
       }
       inSilence = false;
+      globalHadSpeechEnergy = false; // Reset for new recording
       
       // Track if we've seen the recording become active
       let seenActive = false;
@@ -611,6 +613,10 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
         let isSpeech: boolean;
         if (hasMeter) {
           isSpeech = status.metering! > -40; // Changed from -35 to -40 for better sensitivity
+          // Track if we've seen any speech energy
+          if (status.metering! > -45) {
+            globalHadSpeechEnergy = true;
+          }
         } else {
           // Fallback: use duration change as activity indicator
           const durationChanged = status.durationMillis !== lastDurationMillis;
@@ -687,7 +693,7 @@ export function isLegacyRecordingActive(): boolean {
   return legacyRecordingActive;
 }
 
-export async function legacyStopRecording(options?: { reason?: string }): Promise<{ uri: string; duration: number }> {
+export async function legacyStopRecording(options?: { reason?: string }): Promise<{ uri: string; duration: number; hadSpeechEnergy?: boolean }> {
   // Check if stop was already handled for this turn
   if (hasStopped) {
     console.log('[Stop] already handled');
@@ -793,7 +799,7 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
       }
     }
     
-    return { uri, duration };
+    return { uri, duration, hadSpeechEnergy: globalHadSpeechEnergy };
   } catch (error) {
     console.error('❌ [Legacy] Error during stop (non-fatal):', error);
     // Clean up regardless of error

@@ -139,7 +139,21 @@ export default function VoiceInputControls({
       
       setIsRecording(false);
       
-      const { uri, duration } = await legacyStopRecording({ reason });
+      const { uri, duration, hadSpeechEnergy } = await legacyStopRecording({ reason });
+      
+      // Guard 1: Minimum duration check (600ms)
+      if (!uri || duration < 600) {
+        console.log(`[Filter] short recording (${duration}ms), skipping`);
+        setError('No speech detected');
+        return;
+      }
+      
+      // Guard 3: Energy heuristic (if metering was available)
+      if (hadSpeechEnergy === false) {
+        console.log('[Filter] no speech energy detected, skipping');
+        setError('No speech detected');
+        return;
+      }
       
       if (uri && duration > 1000) {
         console.log(`✅ Recording stopped. Duration: ${duration}ms`);
@@ -233,8 +247,10 @@ export default function VoiceInputControls({
         }
       }
       
-      if (!transcription || transcription.trim() === '') {
-        console.log('⚠️ No transcription received');
+      // Guard 2: Transcription guard - check for empty or meaningless transcripts
+      if (!transcription || transcription.trim().length < 2 || /^\W*$/.test(transcription)) {
+        console.log('[Filter] empty transcript, skipping');
+        setError('No speech detected');
         return;
       }
       
