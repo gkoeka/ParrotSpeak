@@ -187,8 +187,13 @@ export default function VoiceInputControls({
       
       metricsCollector.startTimer('whisper');
       // Don't pass language hint to allow Whisper to auto-detect the spoken language
-      // This enables proper detection for the auto-detect feature
-      const transcriptionResult = await processRecording(uri, '');
+      // Pass auto-detect state and expected language for server-side validation
+      const transcriptionResult = await processRecording(
+        uri, 
+        '', 
+        participants.autoDetectSpeakers,
+        sourceLanguage // Expected language when auto-detect is OFF
+      );
       metricsCollector.endTimer('whisper');
       
       // Handle both string and object responses

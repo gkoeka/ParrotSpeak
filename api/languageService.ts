@@ -145,8 +145,10 @@ export async function getLanguagesWithSpeechSupport(): Promise<Language[]> {
 // Speech recognition function using the server API
 export async function recognizeSpeech(
   audioBase64: string,
-  languageCode: string
-): Promise<string> {
+  languageCode: string,
+  autoDetectEnabled?: boolean,
+  expectedLanguage?: string
+): Promise<any> {
   try {
     // Add timeout for Whisper API calls
     const controller = new AbortController();
@@ -156,7 +158,9 @@ export async function recognizeSpeech(
       method: 'POST',
       body: JSON.stringify({
         audio: audioBase64,
-        language: languageCode
+        language: languageCode,
+        autoDetectEnabled,
+        expectedLanguage
       }),
       signal: controller.signal
     });
@@ -170,7 +174,15 @@ export async function recognizeSpeech(
     }
     
     const data = await response.json();
-    return data.text;
+    
+    // Check if translation should be prevented (manual mode mismatch)
+    if (data.shouldPreventTranslation) {
+      console.log('[Manual Mode] Translation prevented by server:', data.wrongLanguageError);
+      throw new Error(data.wrongLanguageError || 'Wrong language detected');
+    }
+    
+    // Return full response object for language detection
+    return data;
   } catch (error: any) {
     // Enhanced error logging
     if (error.name === 'AbortError') {
@@ -181,7 +193,7 @@ export async function recognizeSpeech(
       throw new Error('Network error during speech recognition. Please check your connection.');
     } else {
       console.error('❌ Whisper API error:', error);
-      throw new Error(error.message || 'Speech recognition failed. Please try again.');
+      throw error; // Pass through the error as-is
     }
   }
 }

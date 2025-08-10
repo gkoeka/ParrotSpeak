@@ -1005,7 +1005,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/transcribe', requireAuth, requireSubscription, async (req: Request, res: Response) => {
     const startTime = Date.now();
     try {
-      const { audio, language } = req.body;
+      const { audio, language, autoDetectEnabled, expectedLanguage } = req.body;
       
       if (!audio) {
         return res.status(400).json({ message: 'Audio data is required' });
@@ -1013,6 +1013,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Import the working transcription service
       const { transcribeAudio } = await import('./services/openai');
+      const { normalizeLanguageCode } = await import('../utils/languageNormalization');
       
       // Convert Base64 audio data to buffer
       const audioBuffer = Buffer.from(audio, 'base64');
@@ -1026,13 +1027,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const processingTime = Date.now() - startTime;
       console.log(`✅ Transcription successful in ${processingTime}ms:`, transcriptionResult.text.substring(0, 50) + '...');
       
+      // Check if manual mode mismatch should prevent translation
+      let shouldPreventTranslation = false;
+      let wrongLanguageError = null;
+      
+      if (autoDetectEnabled === false && expectedLanguage && transcriptionResult.language) {
+        const detectedLang = normalizeLanguageCode(transcriptionResult.language);
+        const expectedLang = normalizeLanguageCode(expectedLanguage);
+        
+        console.log(`[Manual Mode Check] Auto-detect: ${autoDetectEnabled}, Detected: ${detectedLang}, Expected: ${expectedLang}`);
+        
+        if (detectedLang !== expectedLang) {
+          shouldPreventTranslation = true;
+          wrongLanguageError = `Wrong language detected! Expected ${expectedLang} but heard ${detectedLang}. Enable Auto-detect speakers in Settings for automatic language switching.`;
+          console.log(`[Manual Mode] Blocking translation - language mismatch`);
+        }
+      }
+      
       // Add performance headers
       res.set('X-Processing-Time', processingTime.toString());
       
       // Return the transcribed text and detected language
       res.json({ 
         text: transcriptionResult.text,
-        language: transcriptionResult.language 
+        language: transcriptionResult.language,
+        shouldPreventTranslation,
+        wrongLanguageError
       });
       
     } catch (error) {
