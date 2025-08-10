@@ -626,6 +626,8 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
         if (!graceEnded) {
           console.log('[SilenceTimer] grace ended');
           graceEnded = true;
+          // Reset inSilence flag after grace to allow proper timer arming
+          inSilence = false;
         }
         
         // Detect metering availability on first callback
@@ -670,23 +672,22 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
             }
             inSilence = false;
           } else {
-            // Silence detected - only arm timer when transitioning from speech to silence
+            // Silence detected - arm timer if not already armed
+            if (!silenceTimer) {
+              silenceTimer = setTimeout(() => {
+                // Guard against late fires with recId check
+                if (myId !== recId) {
+                  console.log('[SilenceTimer] ignored (stale recId)');
+                  return;
+                }
+                // Call the single stop path (idempotent)
+                console.log('[SilenceTimer] elapsed → auto-stop');
+                legacyStopRecording({ reason: 'auto' });
+              }, 2000);
+              console.log('[SilenceTimer] armed (2000ms)');
+            }
+            // Log state change to silence only when it actually changes
             if (!inSilence) {
-              // Entering silence from speech/grace
-              if (!silenceTimer) {
-                silenceTimer = setTimeout(() => {
-                  // Guard against late fires with recId check
-                  if (myId !== recId) {
-                    console.log('[SilenceTimer] ignored (stale recId)');
-                    return;
-                  }
-                  // Call the single stop path (idempotent)
-                  console.log('[SilenceTimer] elapsed → auto-stop');
-                  legacyStopRecording({ reason: 'auto' });
-                }, 2000);
-                console.log('[SilenceTimer] armed (2000ms)');
-              }
-              // Log state change to silence
               if (lastSilenceState !== true) {
                 console.log('[SilenceTimer] state -> silence');
                 lastSilenceState = true;
