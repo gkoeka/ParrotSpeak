@@ -632,10 +632,10 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
             console.log('[SilenceTimer] fallback path: no metering');
             fallbackLogged = true;
           }
-          // Fallback: use duration change as activity indicator
-          const durationChanged = status.durationMillis !== lastDurationMillis;
+          // Fallback: when no metering, assume silence (allow timer to work)
+          // This ensures auto-stop works on devices without metering
           lastDurationMillis = status.durationMillis || 0;
-          isSpeech = durationChanged; // If duration is changing, assume activity
+          isSpeech = false; // Assume silence when no metering available
         }
         
         // Handle transitions
