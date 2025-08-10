@@ -14,7 +14,7 @@ const openai = new OpenAI({
  * @param language Optional language code for transcription
  * @returns Promise<string> - Transcribed text
  */
-export async function transcribeAudio(audioBuffer: Buffer, language?: string): Promise<string> {
+export async function transcribeAudio(audioBuffer: Buffer, language?: string): Promise<{ text: string; language?: string }> {
   try {
     // Validate API key
     if (!process.env.OPENAI_API_KEY) {
@@ -79,19 +79,38 @@ export async function transcribeAudio(audioBuffer: Buffer, language?: string): P
       };
 
       // Transcribe using OpenAI Whisper SDK
+      // Use verbose_json format to get language detection
       const transcription = await openai.audio.transcriptions.create({
         file: audioStream,
         model: 'whisper-1',
-        language: convertLanguageCode(language),
-        response_format: 'text',
+        // Don't specify language to allow auto-detection
+        response_format: 'verbose_json',
       });
       
-      console.log('OpenAI transcription successful:', transcription.substring(0, 50) + '...');
+      // Handle verbose_json response
+      let transcriptionText: string;
+      let detectedLanguage: string | undefined;
+      
+      if (typeof transcription === 'object' && 'text' in transcription) {
+        transcriptionText = (transcription as any).text || '';
+        detectedLanguage = (transcription as any).language;
+        console.log('OpenAI transcription successful:', transcriptionText.substring(0, 50) + '...');
+        if (detectedLanguage) {
+          console.log('Detected language:', detectedLanguage);
+        }
+      } else {
+        transcriptionText = String(transcription);
+        console.log('OpenAI transcription successful:', transcriptionText.substring(0, 50) + '...');
+      }
 
       // Clean up temporary file
       fs.unlinkSync(tempFilePath);
 
-      return transcription.trim();
+      // Return both transcription and detected language
+      return {
+        text: transcriptionText.trim(),
+        language: detectedLanguage
+      };
     } catch (error) {
       // Clean up temporary file on error
       if (fs.existsSync(tempFilePath)) {

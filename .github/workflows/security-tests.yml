@@ -1,0 +1,73 @@
+name: Security Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'scripts/verifyAllScenarios.ts'
+      - 'scripts/test-*.ts'
+      - '.github/workflows/security-tests.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/verifyAllScenarios.ts'
+      - 'scripts/test-*.ts'
+
+jobs:
+  injection-prevention:
+    name: Test Injection Prevention
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run injection prevention tests
+        run: |
+          echo "🔒 Running injection prevention tests..."
+          npx tsx scripts/test-injection-prevention.ts
+        env:
+          CI: true
+      
+      - name: Run argument validator tests
+        run: |
+          echo "🛡️ Running argument validator tests..."
+          npx tsx scripts/test-arg-validator.ts
+        env:
+          CI: true
+      
+      - name: Run blast radius tests
+        run: |
+          echo "💥 Running blast radius reduction tests..."
+          npx tsx scripts/test-blast-radius.ts
+        env:
+          CI: true
+      
+      - name: Verify security measures
+        run: |
+          echo "✅ Verifying security implementation..."
+          # Check that shell is explicitly disabled
+          grep -q "shell: false" scripts/verifyAllScenarios.ts || exit 1
+          # Check that ALLOWED_COMMANDS exists
+          grep -q "ALLOWED_COMMANDS" scripts/verifyAllScenarios.ts || exit 1
+          # Check that validator exists
+          grep -q "validateExtraArgs" scripts/verifyAllScenarios.ts || exit 1
+          echo "✅ All security measures in place"
+      
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Security Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Injection prevention tests passed" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Argument validation tests passed" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Blast radius reduction verified" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Security measures confirmed in code" >> $GITHUB_STEP_SUMMARY

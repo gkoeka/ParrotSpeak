@@ -12,6 +12,7 @@ import { useParticipants } from '../contexts/ParticipantsContext';
 import { determineSpeaker, getTargetLanguage } from '../utils/languageDetection';
 import { PipelineStatus } from './StatusPill';
 import { metricsTracker } from '../utils/metricsTracker';
+import { normalizeLanguageCode } from '../utils/languageNormalization';
 
 interface VoiceInputControlsProps {
   onMessage: (message: {
@@ -50,7 +51,7 @@ export default function VoiceInputControls({
   const [longRecordingBannerShown, setLongRecordingBannerShown] = useState(false);
 
   // Check if source or target language supports speech
-  const normalizeLanguageCode = (code: string) => {
+  const getLanguageConfig = (code: string) => {
     if (code.includes('-') && code.length > 3) {
       const baseCode = code.split('-')[0];
       const specificLang = getLanguageByCode(code);
@@ -60,8 +61,8 @@ export default function VoiceInputControls({
     return getLanguageByCode(code);
   };
   
-  const sourceLanguageConfig = normalizeLanguageCode(sourceLanguage);
-  const targetLanguageConfig = normalizeLanguageCode(targetLanguage);
+  const sourceLanguageConfig = getLanguageConfig(sourceLanguage);
+  const targetLanguageConfig = getLanguageConfig(targetLanguage);
   const isSourceSpeechSupported = sourceLanguageConfig?.speechSupported ?? true;
   const isTargetSpeechSupported = targetLanguageConfig?.speechSupported ?? true;
 
@@ -132,7 +133,7 @@ export default function VoiceInputControls({
         // Check for long recording and show banner if needed
         if (duration > 60000 && !longRecordingBannerShown) {
           setError('Let\'s try shorter turns (≤60s) for better results');
-          setTimeout(() => setError(null), 5000); // Show for 5 seconds
+          // User must manually close - no auto-dismiss
           setLongRecordingBannerShown(true);
         }
         
@@ -185,7 +186,14 @@ export default function VoiceInputControls({
       console.log('📝 Transcribing audio...');
       
       metricsCollector.startTimer('whisper');
-      const transcriptionResult = await processRecording(uri, sourceLanguage);
+      // Don't pass language hint to allow Whisper to auto-detect the spoken language
+      // Pass auto-detect state and expected language for server-side validation
+      const transcriptionResult = await processRecording(
+        uri, 
+        '', 
+        participants.autoDetectSpeakers,
+        sourceLanguage // Expected language when auto-detect is OFF
+      );
       metricsCollector.endTimer('whisper');
       
       // Handle both string and object responses
@@ -201,8 +209,14 @@ export default function VoiceInputControls({
       
       console.log('Transcription:', transcription);
       if (detectedLang) {
-        console.log('Detected language:', detectedLang);
-        metricsCollector.setDetectedLanguage(detectedLang);
+        console.log('Raw detected language:', detectedLang);
+        // Normalize the language code (e.g., "german" → "de")
+        const normalizedLang = normalizeLanguageCode(detectedLang);
+        detectedLang = normalizedLang;
+        console.log('Normalized language:', detectedLang);
+        if (normalizedLang) {
+          metricsCollector.setDetectedLanguage(normalizedLang);
+        }
       }
       
       if (!transcription || transcription.trim() === '') {
@@ -214,6 +228,8 @@ export default function VoiceInputControls({
       let actualSourceLang = sourceLanguage;
       let actualTargetLang = targetLanguage;
       let speaker: 'A' | 'B' | undefined;
+      
+      console.log(`[AutoDetect] enabled=${participants.autoDetectSpeakers}, detectedLang=${detectedLang}`);
       
       if (participants.autoDetectSpeakers && detectedLang) {
         speaker = determineSpeaker(
@@ -231,10 +247,39 @@ export default function VoiceInputControls({
         console.log(`    Route: ${actualSourceLang} → ${actualTargetLang}`);
         setLastTurnSpeaker(speaker);
       } else {
-        // Manual mode: use provided source/target
+        // Manual mode: force A→B (or B→A if swapped) regardless of detected language
+        console.log(`📍 Manual mode activated`);
         actualSourceLang = sourceLanguage;
         actualTargetLang = targetLanguage;
-        console.log(`📍 Manual mode: ${actualSourceLang} → ${actualTargetLang}`);
+        console.log(`    Source: ${actualSourceLang}, Target: ${actualTargetLang}`);
+        
+        // Determine speaker based on configured source
+        if (sourceLanguage === participants.A.lang) {
+          speaker = 'A';
+        } else if (sourceLanguage === participants.B.lang) {
+          speaker = 'B';
+        }
+        
+        // Check if detected language doesn't match expected source
+        if (detectedLang && detectedLang !== actualSourceLang) {
+          console.log(`📍 Manual mode: Detected ${detectedLang} but expecting ${actualSourceLang}`);
+          
+          // If they spoke the target language, suggest enabling auto-detect
+          if (detectedLang === actualTargetLang) {
+            console.log(`💡 User spoke target language (${detectedLang}). Consider enabling auto-detect for better results.`);
+            // Show a helpful message to the user (user must manually close)
+            setError('Wrong language! Enable "Auto-detect speakers" in Settings for automatic language switching');
+            // No auto-dismiss - user controls when to close the tip
+            
+            // Don't proceed with translation - just show the tip
+            onStatusChange?.('error');
+            return;
+          }
+          // For other language mismatches, still show a warning but proceed
+          console.log(`⚠️ Language mismatch but proceeding: ${actualSourceLang} → ${actualTargetLang}`);
+        } else {
+          console.log(`📍 Manual mode: ${actualSourceLang} → ${actualTargetLang}`);
+        }
       }
       
       // Set target language for metrics
@@ -245,13 +290,24 @@ export default function VoiceInputControls({
       onStatusChange?.('translating');
       console.log('🌐 Translating text...');
       
-      metricsCollector.startTimer('translate');
-      const translationResult = await translateText(
-        transcription,
-        actualSourceLang,
-        actualTargetLang
-      );
-      metricsCollector.endTimer('translate');
+      // Check if source and target are the same (edge case)
+      let translationResult: { translation: string };
+      
+      if (actualSourceLang === actualTargetLang) {
+        console.log(`⚠️ Source and target are the same (${actualSourceLang}), skipping translation`);
+        // Still create a "translation" that's the same as the original
+        translationResult = { translation: transcription };
+        metricsCollector.startTimer('translate');
+        metricsCollector.endTimer('translate');
+      } else {
+        metricsCollector.startTimer('translate');
+        translationResult = await translateText(
+          transcription,
+          actualSourceLang,
+          actualTargetLang
+        );
+        metricsCollector.endTimer('translate');
+      }
       
       console.log('Translation:', translationResult.translation);
       
@@ -270,7 +326,7 @@ export default function VoiceInputControls({
       onMessage(message);
       
       // Step 6: TTS for translation
-      const targetLangConfig = normalizeLanguageCode(actualTargetLang);
+      const targetLangConfig = getLanguageConfig(actualTargetLang);
       const isTargetSupported = targetLangConfig?.speechSupported ?? true;
       
       if (isTargetSupported && translationResult.translation) {
@@ -616,4 +672,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-});
+});// Cache bust: 1754791991

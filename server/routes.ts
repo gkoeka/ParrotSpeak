@@ -1005,7 +1005,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/transcribe', requireAuth, requireSubscription, async (req: Request, res: Response) => {
     const startTime = Date.now();
     try {
-      const { audio, language } = req.body;
+      const { audio, language, autoDetectEnabled, expectedLanguage } = req.body;
       
       if (!audio) {
         return res.status(400).json({ message: 'Audio data is required' });
@@ -1013,6 +1013,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Import the working transcription service
       const { transcribeAudio } = await import('./services/openai');
+      const { normalizeLanguageCode } = await import('../utils/languageNormalization');
+      
+      // Helper function to get language name from code
+      const getLanguageName = (code: string): string => {
+        const languageNames: { [key: string]: string } = {
+          'en': 'English',
+          'es': 'Spanish',
+          'fr': 'French',
+          'de': 'German',
+          'it': 'Italian',
+          'pt': 'Portuguese',
+          'nl': 'Dutch',
+          'pl': 'Polish',
+          'ru': 'Russian',
+          'zh': 'Chinese',
+          'ja': 'Japanese',
+          'ko': 'Korean',
+          'ar': 'Arabic',
+          'hi': 'Hindi',
+          'tr': 'Turkish',
+          'sv': 'Swedish',
+          'da': 'Danish',
+          'no': 'Norwegian',
+          'fi': 'Finnish'
+        };
+        return languageNames[code] || code.toUpperCase();
+      };
       
       // Convert Base64 audio data to buffer
       const audioBuffer = Buffer.from(audio, 'base64');
@@ -1021,16 +1048,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`📊 Audio size: ${(audioBuffer.length / 1024).toFixed(2)}KB`);
       
       // Use the working transcription method that handles file I/O properly
-      const transcription = await transcribeAudio(audioBuffer, language);
+      const transcriptionResult = await transcribeAudio(audioBuffer, language);
       
       const processingTime = Date.now() - startTime;
-      console.log(`✅ Transcription successful in ${processingTime}ms:`, transcription.substring(0, 50) + '...');
+      console.log(`✅ Transcription successful in ${processingTime}ms:`, transcriptionResult.text.substring(0, 50) + '...');
+      
+      // Check if manual mode mismatch should prevent translation
+      let shouldPreventTranslation = false;
+      let wrongLanguageError = null;
+      
+      if (autoDetectEnabled === false && expectedLanguage && transcriptionResult.language) {
+        const detectedLang = normalizeLanguageCode(transcriptionResult.language);
+        const expectedLang = normalizeLanguageCode(expectedLanguage);
+        
+        console.log(`[Manual Mode Check] Auto-detect: ${autoDetectEnabled}, Detected: ${detectedLang}, Expected: ${expectedLang}`);
+        
+        if (detectedLang !== expectedLang) {
+          shouldPreventTranslation = true;
+          const detectedName = getLanguageName(detectedLang || '');
+          const expectedName = getLanguageName(expectedLang || '');
+          wrongLanguageError = `Wrong language detected! Expected ${expectedName} but heard ${detectedName}. Enable Auto-detect speakers in Settings for automatic language switching.`;
+          console.log(`[Manual Mode] Blocking translation - language mismatch`);
+        }
+      }
       
       // Add performance headers
       res.set('X-Processing-Time', processingTime.toString());
       
-      // Return the transcribed text
-      res.json({ text: transcription });
+      // Return the transcribed text and detected language
+      res.json({ 
+        text: transcriptionResult.text,
+        language: transcriptionResult.language,
+        shouldPreventTranslation,
+        wrongLanguageError
+      });
       
     } catch (error) {
       const processingTime = Date.now() - startTime;
@@ -1409,12 +1460,156 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   const httpServer = createServer(app);
   
-  // Initialize WebSocket server
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  // Rate limiting for WebSocket connections
+  const wsRateLimiter = new Map<string, { count: number; resetTime: number }>();
+  const WS_RATE_LIMIT = 10; // Max attempts per minute
+  const WS_RATE_WINDOW = 60 * 1000; // 1 minute
+  
+  // Origin/Host allowlist configuration
+  const isProd = process.env.NODE_ENV === 'production';
+  const allowedOrigins = new Set([
+    // Production domains
+    'https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev',
+    'https://parrotspeak.com',
+    'https://www.parrotspeak.com',
+    'https://app.parrotspeak.com',
+    // Development origins (only in non-production)
+    ...(isProd ? [] : [
+      'http://localhost:3000',
+      'http://localhost:5000',
+      'http://localhost:8081', // Expo
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5000',
+      'http://127.0.0.1:8081',
+      'http://10.0.2.2:5000', // Android emulator
+      'http://10.0.3.2:5000', // Android emulator (alternative)
+      'exp://localhost:8081', // Expo development
+      null // Allow no origin in development (for testing)
+    ])
+  ]);
+  
+  // Initialize WebSocket server with authentication handling
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: '/ws',
+    verifyClient: async (info, cb) => {
+      const clientIp = info.req.socket.remoteAddress || 'unknown';
+      
+      // 1. Check Origin/Host headers
+      const origin = info.origin || info.req.headers.origin;
+      const host = info.req.headers.host;
+      
+      // Parse and validate origin
+      const isValidOrigin = origin === undefined || origin === null 
+        ? !isProd // Allow missing origin only in development
+        : allowedOrigins.has(origin);
+      
+      if (!isValidOrigin) {
+        console.error(`WebSocket rejected - Invalid origin: ${origin} from IP: ${clientIp}, Host: ${host}`);
+        cb(false, 403, 'Forbidden: Invalid origin');
+        return;
+      }
+      
+      // Additional host validation for production
+      if (isProd && host) {
+        const allowedHosts = [
+          '40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev',
+          'parrotspeak.com',
+          'www.parrotspeak.com',
+          'app.parrotspeak.com'
+        ];
+        const hostWithoutPort = host.split(':')[0];
+        if (!allowedHosts.includes(hostWithoutPort)) {
+          console.error(`WebSocket rejected - Invalid host: ${host} from IP: ${clientIp}`);
+          cb(false, 403, 'Forbidden: Invalid host');
+          return;
+        }
+      }
+      
+      console.log(`WebSocket origin check passed - Origin: ${origin || 'none'}, Host: ${host}, IP: ${clientIp}`);
+      
+      // 2. Check rate limiting
+      const now = Date.now();
+      const rateLimit = wsRateLimiter.get(clientIp);
+      if (rateLimit) {
+        if (now < rateLimit.resetTime) {
+          if (rateLimit.count >= WS_RATE_LIMIT) {
+            console.warn(`WebSocket rate limit exceeded for IP: ${clientIp}`);
+            cb(false, 429, 'Too Many Requests');
+            return;
+          }
+          rateLimit.count++;
+        } else {
+          rateLimit.count = 1;
+          rateLimit.resetTime = now + WS_RATE_WINDOW;
+        }
+      } else {
+        wsRateLimiter.set(clientIp, { count: 1, resetTime: now + WS_RATE_WINDOW });
+      }
+      
+      // Extract token from subprotocol
+      const protocols = info.req.headers['sec-websocket-protocol'];
+      if (!protocols) {
+        console.error(`WebSocket auth failed: No subprotocol provided from IP: ${clientIp}`);
+        cb(false, 401, 'Unauthorized: Missing authentication');
+        return;
+      }
+      
+      // Parse bearer token from subprotocol
+      const protocolArray = protocols.split(',').map(p => p.trim());
+      const bearerProtocol = protocolArray.find(p => p.startsWith('bearer.'));
+      
+      if (!bearerProtocol) {
+        console.error(`WebSocket auth failed: No bearer token in subprotocol from IP: ${clientIp}`);
+        cb(false, 401, 'Unauthorized: Invalid authentication format');
+        return;
+      }
+      
+      const token = bearerProtocol.substring(7); // Remove 'bearer.' prefix
+      
+      // Verify JWT token
+      const { verifyToken } = await import('./utils/jwt');
+      const payload = verifyToken(token);
+      
+      if (!payload) {
+        console.error(`WebSocket auth failed: Invalid token from IP: ${clientIp}`);
+        cb(false, 401, 'Unauthorized: Invalid token');
+        return;
+      }
+      
+      // Get user from database
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, payload.userId)
+      });
+      
+      if (!user) {
+        console.error(`WebSocket auth failed: User not found for ID ${payload.userId} from IP: ${clientIp}`);
+        cb(false, 401, 'Unauthorized: User not found');
+        return;
+      }
+      
+      // Store user info on the request for later use
+      (info.req as any).authenticatedUser = user;
+      (info.req as any).authenticatedUserId = user.id;
+      
+      console.log(`WebSocket authenticated for user ${user.email} from IP: ${clientIp}`);
+      
+      // Accept the connection and set the subprotocol
+      cb(true);
+    },
+    handleProtocols: (protocols: Set<string>) => {
+      // Accept the bearer protocol if present
+      const protocolArray = Array.from(protocols);
+      const bearerProtocol = protocolArray.find((p: string) => p.startsWith('bearer.'));
+      return bearerProtocol || false;
+    }
+  });
   
   // Handle WebSocket connections
-  wss.on('connection', (ws: WebSocket) => {
-    console.log('Client connected to WebSocket');
+  wss.on('connection', (ws: WebSocket, req) => {
+    const authenticatedUserId = (req as any).authenticatedUserId;
+    const authenticatedUser = (req as any).authenticatedUser;
+    console.log(`Client connected to WebSocket: User ID ${authenticatedUserId}`);
     
     ws.on('message', async (message: string) => {
       try {
@@ -1422,7 +1617,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('WebSocket message received:', data);
         
         if (data.type === 'translate') {
-          const { conversationId, text, sourceLanguage, targetLanguage, userId } = data;
+          const { conversationId, text, sourceLanguage, targetLanguage } = data;
+          // Use authenticated user ID from the connection, not from the message
+          const userId = authenticatedUserId;
           console.log('Translation request:', { conversationId, text, sourceLanguage, targetLanguage, userId });
           
           try {

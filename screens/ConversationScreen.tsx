@@ -9,6 +9,7 @@ import VoiceInputControls from '../components/VoiceInputControls';
 import { isRTLLanguage, rtlStyle, getWritingDirection } from '../utils/rtlSupport';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useParticipants } from '../contexts/ParticipantsContext';
 import { Ionicons } from '@expo/vector-icons';
 import { API_BASE_URL } from '../api/config';
 import { getSupportedLanguages } from '../constants/languageConfiguration';
@@ -24,6 +25,7 @@ type ConversationNavigationProp = StackNavigationProp<RootStackParamList, 'Conve
 export default function ConversationScreen() {
   const { isDarkMode } = useTheme();
   const { user } = useAuth();
+  const { setParticipantLanguage } = useParticipants();
   const navigation = useNavigation<ConversationNavigationProp>();
   const route = useRoute<any>();
   const conversationId = route.params?.id;
@@ -127,6 +129,21 @@ export default function ConversationScreen() {
 
     savePreferences();
   }, [sourceLanguage, targetLanguage, conversationId, preferencesLoaded]);
+
+  // Sync participant languages with UI selections
+  useEffect(() => {
+    // Only update after preferences are loaded
+    if (preferencesLoaded && sourceLanguage) {
+      setParticipantLanguage('A', sourceLanguage);
+    }
+  }, [sourceLanguage, preferencesLoaded, setParticipantLanguage]);
+
+  useEffect(() => {
+    // Only update after preferences are loaded
+    if (preferencesLoaded && targetLanguage) {
+      setParticipantLanguage('B', targetLanguage);
+    }
+  }, [targetLanguage, preferencesLoaded, setParticipantLanguage]);
 
   // Load conversation data if viewing from history
   useEffect(() => {

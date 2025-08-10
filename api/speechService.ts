@@ -673,19 +673,21 @@ async function convertAudioToBase64(uri: string): Promise<string> {
 // Process the recorded audio with our server-side Whisper API
 export async function processRecording(
   recordingUri: string,
-  languageCode: string
-): Promise<string> {
+  languageCode: string,
+  autoDetectEnabled?: boolean,
+  expectedLanguage?: string
+): Promise<any> {
   try {
     console.log('Processing recording:', recordingUri, 'Language:', languageCode);
     
     // Convert audio file to Base64
     const audioBase64 = await convertAudioToBase64(recordingUri);
     
-    // Send to transcription API
-    const transcription = await recognizeSpeech(audioBase64, languageCode);
+    // Send to transcription API with auto-detect state
+    const transcriptionResult = await recognizeSpeech(audioBase64, languageCode, autoDetectEnabled, expectedLanguage);
     
-    console.log('Transcription successful:', transcription);
-    return transcription;
+    console.log('Transcription successful:', transcriptionResult);
+    return transcriptionResult;
   } catch (error) {
     console.error('Error processing recording:', error);
     throw error;
