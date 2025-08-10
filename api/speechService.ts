@@ -313,11 +313,12 @@ export interface SpeechRecognitionResult {
 // Legacy recording variable for OFF mode only
 let legacyRecording: Audio.Recording | null = null;
 let legacyRecordingActive: boolean = false;
+let isStoppingRecording: boolean = false; // Guard flag to prevent overlapping stops
 
 // AppState listener for legacy mode
 let appStateSubscription: any = null;
 
-// Silence timer for auto-stop (2 seconds)
+// Silence timer for auto-stop (2 seconds) - single timer per recording
 let silenceTimer: NodeJS.Timeout | null = null;
 let lastSpeechTime: number = Date.now();
 
@@ -385,6 +386,13 @@ function initializeLegacyAppStateListener() {
   
   appStateSubscription = addAppStateListener((nextAppState) => {
     if (nextAppState === 'background' || nextAppState === 'inactive') {
+      // Clear timer when app backgrounds
+      if (silenceTimer) {
+        clearTimeout(silenceTimer);
+        silenceTimer = null;
+        console.log('[SilenceTimer] cleared (app background)');
+      }
+      
       if (legacyRecordingActive && legacyRecording) {
         console.log('📱 [Legacy] App backgrounded/interrupted → stopping recording');
         console.log('🔄 [Interruption] System interruption detected - ending recording safely');
@@ -452,6 +460,9 @@ export async function legacyStartRecording(): Promise<void> {
     // Prevent multiple recordings
     if (legacyRecordingActive || legacyRecording) {
       console.warn('⚠️ [Legacy] Recording already in progress');
+      if (silenceTimer) {
+        console.log('[SilenceTimer] start ignored (already armed)');
+      }
       return;
     }
     
@@ -511,19 +522,19 @@ export async function legacyStartRecording(): Promise<void> {
       // Log initial audio route
       await logAudioRouteStatus('recording start');
       
-      // Set up silence detection with status updates
-      console.log('[SilenceTimer] armed (2000ms)');
-      lastSpeechTime = Date.now();
-      
-      // Clear any existing timer
+      // Clear any existing timer before arming new one (defensive)
       if (silenceTimer) {
         clearTimeout(silenceTimer);
         silenceTimer = null;
       }
       
+      // Set up silence detection with status updates
+      console.log('[SilenceTimer] armed (2000ms)');
+      lastSpeechTime = Date.now();
+      
       // Start monitoring for silence
       recording.setOnRecordingStatusUpdate((status) => {
-        if (!legacyRecordingActive) return; // Skip if not recording
+        if (!legacyRecordingActive || isStoppingRecording) return; // Skip if not recording or already stopping
         
         // Check if metering is available
         if (status.metering != null && status.metering !== undefined) {
@@ -533,10 +544,13 @@ export async function legacyStartRecording(): Promise<void> {
             console.log('[SilenceTimer] reset (speech)');
             lastSpeechTime = Date.now();
             
-            // Reset the timer
-            if (silenceTimer) clearTimeout(silenceTimer);
+            // Clear and reset the timer
+            if (silenceTimer) {
+              clearTimeout(silenceTimer);
+              silenceTimer = null;
+            }
             silenceTimer = setTimeout(() => {
-              if (legacyRecordingActive) {
+              if (legacyRecordingActive && !isStoppingRecording) {
                 console.log('[SilenceTimer] elapsed → auto-stop');
                 legacyStopRecording({ reason: 'silence' });
               }
@@ -549,10 +563,13 @@ export async function legacyStartRecording(): Promise<void> {
             console.log('[SilenceTimer] reset (fallback)');
             lastSpeechTime = now;
             
-            // Reset the timer
-            if (silenceTimer) clearTimeout(silenceTimer);
+            // Clear and reset the timer
+            if (silenceTimer) {
+              clearTimeout(silenceTimer);
+              silenceTimer = null;
+            }
             silenceTimer = setTimeout(() => {
-              if (legacyRecordingActive) {
+              if (legacyRecordingActive && !isStoppingRecording) {
                 console.log('[SilenceTimer] elapsed → auto-stop');
                 legacyStopRecording({ reason: 'silence' });
               }
@@ -563,7 +580,7 @@ export async function legacyStartRecording(): Promise<void> {
       
       // Start the initial silence timer
       silenceTimer = setTimeout(() => {
-        if (legacyRecordingActive) {
+        if (legacyRecordingActive && !isStoppingRecording) {
           console.log('[SilenceTimer] elapsed → auto-stop');
           legacyStopRecording({ reason: 'silence' });
         }
@@ -580,8 +597,16 @@ export async function legacyStartRecording(): Promise<void> {
     }
   } catch (error) {
     console.error('❌ [Legacy] Failed to start recording:', error);
+    // Clean up on error
     legacyRecording = null;
     legacyRecordingActive = false;
+    isStoppingRecording = false;
+    // Clear timer on error
+    if (silenceTimer) {
+      clearTimeout(silenceTimer);
+      silenceTimer = null;
+      console.log('[SilenceTimer] cleared (start error)');
+    }
     throw error;
   }
 }
@@ -598,23 +623,34 @@ export function isLegacyRecordingActive(): boolean {
 export async function legacyStopRecording(options?: { reason?: string }): Promise<{ uri: string; duration: number }> {
   try {
     const reason = options?.reason || 'manual';
-    console.log(`🛑 [Legacy] Stopping legacy recording (reason: ${reason})...`);
     
-    // Clear silence timer on any stop
+    // Make stop idempotent - check if already stopping
+    if (isStoppingRecording) {
+      console.log('[SilenceTimer] stop ignored (already stopped)');
+      return { uri: '', duration: 0 };
+    }
+    
+    // Clear silence timer on any stop (even if recording is already stopped)
     if (silenceTimer) {
       clearTimeout(silenceTimer);
       silenceTimer = null;
       console.log('[SilenceTimer] cleared');
     }
     
-    // Handle interruption-specific cleanup
-    if (reason === 'background') {
-      console.log('🔄 [Interruption] Handling background/interruption cleanup');
-    }
-    
+    // Check if there's anything to stop
     if (!legacyRecording || !legacyRecordingActive) {
       console.warn('⚠️ [Legacy] No active recording to stop - ignoring');
       return { uri: '', duration: 0 };
+    }
+    
+    console.log(`🛑 [Legacy] Stopping legacy recording (reason: ${reason})...`);
+    
+    // Set guard flag to prevent overlapping stops
+    isStoppingRecording = true;
+    
+    // Handle interruption-specific cleanup
+    if (reason === 'background') {
+      console.log('🔄 [Interruption] Handling background/interruption cleanup');
     }
     
     // Mark as inactive immediately to prevent double-stop
@@ -650,6 +686,7 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
     
     // Clean up
     legacyRecording = null;
+    isStoppingRecording = false; // Reset guard flag
     
     console.log(`✅ [Legacy] Recording stopped. Duration: ${duration}ms, URI: ${uri ? uri.substring(uri.length - 30) : 'none'}`);
     
@@ -676,6 +713,13 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
     // Clean up regardless of error
     legacyRecording = null;
     legacyRecordingActive = false;
+    isStoppingRecording = false; // Reset guard flag
+    // Clear timer on error
+    if (silenceTimer) {
+      clearTimeout(silenceTimer);
+      silenceTimer = null;
+      console.log('[SilenceTimer] cleared (stop error)');
+    }
     // Return empty result instead of throwing - prevents UI errors
     return { uri: '', duration: 0 };
   }

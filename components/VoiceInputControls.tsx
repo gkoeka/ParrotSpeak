@@ -73,19 +73,29 @@ export default function VoiceInputControls({
       // Poll every 100ms to check if recording was auto-stopped
       checkInterval.current = setInterval(async () => {
         if (!isLegacyRecordingActive()) {
-          // Recording was stopped by silence timer
-          console.log('🔄 Auto-stop detected from silence timer');
-          setIsRecording(false);
+          // Clear interval immediately to prevent multiple triggers
           if (checkInterval.current) {
             clearInterval(checkInterval.current);
             checkInterval.current = null;
           }
+          
+          // Recording was stopped by silence timer
+          console.log('🔄 Auto-stop detected from silence timer');
+          setIsRecording(false);
+          
           // Process the audio automatically
           setIsProcessing(true);
           try {
             const { uri, duration } = await legacyStopRecording({ reason: 'silence' });
             if (uri && duration > 500) {
               console.log(`✅ Auto-stopped recording. Duration: ${duration}ms`);
+              
+              // Check for long recording
+              if (duration > 60000 && !longRecordingBannerShown) {
+                setError('Let\'s try shorter turns (≤60s) for better results');
+                setLongRecordingBannerShown(true);
+              }
+              
               await processAudio(uri, duration);
             }
           } catch (error) {
@@ -97,13 +107,14 @@ export default function VoiceInputControls({
         }
       }, 100);
     } else {
-      // Clear interval when not recording
+      // Clear interval when not recording or processing
       if (checkInterval.current) {
         clearInterval(checkInterval.current);
         checkInterval.current = null;
       }
     }
     
+    // Cleanup on unmount
     return () => {
       if (checkInterval.current) {
         clearInterval(checkInterval.current);
