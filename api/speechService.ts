@@ -316,6 +316,7 @@ let legacyRecordingActive: boolean = false;
 let isStoppingRecording: boolean = false; // Guard flag to prevent overlapping stops
 let isStarting: boolean = false; // Guard flag to prevent overlapping starts
 let isStopping: boolean = false; // Guard flag for stop operations
+let hasStopped: boolean = false; // Track if stop was already handled for this turn
 
 // AppState listener for legacy mode
 let appStateSubscription: any = null;
@@ -457,6 +458,7 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
   }
   
   isStarting = true;
+  hasStopped = false; // Reset for new turn
   // Store the onAutoStop callback for this recording session
   onAutoStopCallback = options?.onAutoStop;
   
@@ -669,13 +671,21 @@ export function isLegacyRecordingActive(): boolean {
 }
 
 export async function legacyStopRecording(options?: { reason?: string }): Promise<{ uri: string; duration: number }> {
-  // Check if already stopping
+  // Check if stop was already handled for this turn
+  if (hasStopped) {
+    console.log('[Stop] already handled');
+    return { uri: '', duration: 0 };
+  }
+  
+  // Check if already in the process of stopping
   if (isStopping) {
-    console.log('[Stop] ignored (already stopping)');
+    console.log('[Stop] already handled');
     return { uri: '', duration: 0 };
   }
   
   isStopping = true;
+  hasStopped = true; // Mark as handled for this turn
+  
   try {
     const reason = options?.reason || 'manual';
     
@@ -688,13 +698,7 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
     
     // Check if there's anything to stop
     if (!legacyRecording || !legacyRecordingActive) {
-      console.log('[Stop] no-op (already stopped)');
-      return { uri: '', duration: 0 };
-    }
-    
-    // Make stop idempotent - check if already stopping
-    if (isStoppingRecording) {
-      console.log('[SilenceTimer] stop ignored (already stopped)');
+      // Don't log redundant messages, already handled
       return { uri: '', duration: 0 };
     }
     
