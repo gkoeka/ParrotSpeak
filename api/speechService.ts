@@ -573,6 +573,7 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
       // Track if we've seen the recording become active
       let seenActive = false;
       let lastDurationMillis = 0; // For fallback when no metering
+      let recordingStartTime = Date.now(); // Track when recording started for grace period
       
       // Start monitoring for silence - do NOT arm timer yet, wait for status updates
       recording.setOnRecordingStatusUpdate((status) => {
@@ -589,13 +590,23 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
           return;
         }
         
+        // Grace period: Don't arm timer for first 700ms to allow user to start speaking
+        const recordingDurationMillis = status.durationMillis || 0;
+        if (recordingDurationMillis < 700) {
+          if (!inSilence) {
+            console.log('[SilenceTimer] grace active');
+            inSilence = true; // Mark to avoid repeated logs
+          }
+          return;
+        }
+        
         // Detect metering availability
         const hasMeter = status.metering != null && status.metering !== undefined;
         
-        // Compute if speech is detected
+        // Compute if speech is detected (lower threshold for better detection)
         let isSpeech: boolean;
         if (hasMeter) {
-          isSpeech = status.metering! > -35;
+          isSpeech = status.metering! > -40; // Changed from -35 to -40 for better sensitivity
         } else {
           // Fallback: use duration change as activity indicator
           const durationChanged = status.durationMillis !== lastDurationMillis;
@@ -605,7 +616,7 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
         
         // Handle transitions
         if (isSpeech) {
-          // Speech detected or activity detected (fallback)
+          // Speech detected - clear any existing timer
           if (silenceTimer) {
             clearTimeout(silenceTimer);
             silenceTimer = null;
@@ -613,22 +624,24 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
           }
           inSilence = false;
         } else {
-          // Silence detected
-          if (!silenceTimer && seenActive) {
-            // Only arm timer when entering silence AND recording is active
-            silenceTimer = setTimeout(() => {
-              // Guard against late fires with recId check
-              if (myId !== recId) {
-                console.log('[SilenceTimer] stale fire ignored');
-                return;
-              }
-              // Call the single stop path (idempotent)
-              console.log('[SilenceTimer] elapsed → auto-stop');
-              legacyStopRecording({ reason: 'auto' });
-            }, 2000);
-            console.log('[SilenceTimer] armed (2000ms)');
+          // Silence detected - only arm timer when transitioning from speech to silence
+          if (!inSilence) {
+            // Entering silence from speech/grace
+            if (!silenceTimer) {
+              silenceTimer = setTimeout(() => {
+                // Guard against late fires with recId check
+                if (myId !== recId) {
+                  console.log('[SilenceTimer] ignored (stale recId)');
+                  return;
+                }
+                // Call the single stop path (idempotent)
+                console.log('[SilenceTimer] elapsed → auto-stop');
+                legacyStopRecording({ reason: 'auto' });
+              }, 2000);
+              console.log('[SilenceTimer] armed (2000ms)');
+            }
+            inSilence = true;
           }
-          inSilence = true;
         }
       });
     } catch (createError: any) {

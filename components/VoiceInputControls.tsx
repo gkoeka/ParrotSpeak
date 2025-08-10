@@ -141,7 +141,7 @@ export default function VoiceInputControls({
       
       const { uri, duration } = await legacyStopRecording({ reason });
       
-      if (uri && duration > 500) {
+      if (uri && duration > 1000) {
         console.log(`✅ Recording stopped. Duration: ${duration}ms`);
         
         // Check for long recording and show banner if needed
