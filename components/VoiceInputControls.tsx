@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import * as FileSystem from 'expo-file-system';
 
-import { legacyStartRecording, legacyStopRecording, processRecording, speakText, deleteRecordingFile, isLegacyRecordingActive } from '../api/speechService';
+import { legacyStartRecording, legacyStopRecording, processRecording, speakText, deleteRecordingFile } from '../api/speechService';
 import { translateText } from '../api/languageService';
 import { getLanguageByCode } from '../constants/languageConfiguration';
 import { useTheme } from '../contexts/ThemeContext';
@@ -43,7 +43,6 @@ export default function VoiceInputControls({
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const checkInterval = useRef<NodeJS.Timeout | null>(null);
 
   const [textInput, setTextInput] = useState('');
   const [showTextInput, setShowTextInput] = useState(false);
@@ -67,39 +66,7 @@ export default function VoiceInputControls({
   const isSourceSpeechSupported = sourceLanguageConfig?.speechSupported ?? true;
   const isTargetSpeechSupported = targetLanguageConfig?.speechSupported ?? true;
 
-  // Check for auto-stop from silence timer
-  useEffect(() => {
-    if (isRecording && !isProcessing) {
-      // Poll every 100ms to check if recording was auto-stopped
-      checkInterval.current = setInterval(() => {
-        if (!isLegacyRecordingActive()) {
-          // Clear interval immediately to prevent multiple triggers
-          if (checkInterval.current) {
-            clearInterval(checkInterval.current);
-            checkInterval.current = null;
-          }
-          
-          // Recording was stopped by silence timer - just trigger the stop handler
-          console.log('🔄 Auto-stop detected from silence timer');
-          handleStopRecording('silence-detected');
-        }
-      }, 100);
-    } else {
-      // Clear interval when not recording or processing
-      if (checkInterval.current) {
-        clearInterval(checkInterval.current);
-        checkInterval.current = null;
-      }
-    }
-    
-    // Cleanup on unmount
-    return () => {
-      if (checkInterval.current) {
-        clearInterval(checkInterval.current);
-        checkInterval.current = null;
-      }
-    };
-  }, [isRecording, isProcessing]);
+
 
   // Simple start recording - legacy mode only
   const handleStartRecording = async () => {
@@ -116,8 +83,13 @@ export default function VoiceInputControls({
       setIsRecording(true);
       setError(null);
       
-      console.log('[VoiceInputControls] Calling legacyStartRecording...');
-      await legacyStartRecording();
+      console.log('[VoiceInputControls] Calling legacyStartRecording with onAutoStop callback...');
+      await legacyStartRecording({
+        onAutoStop: () => {
+          console.log('🔄 Auto-stop notification received from service');
+          handleStopRecording('silence-detected');
+        }
+      });
       console.log('✅ Recording started - tap again to stop or wait for 2s silence');
       
     } catch (error: any) {

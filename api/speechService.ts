@@ -324,6 +324,7 @@ let appStateSubscription: any = null;
 let silenceTimer: NodeJS.Timeout | null = null;
 let inSilence: boolean = false;
 let recId: number = 0; // increment when a new recording starts
+let onAutoStopCallback: (() => void) | undefined = undefined; // Callback for auto-stop notification
 
 /**
  * Helper to resolve interruption mode constants safely across Expo AV versions
@@ -446,8 +447,9 @@ const LOW_M4A: Audio.RecordingOptions = {
 /**
  * Legacy recording start for OFF mode (standard single-tap recording)
  * Used when Conversation Mode is disabled
+ * @param options Optional configuration including onAutoStop callback
  */
-export async function legacyStartRecording(): Promise<void> {
+export async function legacyStartRecording(options?: { onAutoStop?: () => void }): Promise<void> {
   // Check if already starting or stopping
   if (isStarting || isStopping) {
     console.log('[Start] ignored (busy)');
@@ -455,6 +457,9 @@ export async function legacyStartRecording(): Promise<void> {
   }
   
   isStarting = true;
+  // Store the onAutoStop callback for this recording session
+  onAutoStopCallback = options?.onAutoStop;
+  
   try {
     console.log('🎤 [Legacy] Starting legacy recording (CM OFF mode)...');
     console.log('[Legacy] Platform checks:', {
@@ -737,6 +742,16 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
       console.log(`📈 [Metric] Recording turn: {durationMs: ${duration}}`);
     }
     
+    // If this was an auto-stop, invoke the callback to notify UI
+    if (reason === 'auto' && onAutoStopCallback) {
+      try {
+        console.log('📞 [Callback] Notifying UI of auto-stop');
+        onAutoStopCallback();
+      } catch (callbackError) {
+        console.warn('⚠️ [Callback] Error in onAutoStop callback:', callbackError);
+      }
+    }
+    
     return { uri, duration };
   } catch (error) {
     console.error('❌ [Legacy] Error during stop (non-fatal):', error);
@@ -756,6 +771,8 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
     isStopping = false;
     // Invalidate late timers
     recId++;
+    // Clear callback after stop completes
+    onAutoStopCallback = undefined;
   }
 }
 
