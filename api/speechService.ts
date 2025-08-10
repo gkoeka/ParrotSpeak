@@ -321,6 +321,11 @@ let hasStopped: boolean = false; // Track if stop was already handled for this t
 // AppState listener for legacy mode
 let appStateSubscription: any = null;
 
+// Silence detection threshold in dB - adjust for different environments
+// Lower values = more sensitive (e.g., -45 for quiet rooms)
+// Higher values = less sensitive (e.g., -35 for noisy environments)
+const SILENCE_DB = -40; // was -35
+
 // Silence timer for auto-stop (2 seconds) - single timer per recording
 let silenceTimer: NodeJS.Timeout | null = null;
 let inSilence: boolean = false;
@@ -637,6 +642,7 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
             console.log('[SilenceTimer] unsupported (no metering)');
           } else {
             console.log('[SilenceTimer] metering active (rms dB available)');
+            console.log(`[SilenceTimer] threshold=${SILENCE_DB}dB`);
           }
         }
         
@@ -644,7 +650,7 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
         if (meteringSupported) {
           // Compute if speech is detected (lower threshold for better detection)
           const rmsValue = status.metering!;
-          const isSpeech = rmsValue > -40; // Changed from -35 to -40 for better sensitivity
+          const isSpeech = rmsValue > SILENCE_DB; // Use configurable threshold
           
           // Log RMS values for first 3 seconds to help debug
           if (recordingDurationMillis <= 3000) {
