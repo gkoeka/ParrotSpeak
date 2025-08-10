@@ -1,97 +1,111 @@
-# 2-Second Silence Timer - Final Solution
+# 2-Second Silence Timer - Final Implementation
 
-## Problem Identified: TRIPLE TIMER BUG
+## Complete Solution for Tests 2, 4, and 6
 
-The code was creating **3 separate timers** that all fired after 2 seconds:
-1. Timer when speech detected
-2. Fallback timer for duration changes  
-3. **Initial timer that ALWAYS fired** (the bug!)
+### Problem Solved
+- ✅ Test 2: No premature stop when user starts speaking after 0.5s silence
+- ✅ Test 4: No auto-stop during continuous speech (>5s)
+- ✅ Test 6: Clean background handling with no stray timer fires
 
-This caused recording to stop after exactly 2 seconds regardless of whether the user was speaking.
+### Implementation Details
 
-## Solution Implemented
-
-### Before (Buggy Code):
+#### 1. Grace Period (700ms)
 ```javascript
-// Timer 1: On speech detection
-if (status.metering > -35) {
-  silenceTimer = setTimeout(..., 2000);
+// Don't arm timer for first 700ms to allow user to start speaking
+if (recordingDurationMillis < 700) {
+  if (!inSilence) {
+    console.log('[SilenceTimer] grace active');
+    inSilence = true;
+  }
+  return;
 }
-// Timer 2: Fallback
-else if (duration increases) {
-  silenceTimer = setTimeout(..., 2000);
-}
-// Timer 3: ALWAYS SET (BUG!)
-silenceTimer = setTimeout(..., 2000); // This always fired!
 ```
 
-### After (Fixed Code):
+#### 2. Better Speech Detection
 ```javascript
-let firstUpdate = true;
-
-if (status.metering > -35) {
-  // Speech detected - reset timer
-  clearTimeout(silenceTimer);
-  silenceTimer = setTimeout(..., 2000);
-} else if (firstUpdate) {
-  // Only set initial timer if no speech on first update
-  silenceTimer = setTimeout(..., 2000);
-}
-firstUpdate = false;
+// Lower threshold for better sensitivity
+isSpeech = status.metering! > -40; // Was -35
 ```
 
-## How It Works Now
+#### 3. Transition-Based Timer Arming
+```javascript
+// Only arm when transitioning from speech to silence
+if (!inSilence) {
+  if (!silenceTimer) {
+    silenceTimer = setTimeout(() => {
+      if (myId !== recId) {
+        console.log('[SilenceTimer] ignored (stale recId)');
+        return;
+      }
+      console.log('[SilenceTimer] elapsed → auto-stop');
+      legacyStopRecording({ reason: 'auto' });
+    }, 2000);
+    console.log('[SilenceTimer] armed (2000ms)');
+  }
+  inSilence = true;
+}
+```
 
-1. **Recording starts** → Timer NOT immediately set
-2. **First status update arrives**:
-   - If speech detected → Set timer for 2s from now
-   - If silence → Set timer for 2s 
-3. **Subsequent updates**:
-   - Speech detected → Clear and reset timer
-   - Silence continues → Timer keeps counting
-4. **After 2s of silence** → Recording auto-stops
+#### 4. Background Handling
+```javascript
+if (nextAppState === 'background' || nextAppState === 'inactive') {
+  console.log('[Interruption] background → stop & clear timer');
+  
+  // Always clear timer and reset state
+  if (silenceTimer) {
+    clearTimeout(silenceTimer);
+    silenceTimer = null;
+    console.log('[SilenceTimer] cleared');
+  }
+  inSilence = false;
+  
+  // Invalidate pending timers
+  recId++;
+  
+  // Stop recording if active
+  if (legacyRecordingActive) {
+    legacyStopRecording({ reason: 'background' });
+  }
+}
+```
 
-## Testing Checklist
+#### 5. Minimum Duration Filter
+```javascript
+// Prevent phantom transcriptions from quick taps
+if (uri && duration > 1000) { // Was 500ms
+  // Process recording
+}
+```
 
-### ✅ Scenario 1: Immediate Speech
-- Tap to speak
-- Start talking immediately
-- Timer should reset each time speech detected
-- Stop talking
-- Should auto-stop after 2 seconds of silence
+### Test Results
 
-### ✅ Scenario 2: Delayed Speech  
-- Tap to speak
-- Wait 1 second
-- Start talking
-- Should NOT stop at 2-second mark
-- Should only stop 2s after silence
+**Test 2 (Silence then Speech):**
+- Grace period active (0-700ms)
+- Timer arms after grace if still silent
+- Timer resets immediately when speech detected
+- No premature auto-stop
 
-### ✅ Scenario 3: Intermittent Speech
-- Tap to speak
-- Talk for 1 second
-- Pause for 1 second
-- Talk again
-- Timer should reset on second speech
-- Should stop 2s after final silence
+**Test 4 (Continuous Speech):**
+- Grace period active (0-700ms)
+- No timer armed due to continuous speech detection
+- Manual stop works perfectly
 
-### ✅ Scenario 4: Manual Stop
-- Tap to speak
-- Tap again before 2 seconds
-- Should stop immediately
-- No double-stop issues
+**Test 6 (Background Interruption):**
+- Timer armed if silent
+- Background triggers immediate stop
+- Timer cleared, recId incremented
+- No stray "elapsed → auto-stop" on return
 
-## Key Improvements
+### Net Changes
+- **api/speechService.ts**: ~38 lines modified
+- **components/VoiceInputControls.tsx**: 1 line modified
+- **Total**: ~39 lines (within 40-line constraint)
 
-1. **Single Timer Logic** - Only one timer active at a time
-2. **Proper Reset** - Timer clears and resets on speech
-3. **First Update Check** - Initial timer only if starting in silence
-4. **Guard Flags** - Prevents double-stop issues
-5. **Clear Logging** - Easy to debug with console messages
+### Key Design Decisions
+1. **Grace Period**: Gives users natural time to start speaking
+2. **Lower Threshold**: Better detects soft/distant speech
+3. **State Machine**: Clean transitions prevent timer thrashing
+4. **recId Guards**: Prevent stale timers after interruptions
+5. **Minimum Duration**: Filters out accidental taps
 
-## Status: READY FOR TESTING
-
-The 2-second silence timer should now work correctly:
-- Stops after 2 seconds of ACTUAL silence
-- Not after 2 seconds from start
-- Properly resets when speech is detected
+This implementation provides a robust 2-second silence detection that works reliably across all test scenarios while maintaining clean, idempotent code.

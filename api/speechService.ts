@@ -391,21 +391,25 @@ function initializeLegacyAppStateListener() {
   
   appStateSubscription = addAppStateListener((nextAppState) => {
     if (nextAppState === 'background' || nextAppState === 'inactive') {
-      // Clear timer when app backgrounds
+      console.log('[Interruption] background → stop & clear timer');
+      
+      // Always clear timer and reset state when backgrounding
       if (silenceTimer) {
         clearTimeout(silenceTimer);
         silenceTimer = null;
         console.log('[SilenceTimer] cleared');
       }
-      // Invalidate late timers
+      inSilence = false; // Reset silence state
+      
+      // Invalidate late timers by incrementing recId
       recId++;
       
+      // Stop recording if active
       if (legacyRecordingActive && legacyRecording) {
-        console.log('📱 [Legacy] App backgrounded/interrupted → stopping recording');
-        console.log('🔄 [Interruption] System interruption detected - ending recording safely');
-        // Force stop recording when app goes to background or is interrupted
+        console.log('📱 [Legacy] App backgrounded → stopping recording');
+        // Force stop recording when app goes to background
         legacyStopRecording({ reason: 'background' }).then(() => {
-          console.log('✅ [Interruption] Recording ended safely due to interruption');
+          console.log('✅ [Interruption] Recording ended safely');
         }).catch((error) => {
           console.log('⚠️ [Interruption] Error stopping recording:', error);
         });
