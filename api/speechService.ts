@@ -316,6 +316,7 @@ let legacyRecordingActive: boolean = false;
 let isStoppingRecording: boolean = false; // Guard flag to prevent overlapping stops
 let isStarting: boolean = false; // Guard flag to prevent overlapping starts
 let isStopping: boolean = false; // Guard flag for stop operations
+let legacyRecordingStartTime: number | null = null; // Track when recording started for duration fallback
 let hasStopped: boolean = false; // Track if stop was already handled for this turn
 
 // AppState listener for legacy mode
@@ -578,6 +579,7 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
       const { recording } = await Audio.Recording.createAsync(recordingOptions);
       legacyRecording = recording;
       legacyRecordingActive = true;
+      legacyRecordingStartTime = Date.now(); // Track when recording started
       console.log('✅ [Legacy] Recording started successfully');
       
       // Log initial audio route
@@ -799,7 +801,18 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
       await legacyRecording.stopAndUnloadAsync();
       uri = legacyRecording.getURI() || '';
       const status = await legacyRecording.getStatusAsync();
-      duration = status.durationMillis || 0;
+      
+      // Compute trustworthy duration - prefer status.durationMillis, fallback to timestamp diff
+      if (status.durationMillis && status.durationMillis > 0) {
+        duration = status.durationMillis;
+        console.log(`[Duration] Using status.durationMillis: ${duration}ms`);
+      } else if (legacyRecordingStartTime) {
+        duration = Date.now() - legacyRecordingStartTime;
+        console.log(`[Duration] Using timestamp fallback: ${duration}ms`);
+      } else {
+        duration = 0;
+        console.log('[Duration] No duration available');
+      }
       
       // Log file size for optimization tracking
       if (uri && isFileSystemAvailable) {
@@ -818,6 +831,7 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
     
     // Clean up
     legacyRecording = null;
+    legacyRecordingStartTime = null; // Reset start time
     isStoppingRecording = false; // Reset guard flag
     
     console.log(`✅ [Legacy] Recording stopped. Duration: ${duration}ms, URI: ${uri ? uri.substring(uri.length - 30) : 'none'}`);
@@ -855,6 +869,7 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
     // Clean up regardless of error
     legacyRecording = null;
     legacyRecordingActive = false;
+    legacyRecordingStartTime = null; // Reset start time
     isStoppingRecording = false; // Reset guard flag
     // Clear timer on error
     if (silenceTimer) {

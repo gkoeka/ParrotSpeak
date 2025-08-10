@@ -158,30 +158,27 @@ export default function VoiceInputControls({
   // Handle auto-stop processing without calling stop again
   const handleAutoStopProcessing = async (uri: string, durationMs: number) => {
     try {
-      // Guard 1: Minimum duration check (600ms)
-      if (!uri || durationMs < 600) {
-        console.log(`[Filter] short recording (${durationMs}ms), skipping`);
+      // Guard 1: Minimum duration check (500ms) or no URI
+      if (!uri || durationMs < 500) {
+        console.log(`[Filter] short (<500ms) recording (${durationMs}ms), skipping`);
         setError('No speech detected');
         return;
       }
       
-      if (uri && durationMs > 1000) {
-        console.log(`✅ Auto-stopped recording. Duration: ${durationMs}ms`);
-        
-        // Check for long recording and show banner if needed
-        if (durationMs > 60000 && !longRecordingBannerShown) {
-          setError('Let\'s try shorter turns (≤60s) for better results');
-          setLongRecordingBannerShown(true);
-        }
-        
-        console.log('🔄 Processing audio for translation...');
-        setIsProcessing(true);
-        
-        // Process the recording through the translation pipeline with duration
-        await processAudio(uri, durationMs);
-      } else {
-        console.log('⚠️ Recording too short or no URI');
+      // Process any recording >= 500ms with a URI
+      console.log(`✅ Auto-stopped recording. Duration: ${durationMs}ms`);
+      
+      // Check for long recording and show banner if needed
+      if (durationMs > 60000 && !longRecordingBannerShown) {
+        setError('Let\'s try shorter turns (≤60s) for better results');
+        setLongRecordingBannerShown(true);
       }
+      
+      console.log('🔄 Processing audio for translation...');
+      setIsProcessing(true);
+      
+      // Process the recording through the translation pipeline with duration
+      await processAudio(uri, durationMs);
     } catch (error) {
       console.error('❌ Failed to process auto-stopped recording:', error);
       setError(error instanceof Error ? error.message : 'Failed to process recording');
@@ -206,9 +203,9 @@ export default function VoiceInputControls({
       
       const { uri, duration, hadSpeechEnergy } = await legacyStopRecording({ reason });
       
-      // Guard 1: Minimum duration check (600ms)
-      if (!uri || duration < 600) {
-        console.log(`[Filter] short recording (${duration}ms), skipping`);
+      // Guard 1: Minimum duration check (500ms) or no URI
+      if (!uri || duration < 500) {
+        console.log(`[Filter] short (<500ms) recording (${duration}ms), skipping`);
         setError('No speech detected');
         return;
       }
@@ -220,24 +217,22 @@ export default function VoiceInputControls({
         return;
       }
       
-      if (uri && duration > 1000) {
-        console.log(`✅ Recording stopped. Duration: ${duration}ms`);
+      // Process any recording >= 500ms with a URI
+      console.log(`✅ Recording stopped. Duration: ${duration}ms`);
         
-        // Check for long recording and show banner if needed
-        if (duration > 60000 && !longRecordingBannerShown) {
-          setError('Let\'s try shorter turns (≤60s) for better results');
-          // User must manually close - no auto-dismiss
-          setLongRecordingBannerShown(true);
-        }
-        
-        console.log('🔄 Processing audio for translation...');
-        setIsProcessing(true);
-        
-        // Process the recording through the translation pipeline with duration
-        await processAudio(uri, duration);
-      } else {
-        console.log('⚠️ Recording too short or no URI');
+      
+      // Check for long recording and show banner if needed
+      if (duration > 60000 && !longRecordingBannerShown) {
+        setError('Let\'s try shorter turns (≤60s) for better results');
+        // User must manually close - no auto-dismiss
+        setLongRecordingBannerShown(true);
       }
+      
+      console.log('🔄 Processing audio for translation...');
+      setIsProcessing(true);
+      
+      // Process the recording through the translation pipeline with duration
+      await processAudio(uri, duration);
     } catch (error) {
       console.error('❌ Failed to stop recording:', error);
       setError(error instanceof Error ? error.message : 'Failed to stop recording');
