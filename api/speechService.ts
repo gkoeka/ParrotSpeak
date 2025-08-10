@@ -551,6 +551,7 @@ export async function legacyStartRecording(): Promise<void> {
       lastSpeechTime = Date.now();
       
       // Start monitoring for silence
+      let firstUpdate = true;
       recording.setOnRecordingStatusUpdate((status) => {
         if (!legacyRecordingActive || isStoppingRecording) return; // Skip if not recording or already stopping
         
@@ -559,50 +560,53 @@ export async function legacyStartRecording(): Promise<void> {
           // Metering available: use -35 dB threshold
           if (status.metering > -35) {
             // Speech detected
-            console.log('[SilenceTimer] reset (speech)');
+            console.log('[SilenceTimer] speech detected, resetting timer');
             lastSpeechTime = Date.now();
             
-            // Clear and reset the timer
+            // Clear any existing timer
             if (silenceTimer) {
               clearTimeout(silenceTimer);
               silenceTimer = null;
             }
-            silenceTimer = setTimeout(() => {
-              if (legacyRecordingActive && !isStoppingRecording) {
-                console.log('[SilenceTimer] elapsed → auto-stop');
-                legacyStopRecording({ reason: 'silence' });
-              }
-            }, 2000);
-          }
-        } else if (status.durationMillis && status.durationMillis > 0) {
-          // Fallback: reset timer when duration increases
-          const now = Date.now();
-          if (now - lastSpeechTime > 500) { // Only reset if significant time passed
-            console.log('[SilenceTimer] reset (fallback)');
-            lastSpeechTime = now;
             
-            // Clear and reset the timer
+            // Set new timer for 2 seconds from now
+            silenceTimer = setTimeout(() => {
+              if (legacyRecordingActive && !isStoppingRecording) {
+                console.log('[SilenceTimer] 2 seconds of silence elapsed → auto-stop');
+                legacyStopRecording({ reason: 'silence' });
+              }
+            }, 2000);
+          } else if (firstUpdate) {
+            // No speech on first update - start timer
+            console.log('[SilenceTimer] initial silence, starting 2s timer');
+            silenceTimer = setTimeout(() => {
+              if (legacyRecordingActive && !isStoppingRecording) {
+                console.log('[SilenceTimer] 2 seconds elapsed without speech → auto-stop');
+                legacyStopRecording({ reason: 'silence' });
+              }
+            }, 2000);
+          }
+        } else {
+          // Fallback for devices without metering
+          if (firstUpdate || (Date.now() - lastSpeechTime > 500)) {
+            console.log('[SilenceTimer] fallback timer reset');
+            lastSpeechTime = Date.now();
+            
+            // Clear and set timer
             if (silenceTimer) {
               clearTimeout(silenceTimer);
               silenceTimer = null;
             }
             silenceTimer = setTimeout(() => {
               if (legacyRecordingActive && !isStoppingRecording) {
-                console.log('[SilenceTimer] elapsed → auto-stop');
+                console.log('[SilenceTimer] 2 seconds elapsed (fallback) → auto-stop');
                 legacyStopRecording({ reason: 'silence' });
               }
             }, 2000);
           }
         }
+        firstUpdate = false;
       });
-      
-      // Start the initial silence timer
-      silenceTimer = setTimeout(() => {
-        if (legacyRecordingActive && !isStoppingRecording) {
-          console.log('[SilenceTimer] elapsed → auto-stop');
-          legacyStopRecording({ reason: 'silence' });
-        }
-      }, 2000);
     } catch (createError: any) {
       // Handle specific error types with user-friendly messages
       if (createError.message?.includes('permission')) {
