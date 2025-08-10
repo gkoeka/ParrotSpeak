@@ -1,59 +1,66 @@
-# Critical Fix: Silence Timer Fallback Path
+# Silence Timer: Metering-Only Implementation
 
-## Problem Identified
-The 2-second silence timer was NOT working on devices without audio metering because:
+## Update: August 10, 2025
+Per user requirement: 2-second silence auto-stop ONLY runs when metering is available.
 
-### Root Cause (Line 638)
+## Implementation Details
+
+### Detection Logic
 ```javascript
-// OLD BROKEN CODE:
-isSpeech = durationChanged; // If duration is changing, assume activity
+// On first status callback, detect metering support
+if (meteringSupported === null) {
+  meteringSupported = status.metering != null && status.metering !== undefined;
+  if (!meteringSupported) {
+    console.log('[SilenceTimer] unsupported (no metering)');
+  }
+}
 ```
 
-**Why it failed:**
-- Recording duration ALWAYS increases, even during silence
-- `durationChanged` was always `true` 
-- System thought there was continuous speech
-- Timer never armed → no auto-stop after 2 seconds
+### Behavior by Device Type
 
-## Solution Applied
-```javascript
-// NEW FIXED CODE:
-isSpeech = false; // Assume silence when no metering available
-```
-
-**Why it works:**
-- When metering unavailable, assume silence by default
-- Timer can now arm after grace period
-- 2-second auto-stop will work on all devices
-
-## Expected Behavior After Fix
-
-### With Metering (iOS, some Android)
+#### With Metering (iOS, some Android)
+- Silence detection active
+- 2-second auto-stop enabled
+- Expected logs:
 ```
 [SilenceTimer] grace active
-[SilenceTimer] grace ended
-[SilenceTimer] state -> silence     // Detected via metering
+[SilenceTimer] grace ended  
+[SilenceTimer] state -> silence
 [SilenceTimer] armed (2000ms)
 [SilenceTimer] elapsed → auto-stop
 ```
 
-### Without Metering (some Android)
+#### Without Metering (some Android)
+- Silence detection DISABLED
+- Manual tap-to-stop only
+- Expected logs:
 ```
-[SilenceTimer] fallback path: no metering
-[SilenceTimer] grace active
-[SilenceTimer] grace ended
-[SilenceTimer] state -> silence     // Assumed due to no metering
-[SilenceTimer] armed (2000ms)
-[SilenceTimer] elapsed → auto-stop
+[SilenceTimer] unsupported (no metering)
+// No further timer logs - manual stop only
 ```
 
-## Impact
-- ✅ 2-second auto-stop now works on ALL devices
-- ✅ Fallback path properly handles missing metering
-- ✅ Timer behavior consistent across platforms
+## Key Changes
+1. Added `meteringSupported` flag - set once on first callback
+2. Only process silence detection when `meteringSupported === true`
+3. No fallback assumptions - devices without metering use manual stop only
+4. Removed duration-based fallback logic completely
 
-## Test Instructions
+## Testing Instructions
+
+### Android without metering:
 1. Start recording
-2. Remain silent (or stop speaking)
-3. Should see auto-stop after 2 seconds
-4. Check logs for "fallback path: no metering" if on affected device
+2. Notice log: `[SilenceTimer] unsupported (no metering)`
+3. Recording continues indefinitely
+4. Manual tap to stop works normally
+
+### iOS or Android with metering:
+1. Start recording
+2. Speak then pause
+3. Auto-stops after 2 seconds of silence
+4. See full timer lifecycle logs
+
+## Guards Maintained
+- Single-flight start/stop protection
+- `recId` invalidation for stale timers
+- Idempotent stop operations
+- Timer cleared on any stop/error/background

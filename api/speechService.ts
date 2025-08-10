@@ -578,11 +578,10 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
       
       // Track if we've seen the recording become active
       let seenActive = false;
-      let lastDurationMillis = 0; // For fallback when no metering
       let recordingStartTime = Date.now(); // Track when recording started for grace period
       let lastSilenceState: boolean | null = null; // Track last state to avoid spam
       let graceEnded = false; // Track if grace period has ended
-      let fallbackLogged = false; // Track if fallback path was logged
+      let meteringSupported: boolean | null = null; // Track if metering is supported for this recording
       
       // Start monitoring for silence - do NOT arm timer yet, wait for status updates
       recording.setOnRecordingStatusUpdate((status) => {
@@ -615,68 +614,65 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
           graceEnded = true;
         }
         
-        // Detect metering availability
-        const hasMeter = status.metering != null && status.metering !== undefined;
+        // Detect metering availability on first callback
+        if (meteringSupported === null) {
+          meteringSupported = status.metering != null && status.metering !== undefined;
+          if (!meteringSupported) {
+            console.log('[SilenceTimer] unsupported (no metering)');
+          }
+        }
         
-        // Compute if speech is detected (lower threshold for better detection)
-        let isSpeech: boolean;
-        if (hasMeter) {
-          isSpeech = status.metering! > -40; // Changed from -35 to -40 for better sensitivity
+        // Only process silence detection if metering is supported
+        if (meteringSupported) {
+          // Compute if speech is detected (lower threshold for better detection)
+          const isSpeech = status.metering! > -40; // Changed from -35 to -40 for better sensitivity
+          
           // Track if we've seen any speech energy
           if (status.metering! > -45) {
             globalHadSpeechEnergy = true;
           }
-        } else {
-          // Log fallback path once
-          if (!fallbackLogged) {
-            console.log('[SilenceTimer] fallback path: no metering');
-            fallbackLogged = true;
-          }
-          // Fallback: when no metering, assume silence (allow timer to work)
-          // This ensures auto-stop works on devices without metering
-          lastDurationMillis = status.durationMillis || 0;
-          isSpeech = false; // Assume silence when no metering available
-        }
-        
-        // Handle transitions
-        if (isSpeech) {
-          // Speech detected - clear any existing timer
-          if (silenceTimer) {
-            clearTimeout(silenceTimer);
-            silenceTimer = null;
-            console.log(hasMeter ? '[SilenceTimer] reset (speech)' : '[SilenceTimer] reset (fallback)');
-          }
-          // Log state change only when it actually changes
-          if (inSilence !== false && lastSilenceState !== false) {
-            console.log('[SilenceTimer] state -> speech');
-            lastSilenceState = false;
-          }
-          inSilence = false;
-        } else {
-          // Silence detected - only arm timer when transitioning from speech to silence
-          if (!inSilence) {
-            // Entering silence from speech/grace
-            if (!silenceTimer) {
-              silenceTimer = setTimeout(() => {
-                // Guard against late fires with recId check
-                if (myId !== recId) {
-                  console.log('[SilenceTimer] ignored (stale recId)');
-                  return;
-                }
-                // Call the single stop path (idempotent)
-                console.log('[SilenceTimer] elapsed → auto-stop');
-                legacyStopRecording({ reason: 'auto' });
-              }, 2000);
-              console.log('[SilenceTimer] armed (2000ms)');
+          
+          // Handle transitions
+          if (isSpeech) {
+            // Speech detected - clear any existing timer
+            if (silenceTimer) {
+              clearTimeout(silenceTimer);
+              silenceTimer = null;
+              console.log('[SilenceTimer] reset (speech)');
             }
-            // Log state change to silence
-            if (lastSilenceState !== true) {
-              console.log('[SilenceTimer] state -> silence');
-              lastSilenceState = true;
+            // Log state change only when it actually changes
+            if (inSilence !== false && lastSilenceState !== false) {
+              console.log('[SilenceTimer] state -> speech');
+              lastSilenceState = false;
             }
-            inSilence = true;
+            inSilence = false;
+          } else {
+            // Silence detected - only arm timer when transitioning from speech to silence
+            if (!inSilence) {
+              // Entering silence from speech/grace
+              if (!silenceTimer) {
+                silenceTimer = setTimeout(() => {
+                  // Guard against late fires with recId check
+                  if (myId !== recId) {
+                    console.log('[SilenceTimer] ignored (stale recId)');
+                    return;
+                  }
+                  // Call the single stop path (idempotent)
+                  console.log('[SilenceTimer] elapsed → auto-stop');
+                  legacyStopRecording({ reason: 'auto' });
+                }, 2000);
+                console.log('[SilenceTimer] armed (2000ms)');
+              }
+              // Log state change to silence
+              if (lastSilenceState !== true) {
+                console.log('[SilenceTimer] state -> silence');
+                lastSilenceState = true;
+              }
+              inSilence = true;
+            }
           }
         }
+        // If metering not supported, do nothing - manual stop only
       });
     } catch (createError: any) {
       // Handle specific error types with user-friendly messages
