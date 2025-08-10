@@ -524,7 +524,7 @@ export default function VoiceInputControls({
           isRecording && isDarkMode && styles.recordButtonCompactActiveDark,
           isProcessing && isDarkMode && styles.recordButtonCompactProcessingDark
         ]}
-        onPress={isRecording ? handleStopRecording : handleStartRecording}
+        onPress={isRecording ? () => handleStopRecording() : handleStartRecording}
         accessibilityLabel={
           isProcessing ? "Processing" : 
           isRecording ? "Stop recording" : 
