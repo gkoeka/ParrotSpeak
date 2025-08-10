@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 interface ThemeContextType {
   isDarkMode: boolean;
   toggleDarkMode: () => void;
+  loadThemePreference: () => Promise<void>;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -19,8 +20,11 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const loadThemePreference = async () => {
     try {
       const savedTheme = await SecureStore.getItemAsync('theme');
+      console.log('[ThemeContext] Loading theme preference:', savedTheme);
       if (savedTheme === 'dark') {
         setIsDarkMode(true);
+      } else {
+        setIsDarkMode(false);
       }
     } catch (error) {
       console.error('Error loading theme preference:', error);
@@ -33,13 +37,14 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     
     try {
       await SecureStore.setItemAsync('theme', newMode ? 'dark' : 'light');
+      console.log('[ThemeContext] Theme saved:', newMode ? 'dark' : 'light');
     } catch (error) {
       console.error('Error saving theme preference:', error);
     }
   };
 
   return (
-    <ThemeContext.Provider value={{ isDarkMode, toggleDarkMode }}>
+    <ThemeContext.Provider value={{ isDarkMode, toggleDarkMode, loadThemePreference }}>
       {children}
     </ThemeContext.Provider>
   );

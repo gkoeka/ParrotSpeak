@@ -130,10 +130,17 @@ export function ParticipantsProvider({ children }: { children: React.ReactNode }
   };
   
   const setParticipantLanguage = (id: 'A' | 'B', lang: string) => {
-    setParticipants(prev => ({
-      ...prev,
-      [id]: { ...prev[id], lang }
-    }));
+    setParticipants(prev => {
+      // Only update if actually different to prevent loops
+      if (prev[id].lang === lang) {
+        return prev;
+      }
+      console.log(`[ParticipantsContext] Setting participant ${id} language to: ${lang}`);
+      return {
+        ...prev,
+        [id]: { ...prev[id], lang }
+      };
+    });
   };
 
   return (

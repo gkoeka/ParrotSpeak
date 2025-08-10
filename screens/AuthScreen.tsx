@@ -23,7 +23,7 @@ export default function AuthScreen() {
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { login, register, loginWithGoogle, loginWithApple } = useAuth();
-  const { isDarkMode } = useTheme();
+  const { isDarkMode, loadThemePreference } = useTheme();
 
   useEffect(() => {
     checkAppleAuthAvailability();
@@ -51,8 +51,12 @@ export default function AuthScreen() {
     try {
       if (isLogin) {
         await login(email, password);
+        // Reload theme after successful login
+        await loadThemePreference();
       } else {
         await register(email, password, firstName, lastName);
+        // Reload theme after successful registration
+        await loadThemePreference();
       }
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Authentication failed');
@@ -65,6 +69,8 @@ export default function AuthScreen() {
     setLoading(true);
     try {
       await loginWithGoogle();
+      // Reload theme after successful login
+      await loadThemePreference();
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Google sign in failed');
     } finally {
@@ -76,6 +82,8 @@ export default function AuthScreen() {
     setLoading(true);
     try {
       await loginWithApple();
+      // Reload theme after successful login
+      await loadThemePreference();
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Apple sign in failed');
     } finally {

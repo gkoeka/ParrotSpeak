@@ -132,14 +132,18 @@ export default function ConversationScreen() {
 
   // Sync participant languages with UI selections
   useEffect(() => {
-    // Update participant A with source language
-    setParticipantLanguage('A', sourceLanguage);
-  }, [sourceLanguage, setParticipantLanguage]);
+    // Only update after preferences are loaded
+    if (preferencesLoaded && sourceLanguage) {
+      setParticipantLanguage('A', sourceLanguage);
+    }
+  }, [sourceLanguage, preferencesLoaded, setParticipantLanguage]);
 
   useEffect(() => {
-    // Update participant B with target language
-    setParticipantLanguage('B', targetLanguage);
-  }, [targetLanguage, setParticipantLanguage]);
+    // Only update after preferences are loaded
+    if (preferencesLoaded && targetLanguage) {
+      setParticipantLanguage('B', targetLanguage);
+    }
+  }, [targetLanguage, preferencesLoaded, setParticipantLanguage]);
 
   // Load conversation data if viewing from history
   useEffect(() => {
