@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, Platform, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -41,6 +41,7 @@ export default function VoiceInputControls({
   
   // Recording state
   const [isRecording, setIsRecording] = useState(false);
+  const isRecordingRef = useRef(false); // Ref to access current state in callbacks
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,10 +67,13 @@ export default function VoiceInputControls({
   const isSourceSpeechSupported = sourceLanguageConfig?.speechSupported ?? true;
   const isTargetSpeechSupported = targetLanguageConfig?.speechSupported ?? true;
 
+
+
   // Simple start recording - legacy mode only
   const handleStartRecording = async () => {
     try {
-      console.log('🎤 Starting recording...');
+      console.log('🎤 [VoiceInputControls] handleStartRecording called');
+      console.log('[VoiceInputControls] Platform:', Platform.OS);
       console.log('[UX] haptics=start');
       
       // Light haptic on start
@@ -78,14 +82,53 @@ export default function VoiceInputControls({
       }
       
       setIsRecording(true);
+      isRecordingRef.current = true; // Update ref
       setError(null);
       
-      await legacyStartRecording();
-      console.log('✅ Recording started - tap again to stop');
+      console.log('[VoiceInputControls] Calling legacyStartRecording with onAutoStop callback...');
+      await legacyStartRecording({
+        onAutoStop: (payload: { reason: string; uri: string; durationMs: number; hadSpeech?: boolean; speechFrames?: number }) => {
+          console.log('🔄 Auto-stop notification received from service with payload');
+          
+          // Guard: if not recording, ignore
+          if (!isRecordingRef.current) {
+            console.log('[UI] auto-stop ignored (not recording)');
+            return;
+          }
+          
+          // Set recording state to false
+          setIsRecording(false);
+          isRecordingRef.current = false; // Update ref
+          
+          // If we have a valid URI, process it directly (don't call stop again)
+          if (payload.uri) {
+            console.log('[UI] Processing auto-stopped recording directly');
+            
+            // Light haptic on auto-stop
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
+            
+            // Process the recording directly with the provided data
+            handleAutoStopProcessing(payload.uri, payload.durationMs, payload.hadSpeech, payload.speechFrames);
+          } else {
+            // No URI means recording failed somehow
+            console.log('[UI] Auto-stop with no URI - showing error');
+            setError('Recording stopped but no audio captured');
+          }
+        }
+      });
+      console.log('✅ Recording started - tap again to stop or wait for 2s silence');
       
     } catch (error: any) {
-      console.error('❌ Failed to start recording:', error);
+      console.error('❌ [VoiceInputControls] Failed to start recording:', error);
+      console.error('[VoiceInputControls] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       setIsRecording(false);
+      isRecordingRef.current = false; // Update ref
       
       if (error.message?.includes('permission')) {
         Alert.alert(
@@ -112,10 +155,52 @@ export default function VoiceInputControls({
     }
   };
 
-  // Simple stop recording and process
-  const handleStopRecording = async () => {
+  // Handle auto-stop processing without calling stop again
+  const handleAutoStopProcessing = async (uri: string, durationMs: number, hadSpeech?: boolean, speechFrames?: number) => {
     try {
-      console.log('🛑 Stopping recording...');
+      console.log(`[Filter] gate hadSpeech=${hadSpeech} frames=${speechFrames} duration=${durationMs}ms`);
+      
+      // Guard 1: Minimum duration check (500ms) or no URI
+      if (!uri || durationMs < 500) {
+        console.log(`[Filter] short (<500ms) recording (${durationMs}ms), skipping`);
+        setError('No speech detected');
+        return;
+      }
+      
+      // Guard 2: No-speech guard - only skip if hadSpeech is explicitly false
+      if (hadSpeech === false) {
+        console.log('[Filter] no speech energy detected, skipping');
+        setError('No speech detected');
+        return;
+      }
+      // If hadSpeech === true, ALWAYS proceed (ignore frames count)
+      
+      // Process any recording >= 500ms with a URI
+      console.log(`✅ Auto-stopped recording. Duration: ${durationMs}ms`);
+      
+      // Check for long recording and show banner if needed
+      if (durationMs > 60000 && !longRecordingBannerShown) {
+        setError('Let\'s try shorter turns (≤60s) for better results');
+        setLongRecordingBannerShown(true);
+      }
+      
+      console.log('🔄 Processing audio for translation...');
+      setIsProcessing(true);
+      
+      // Process the recording through the translation pipeline with duration
+      await processAudio(uri, durationMs);
+    } catch (error) {
+      console.error('❌ Failed to process auto-stopped recording:', error);
+      setError(error instanceof Error ? error.message : 'Failed to process recording');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Simple stop recording and process (supports auto-stop from silence timer)
+  const handleStopRecording = async (reason?: string) => {
+    try {
+      console.log(`🛑 Stopping recording... (reason: ${reason || 'manual'})`);
       console.log('[UX] haptics=stop');
       
       // Light haptic on stop
@@ -124,27 +209,50 @@ export default function VoiceInputControls({
       }
       
       setIsRecording(false);
+      isRecordingRef.current = false; // Update ref
       
-      const { uri, duration } = await legacyStopRecording();
+      const { uri, duration, hadSpeechEnergy, hadSpeech, speechFrames } = await legacyStopRecording({ reason });
       
-      if (uri && duration > 500) {
-        console.log(`✅ Recording stopped. Duration: ${duration}ms`);
-        
-        // Check for long recording and show banner if needed
-        if (duration > 60000 && !longRecordingBannerShown) {
-          setError('Let\'s try shorter turns (≤60s) for better results');
-          // User must manually close - no auto-dismiss
-          setLongRecordingBannerShown(true);
-        }
-        
-        console.log('🔄 Processing audio for translation...');
-        setIsProcessing(true);
-        
-        // Process the recording through the translation pipeline with duration
-        await processAudio(uri, duration);
-      } else {
-        console.log('⚠️ Recording too short or no URI');
+      console.log(`[Filter] gate hadSpeech=${hadSpeech} frames=${speechFrames} duration=${duration}ms`);
+      
+      // Guard 1: Minimum duration check (500ms) or no URI
+      if (!uri || duration < 500) {
+        console.log(`[Filter] short (<500ms) recording (${duration}ms), skipping`);
+        setError('No speech detected');
+        return;
       }
+      
+      // Guard 2: No-speech guard - only skip if hadSpeech is explicitly false
+      if (hadSpeech === false) {
+        console.log('[Filter] no speech energy detected, skipping');
+        setError('No speech detected');
+        return;
+      }
+      // If hadSpeech === true, ALWAYS proceed (ignore frames count)
+      
+      // Guard 3: Energy heuristic (legacy fallback if hadSpeech is undefined)
+      if (hadSpeech === undefined && hadSpeechEnergy === false) {
+        console.log('[Filter] no speech energy detected (legacy), skipping');
+        setError('No speech detected');
+        return;
+      }
+      
+      // Process any recording >= 500ms with a URI
+      console.log(`✅ Recording stopped. Duration: ${duration}ms`);
+        
+      
+      // Check for long recording and show banner if needed
+      if (duration > 60000 && !longRecordingBannerShown) {
+        setError('Let\'s try shorter turns (≤60s) for better results');
+        // User must manually close - no auto-dismiss
+        setLongRecordingBannerShown(true);
+      }
+      
+      console.log('🔄 Processing audio for translation...');
+      setIsProcessing(true);
+      
+      // Process the recording through the translation pipeline with duration
+      await processAudio(uri, duration);
     } catch (error) {
       console.error('❌ Failed to stop recording:', error);
       setError(error instanceof Error ? error.message : 'Failed to stop recording');
@@ -219,8 +327,10 @@ export default function VoiceInputControls({
         }
       }
       
-      if (!transcription || transcription.trim() === '') {
-        console.log('⚠️ No transcription received');
+      // Guard 2: Transcription guard - check for empty or meaningless transcripts
+      if (!transcription || transcription.trim().length < 2 || /^\W*$/.test(transcription)) {
+        console.log('[Filter] empty transcript, skipping');
+        setError('No speech detected');
         return;
       }
       
@@ -275,8 +385,9 @@ export default function VoiceInputControls({
             onStatusChange?.('error');
             return;
           }
-          // For other language mismatches, still show a warning but proceed
-          console.log(`⚠️ Language mismatch but proceeding: ${actualSourceLang} → ${actualTargetLang}`);
+          // For other language mismatches, use the DETECTED language as source for translation
+          console.log(`⚠️ Language mismatch: Using detected ${detectedLang} → ${actualTargetLang}`);
+          actualSourceLang = detectedLang; // Use what was actually spoken
         } else {
           console.log(`📍 Manual mode: ${actualSourceLang} → ${actualTargetLang}`);
         }
@@ -467,7 +578,7 @@ export default function VoiceInputControls({
           isRecording && isDarkMode && styles.recordButtonCompactActiveDark,
           isProcessing && isDarkMode && styles.recordButtonCompactProcessingDark
         ]}
-        onPress={isRecording ? handleStopRecording : handleStartRecording}
+        onPress={isRecording ? () => handleStopRecording() : handleStartRecording}
         accessibilityLabel={
           isProcessing ? "Processing" : 
           isRecording ? "Stop recording" : 

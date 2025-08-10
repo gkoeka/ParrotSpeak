@@ -6,9 +6,9 @@ import { Platform } from 'react-native';
 import { addAppStateListener, getCurrentAppState, isAppInForeground } from '../utils/safeAppState';
 
 // Mobile-only speech service with module availability checks
-const isSpeechAvailable = !!Speech;
-const isAudioAvailable = !!Audio;
-const isFileSystemAvailable = !!FileSystem;
+const isSpeechAvailable = typeof Speech !== 'undefined' && Speech !== null;
+const isAudioAvailable = typeof Audio !== 'undefined' && Audio !== null && typeof Audio.Recording !== 'undefined';
+const isFileSystemAvailable = typeof FileSystem !== 'undefined' && FileSystem !== null;
 
 // FOREGROUND-ONLY: All recording stops when app backgrounds
 const FOREGROUND_ONLY = true; // Enforces recording only when app is in foreground (docs: privacy protection)
@@ -313,9 +313,37 @@ export interface SpeechRecognitionResult {
 // Legacy recording variable for OFF mode only
 let legacyRecording: Audio.Recording | null = null;
 let legacyRecordingActive: boolean = false;
+let isStoppingRecording: boolean = false; // Guard flag to prevent overlapping stops
+let isStarting: boolean = false; // Guard flag to prevent overlapping starts
+let isStopping: boolean = false; // Guard flag for stop operations
+let legacyRecordingStartTime: number | null = null; // Track when recording started for duration fallback
+let hasStopped: boolean = false; // Track if stop was already handled for this turn
+
+// Speech activity tracking for no-speech guard
+let hadSpeech: boolean = false; // Whether any speech was detected during recording
+let speechFrames: number = 0; // Count of frames with speech detected
 
 // AppState listener for legacy mode
 let appStateSubscription: any = null;
+
+// Silence detection thresholds with hysteresis
+const SPEECH_DB = -50;     // speech if rms > -50 dB
+const SILENCE_DB = -55;    // clear-armed if rms > -55 dB (hysteresis)
+const ARM_SILENCE_MS = 2000;           // auto-stop after 2s of silence
+const REQUIRE_SILENCE_BEFORE_ARM_MS = 400;  // need ~0.4s continuous silence before arming
+const FRAME_MIN_MS = 60;   // ignore ultra-fast flicker
+
+// Silence timer for auto-stop (2 seconds) - single timer per recording
+let silenceTimer: NodeJS.Timeout | null = null;
+let inSilence: boolean = false;
+let recId: number = 0; // increment when a new recording starts
+let onAutoStopCallback: ((payload: { reason: string; uri: string; durationMs: number }) => void) | undefined = undefined; // Callback for auto-stop notification
+let globalHadSpeechEnergy: boolean = false; // Track speech energy across recording session
+
+// Consecutive silence/speech tracking for hysteresis
+let consecutiveSilentMs: number = 0;
+let consecutiveSpeechMs: number = 0;
+let lastStatusMs: number = 0;
 
 /**
  * Helper to resolve interruption mode constants safely across Expo AV versions
@@ -381,12 +409,25 @@ function initializeLegacyAppStateListener() {
   
   appStateSubscription = addAppStateListener((nextAppState) => {
     if (nextAppState === 'background' || nextAppState === 'inactive') {
+      console.log('[Interruption] background → stop & clear timer');
+      
+      // Always clear timer and reset state when backgrounding
+      if (silenceTimer) {
+        clearTimeout(silenceTimer);
+        silenceTimer = null;
+        console.log('[SilenceTimer] cleared');
+      }
+      inSilence = false; // Reset silence state
+      
+      // Invalidate late timers by incrementing recId
+      recId++;
+      
+      // Stop recording if active
       if (legacyRecordingActive && legacyRecording) {
-        console.log('📱 [Legacy] App backgrounded/interrupted → stopping recording');
-        console.log('🔄 [Interruption] System interruption detected - ending recording safely');
-        // Force stop recording when app goes to background or is interrupted
+        console.log('📱 [Legacy] App backgrounded → stopping recording');
+        // Force stop recording when app goes to background
         legacyStopRecording({ reason: 'background' }).then(() => {
-          console.log('✅ [Interruption] Recording ended safely due to interruption');
+          console.log('✅ [Interruption] Recording ended safely');
         }).catch((error) => {
           console.log('⚠️ [Interruption] Error stopping recording:', error);
         });
@@ -401,7 +442,7 @@ function initializeLegacyAppStateListener() {
   console.log('✅ [Legacy] AppState listener initialized for foreground-only recording');
 }
 
-// Low-bitrate mono M4A optimized for Whisper (16kHz, 24kbps)
+// Low-bitrate mono M4A optimized for Whisper (16kHz, 24kbps) with metering
 const LOW_M4A: Audio.RecordingOptions = {
   android: { 
     extension: '.m4a', 
@@ -423,20 +464,55 @@ const LOW_M4A: Audio.RecordingOptions = {
     mimeType: 'audio/webm',
     bitsPerSecond: 24000,
   },
-  isMeteringEnabled: true
+  isMeteringEnabled: true,
+  // Add update interval to ensure we get timely metering updates
+  ...(('progressUpdateIntervalMillis' in Audio || 'progressUpdateInterval' in Audio) && {
+    progressUpdateIntervalMillis: 200,  // Try newer key name
+    progressUpdateInterval: 200         // Fallback to older key name
+  })
 };
 
 /**
  * Legacy recording start for OFF mode (standard single-tap recording)
  * Used when Conversation Mode is disabled
+ * @param options Optional configuration including onAutoStop callback
  */
-export async function legacyStartRecording(): Promise<void> {
+export async function legacyStartRecording(options?: { onAutoStop?: () => void }): Promise<void> {
+  // Check if already starting or stopping
+  if (isStarting || isStopping) {
+    console.log('[Start] ignored (busy)');
+    return;
+  }
+  
+  isStarting = true;
+  hasStopped = false; // Reset for new turn
+  // Store the onAutoStop callback for this recording session
+  onAutoStopCallback = options?.onAutoStop;
+  
   try {
     console.log('🎤 [Legacy] Starting legacy recording (CM OFF mode)...');
+    console.log('[Legacy] Platform checks:', {
+      isAudioAvailable,
+      isFileSystemAvailable,
+      isSpeechAvailable,
+      Platform: Platform.OS
+    });
     
-    // Platform guard
+    // Platform guard with better error messaging
     if (!isAudioAvailable) {
-      throw new Error('Audio module not available on this platform');
+      console.error('[Legacy] Audio module not available!', {
+        Audio: typeof Audio,
+        AudioRecording: typeof Audio?.Recording,
+        isAudioAvailable,
+        platform: Platform.OS
+      });
+      
+      // Provide platform-specific error message
+      if (Platform.OS === 'web') {
+        throw new Error('Voice recording is not supported in web browser. Please use the mobile app.');
+      } else {
+        throw new Error('Audio recording module failed to load. Please restart the app.');
+      }
     }
     
     // Check if app is in foreground (FOREGROUND-ONLY enforcement)
@@ -448,6 +524,9 @@ export async function legacyStartRecording(): Promise<void> {
     // Prevent multiple recordings
     if (legacyRecordingActive || legacyRecording) {
       console.warn('⚠️ [Legacy] Recording already in progress');
+      if (silenceTimer) {
+        console.log('[SilenceTimer] start ignored (already armed)');
+      }
       return;
     }
     
@@ -499,13 +578,167 @@ export async function legacyStartRecording(): Promise<void> {
     // Create and start recording with error handling
     console.log('📱 [Legacy] Creating recording with createAsync...');
     try {
-      const { recording } = await Audio.Recording.createAsync(LOW_M4A);
+      // Create recording options with enhanced metering configuration
+      const recordingOptions = { ...LOW_M4A };
+      
+      // Try to add additional metering-related options if supported
+      if ('isMeteringEnabled' in Audio || 'isMeteringEnabled' in Audio.Recording) {
+        recordingOptions.isMeteringEnabled = true;
+        console.log('[Recording] Metering explicitly enabled in options');
+      }
+      
+      const { recording } = await Audio.Recording.createAsync(recordingOptions);
       legacyRecording = recording;
       legacyRecordingActive = true;
+      legacyRecordingStartTime = Date.now(); // Track when recording started
       console.log('✅ [Legacy] Recording started successfully');
       
       // Log initial audio route
       await logAudioRouteStatus('recording start');
+      
+      // Increment recording ID for this session
+      recId++;
+      const myId = recId; // Capture current ID for this recording
+      
+      // Clear any existing timer before starting (defensive)
+      if (silenceTimer) {
+        clearTimeout(silenceTimer);
+        silenceTimer = null;
+      }
+      inSilence = false;
+      globalHadSpeechEnergy = false; // Reset for new recording
+      hadSpeech = false; // Reset speech tracking for new recording
+      speechFrames = 0; // Reset speech frame counter
+      consecutiveSilentMs = 0; // Reset consecutive silence tracker
+      consecutiveSpeechMs = 0; // Reset consecutive speech tracker
+      lastStatusMs = 0; // Reset last status timestamp
+      
+      // Track if we've seen the recording become active
+      let seenActive = false;
+      let recordingStartTime = Date.now(); // Track when recording started for grace period
+      let lastSilenceState: boolean | null = null; // Track last state to avoid spam
+      let graceEnded = false; // Track if grace period has ended
+      let meteringSupported: boolean | null = null; // Track if metering is supported for this recording
+      let lastSampleLog = 0; // For sampler logging
+      
+      // Start monitoring for silence - do NOT arm timer yet, wait for status updates
+      recording.setOnRecordingStatusUpdate((status) => {
+        if (!legacyRecordingActive || isStoppingRecording) return; // Skip if not recording or already stopping
+        
+        // Check if recording is active
+        if (status.isRecording === true && !seenActive) {
+          seenActive = true;
+          console.log('[Recording] Active status confirmed');
+        }
+        
+        // Don't process silence detection until recording is confirmed active
+        if (!seenActive) {
+          return;
+        }
+        
+        // Grace period: Don't arm timer for first 700ms to allow user to start speaking
+        const recordingDurationMillis = status.durationMillis || 0;
+        if (recordingDurationMillis < 700) {
+          if (!inSilence) {
+            console.log('[SilenceTimer] grace active');
+            inSilence = true; // Mark to avoid repeated logs
+          }
+          return;
+        }
+        
+        // Log when grace period ends (only once)
+        if (!graceEnded) {
+          console.log('[SilenceTimer] grace ended');
+          graceEnded = true;
+          // Reset inSilence flag after grace to allow proper timer arming
+          inSilence = false;
+        }
+        
+        // Detect metering availability on first callback
+        if (meteringSupported === null) {
+          meteringSupported = status.metering != null && status.metering !== undefined;
+          if (!meteringSupported) {
+            console.log('[SilenceTimer] unsupported (no metering)');
+          } else {
+            console.log('[SilenceTimer] metering active (rms dB available)');
+            console.log(`[SilenceTimer] thresholds SPEECH_DB=${SPEECH_DB} SILENCE_DB=${SILENCE_DB} requireSilence=${REQUIRE_SILENCE_BEFORE_ARM_MS}ms`);
+          }
+        }
+        
+        // Only process silence detection if metering is supported
+        if (meteringSupported) {
+          // Compute time delta
+          const delta = recordingDurationMillis - lastStatusMs;
+          if (delta <= 0 || delta < FRAME_MIN_MS) {
+            return; // Ignore ultra-fast flicker or invalid delta
+          }
+          lastStatusMs = recordingDurationMillis;
+          
+          // Get RMS value and determine if this is a speech frame
+          const rmsValue = status.metering!;
+          const isSpeechFrame = rmsValue > SPEECH_DB;
+          
+          // Log RMS values for first 3 seconds to help debug
+          if (recordingDurationMillis <= 3000) {
+            const isArmed = silenceTimer !== null;
+            console.log(`[SilenceTimer] rms=${rmsValue}dB, isSpeech=${isSpeechFrame}, armed=${isArmed}`);
+          }
+          
+          // Sampler logging - at most once per 1000ms
+          if (recordingDurationMillis - lastSampleLog >= 1000) {
+            console.log(`[SilenceTimer] sample rms=${Math.round(rmsValue)} speechMs=${consecutiveSpeechMs} silentMs=${consecutiveSilentMs} armed=${!!silenceTimer}`);
+            lastSampleLog = recordingDurationMillis;
+          }
+          
+          // Track if we've seen any speech energy (legacy)
+          if (rmsValue > -45) {
+            globalHadSpeechEnergy = true;
+          }
+          
+          // Update consecutive tracking
+          if (isSpeechFrame) {
+            // Speech frame detected
+            consecutiveSpeechMs += delta;
+            consecutiveSilentMs = 0;
+            
+            // Track speech activity for no-speech guard
+            if (!hadSpeech && consecutiveSpeechMs >= 150) {
+              console.log('[Filter] speech detected');
+              hadSpeech = true;
+            }
+            if (hadSpeech) {
+              speechFrames++;
+            }
+            
+            // Hysteresis: ANY value above SILENCE_DB clears the timer
+            if (silenceTimer && rmsValue > SILENCE_DB) {
+              clearTimeout(silenceTimer);
+              silenceTimer = null;
+              console.log('[SilenceTimer] reset (speech)');
+            }
+          } else {
+            // Silent frame detected
+            consecutiveSilentMs += delta;
+            consecutiveSpeechMs = 0;
+            
+            // Arm timer only after continuous silence requirement is met
+            if (!silenceTimer && consecutiveSilentMs >= REQUIRE_SILENCE_BEFORE_ARM_MS) {
+              silenceTimer = setTimeout(() => {
+                // Guard against late fires with recId check
+                if (myId !== recId) {
+                  console.log('[SilenceTimer] ignored (stale recId)');
+                  return;
+                }
+                // Call the single stop path (idempotent)
+                console.log('[SilenceTimer] elapsed → auto-stop');
+                legacyStopRecording({ reason: 'auto' });
+              }, ARM_SILENCE_MS);
+              console.log('[SilenceTimer] armed (2000ms)');
+            }
+          }
+        }
+        // If metering not supported, do nothing - manual stop only
+      });
     } catch (createError: any) {
       // Handle specific error types with user-friendly messages
       if (createError.message?.includes('permission')) {
@@ -518,9 +751,21 @@ export async function legacyStartRecording(): Promise<void> {
     }
   } catch (error) {
     console.error('❌ [Legacy] Failed to start recording:', error);
+    // Clean up on error
     legacyRecording = null;
     legacyRecordingActive = false;
+    isStoppingRecording = false;
+    // Clear timer on error
+    if (silenceTimer) {
+      clearTimeout(silenceTimer);
+      silenceTimer = null;
+      console.log('[SilenceTimer] cleared');
+    }
+    // Invalidate late timers
+    recId++;
     throw error;
+  } finally {
+    isStarting = false;
   }
 }
 
@@ -528,19 +773,51 @@ export async function legacyStartRecording(): Promise<void> {
  * Legacy recording stop for OFF mode (standard single-tap recording)
  * Used when Conversation Mode is disabled
  */
-export async function legacyStopRecording(options?: { reason?: string }): Promise<{ uri: string; duration: number }> {
+// Export function to check if legacy recording is active
+export function isLegacyRecordingActive(): boolean {
+  return legacyRecordingActive;
+}
+
+export async function legacyStopRecording(options?: { reason?: string }): Promise<{ uri: string; duration: number; hadSpeechEnergy?: boolean }> {
+  // Check if stop was already handled for this turn
+  if (hasStopped) {
+    console.log('[Stop] already handled');
+    return { uri: '', duration: 0 };
+  }
+  
+  // Check if already in the process of stopping
+  if (isStopping) {
+    console.log('[Stop] already handled');
+    return { uri: '', duration: 0 };
+  }
+  
+  isStopping = true;
+  hasStopped = true; // Mark as handled for this turn
+  
   try {
     const reason = options?.reason || 'manual';
+    
+    // Clear silence timer on any stop
+    if (silenceTimer) {
+      clearTimeout(silenceTimer);
+      silenceTimer = null;
+      console.log('[SilenceTimer] cleared');
+    }
+    
+    // Check if there's anything to stop
+    if (!legacyRecording || !legacyRecordingActive) {
+      // Don't log redundant messages, already handled
+      return { uri: '', duration: 0 };
+    }
+    
     console.log(`🛑 [Legacy] Stopping legacy recording (reason: ${reason})...`);
+    
+    // Set guard flag to prevent overlapping stops
+    isStoppingRecording = true;
     
     // Handle interruption-specific cleanup
     if (reason === 'background') {
       console.log('🔄 [Interruption] Handling background/interruption cleanup');
-    }
-    
-    if (!legacyRecording || !legacyRecordingActive) {
-      console.warn('⚠️ [Legacy] No active recording to stop - ignoring');
-      return { uri: '', duration: 0 };
     }
     
     // Mark as inactive immediately to prevent double-stop
@@ -557,7 +834,18 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
       await legacyRecording.stopAndUnloadAsync();
       uri = legacyRecording.getURI() || '';
       const status = await legacyRecording.getStatusAsync();
-      duration = status.durationMillis || 0;
+      
+      // Compute trustworthy duration - prefer status.durationMillis, fallback to timestamp diff
+      if (status.durationMillis && status.durationMillis > 0) {
+        duration = status.durationMillis;
+        console.log(`[Duration] Using status.durationMillis: ${duration}ms`);
+      } else if (legacyRecordingStartTime) {
+        duration = Date.now() - legacyRecordingStartTime;
+        console.log(`[Duration] Using timestamp fallback: ${duration}ms`);
+      } else {
+        duration = 0;
+        console.log('[Duration] No duration available');
+      }
       
       // Log file size for optimization tracking
       if (uri && isFileSystemAvailable) {
@@ -576,8 +864,11 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
     
     // Clean up
     legacyRecording = null;
+    legacyRecordingStartTime = null; // Reset start time
+    isStoppingRecording = false; // Reset guard flag
     
     console.log(`✅ [Legacy] Recording stopped. Duration: ${duration}ms, URI: ${uri ? uri.substring(uri.length - 30) : 'none'}`);
+    console.log(`[Filter] hadSpeech=${hadSpeech} frames=${speechFrames} duration=${duration}ms`);
     
     // Check for long recording (> 60 seconds)
     if (duration > 60000) {
@@ -596,23 +887,61 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
       console.log(`📈 [Metric] Recording turn: {durationMs: ${duration}}`);
     }
     
-    return { uri, duration };
+    // If this was an auto-stop, invoke the callback to notify UI with data
+    if (reason === 'auto' && onAutoStopCallback) {
+      try {
+        console.log('[Callback] auto-stop delivered');
+        onAutoStopCallback({ 
+          reason: 'auto', 
+          uri, 
+          durationMs: duration,
+          hadSpeech,
+          speechFrames
+        });
+      } catch (callbackError) {
+        console.warn('⚠️ [Callback] Error in onAutoStop callback:', callbackError);
+      }
+    }
+    
+    // Reset speech tracking after stop
+    const result = { uri, duration, hadSpeechEnergy: globalHadSpeechEnergy, hadSpeech, speechFrames };
+    hadSpeech = false;
+    speechFrames = 0;
+    consecutiveSilentMs = 0;
+    consecutiveSpeechMs = 0;
+    lastStatusMs = 0;
+    
+    return result;
   } catch (error) {
     console.error('❌ [Legacy] Error during stop (non-fatal):', error);
     // Clean up regardless of error
     legacyRecording = null;
     legacyRecordingActive = false;
+    legacyRecordingStartTime = null; // Reset start time
+    isStoppingRecording = false; // Reset guard flag
+    hadSpeech = false; // Reset speech tracking on error
+    speechFrames = 0;
+    consecutiveSilentMs = 0;
+    consecutiveSpeechMs = 0;
+    lastStatusMs = 0;
+    // Clear timer on error
+    if (silenceTimer) {
+      clearTimeout(silenceTimer);
+      silenceTimer = null;
+      console.log('[SilenceTimer] cleared');
+    }
     // Return empty result instead of throwing - prevents UI errors
     return { uri: '', duration: 0 };
+  } finally {
+    isStopping = false;
+    // Invalidate late timers
+    recId++;
+    // Clear callback after stop completes
+    onAutoStopCallback = undefined;
   }
 }
 
-/**
- * Check if legacy recording is currently active
- */
-export function isLegacyRecordingActive(): boolean {
-  return legacyRecordingActive;
-}
+
 
 // Keep deprecated exports for backward compatibility but disabled for CM mode
 export let recording: Audio.Recording | null = null;

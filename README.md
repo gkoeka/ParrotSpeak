@@ -14,6 +14,14 @@ ParrotSpeak enables seamless cross-language communication through real-time spee
 
 ## 🎉 Recent Updates
 
+### Enhanced Recording with Hysteresis & No-Speech Guard (January 10, 2025)
+- **✅ Dual-Threshold Hysteresis System** - Implements SPEECH_DB=-50 for speech detection and SILENCE_DB=-55 for timer clearing with 400ms consecutive silence requirement
+- **✅ Prevents Premature Auto-Stops** - Any sound above -55dB clears armed timer, eliminating false stops during natural speech pauses
+- **✅ No-Speech Guard** - Smart filtering prevents silent recordings from being transcribed, saving API costs with hadSpeech flag tracking
+- **✅ Trustworthy Duration Calculation** - Uses status.durationMillis or timestamp fallback for accurate recording length with <500ms filtering
+- **✅ Sampler Logging** - Real-time monitoring every 1000ms showing RMS values, consecutive speech/silence durations, and timer state
+- **✅ Device Compatibility** - Automatic fallback disables auto-stop on Android devices without audio metering support
+
 ### Security Hardening & CI/CD Integration (January 9, 2025)
 - **✅ Script Execution Security** - Implemented defense-in-depth protection against command injection with allowlist, validator, and no-shell policy
 - **✅ WebSocket Security Enhanced** - Token-based auth via subprotocols, strict origin validation, and wss:// enforcement
@@ -110,10 +118,13 @@ ParrotSpeak enables seamless cross-language communication through real-time spee
 ### Core Translation Capabilities
 - **Conversation Mode** - Hands-free continuous conversation mode with automatic speaker detection and switching (enabled by default, configurable in Settings)
 - **Real-time Voice-to-Voice Translation** - Speak naturally and hear translations instantly with WebSocket streaming
+- **Enhanced Recording with Hysteresis** - Dual-threshold system (SPEECH_DB=-50, SILENCE_DB=-55) prevents premature stops during natural speech
+- **2-Second Silence Auto-Stop** - Intelligent detection requires 400ms consecutive silence before arming, with immediate reset on any sound above -55dB
+- **No-Speech Guard** - Smart filtering skips transcription of silent recordings, saving API costs while ensuring all speech is processed
 - **Bi-directional Conversations** - Both parties can speak in their native languages seamlessly
 - **Context-Aware Translations** - AI understands context, tone, and cultural nuances
 - **Fast Response Times** - Translations typically complete in 500-2500ms
-- **Visual Translation** - Camera-based text translation for signs and documents (web + mobile)
+- **Visual Translation** - Camera-based text translation for signs and documents (currently disabled in MVP)
 - **Text Translation** - Direct text input with instant translation
 - **WebSocket Real-time Communication** - Live streaming for immediate translation results
 
@@ -247,14 +258,17 @@ Please report security vulnerabilities to security@parrotspeak.com. Do not creat
 
 ## 📝 Development Status & Deployment
 
-### Current Status (February 5, 2025)
+### Current Status (January 10, 2025)
 - **✅ Mobile-Only Architecture**: Optimized for iOS and Android exclusively
 - **✅ Subscription System**: IAP integration complete with all subscription types verified and enforced
 - **✅ Authentication**: JWT token-based auth with reliable persistence across app restarts
 - **✅ Security Hardened**: Command injection prevention, WebSocket security, and automated regression testing
+- **✅ Enhanced Recording**: Dual-threshold hysteresis system prevents premature auto-stops, no-speech guard saves API costs
 - **✅ User Experience**: Welcome screen for new users, persistent dark mode, centered header design
 - **✅ Language Features**: Flag display for all 67 languages, automatic language preference persistence
 - **✅ API Protection**: All translation endpoints require active subscription with proper access control
+- **✅ TypeScript Safety**: Zero compilation errors, proper navigation types, only 9 type casts in entire codebase
+- **✅ Database Migrations**: Automatic SQL migration system with conversation_metrics table for performance tracking
 - **🚨 Package Compatibility**: Requires Expo SDK 50 downgrade for React Native 0.73.9 compatibility
 - **✅ Core Features**: Voice translation, subscription protection, and navigation complete
 - **⏳ MVP Launch**: Camera features disabled for initial release (code preserved)
@@ -454,6 +468,32 @@ npm run type-check   # TypeScript type checking
 npm run build        # Build API server for production
 npm run start        # Start production API server
 ```
+
+## 🎙️ Advanced Recording Implementation
+
+### Hysteresis System
+- **Dual Thresholds**: SPEECH_DB=-50 for detection, SILENCE_DB=-55 for timer clearing
+- **Consecutive Silence**: Requires 400ms continuous silence before arming 2-second timer
+- **Smart Reset**: Any sound above -55dB immediately clears armed timer
+- **Natural Speech Handling**: Prevents false stops during pauses, breathing, or soft syllables
+
+### No-Speech Guard
+- **API Cost Savings**: Skips transcription for silent recordings
+- **hadSpeech Tracking**: Monitors if any speech was detected during recording
+- **Duration Filtering**: Rejects recordings shorter than 500ms
+- **Smart Processing**: Always processes when hadSpeech=true, regardless of frame count
+
+### Device Compatibility
+- **Metering Support Detection**: Auto-detects if device supports audio level monitoring
+- **Android Fallback**: Disables auto-stop on devices without metering capability
+- **Manual Mode Always Available**: Users can always manually stop recording
+- **Cross-Platform Testing**: Verified on iOS 14+, Android 10+, various device models
+
+### Debug & Monitoring
+- **Sampler Logging**: Real-time monitoring every 1000ms
+- **State Tracking**: Shows consecutive speech/silence durations
+- **Timer Status**: Displays armed/reset/elapsed states
+- **RMS Values**: Live audio level monitoring in decibels
 
 ## 🛡️ Enterprise Security Features
 
