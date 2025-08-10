@@ -725,12 +725,7 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
   }
 }
 
-/**
- * Check if legacy recording is currently active
- */
-export function isLegacyRecordingActive(): boolean {
-  return legacyRecordingActive;
-}
+
 
 // Keep deprecated exports for backward compatibility but disabled for CM mode
 export let recording: Audio.Recording | null = null;
