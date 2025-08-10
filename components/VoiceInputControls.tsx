@@ -126,7 +126,8 @@ export default function VoiceInputControls({
   // Simple start recording - legacy mode only
   const handleStartRecording = async () => {
     try {
-      console.log('🎤 Starting recording...');
+      console.log('🎤 [VoiceInputControls] handleStartRecording called');
+      console.log('[VoiceInputControls] Platform:', Platform.OS);
       console.log('[UX] haptics=start');
       
       // Light haptic on start
@@ -137,11 +138,17 @@ export default function VoiceInputControls({
       setIsRecording(true);
       setError(null);
       
+      console.log('[VoiceInputControls] Calling legacyStartRecording...');
       await legacyStartRecording();
       console.log('✅ Recording started - tap again to stop or wait for 2s silence');
       
     } catch (error: any) {
-      console.error('❌ Failed to start recording:', error);
+      console.error('❌ [VoiceInputControls] Failed to start recording:', error);
+      console.error('[VoiceInputControls] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       setIsRecording(false);
       
       if (error.message?.includes('permission')) {

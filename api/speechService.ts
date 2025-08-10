@@ -6,9 +6,9 @@ import { Platform } from 'react-native';
 import { addAppStateListener, getCurrentAppState, isAppInForeground } from '../utils/safeAppState';
 
 // Mobile-only speech service with module availability checks
-const isSpeechAvailable = !!Speech;
-const isAudioAvailable = !!Audio;
-const isFileSystemAvailable = !!FileSystem;
+const isSpeechAvailable = typeof Speech !== 'undefined' && Speech !== null;
+const isAudioAvailable = typeof Audio !== 'undefined' && Audio !== null && typeof Audio.Recording !== 'undefined';
+const isFileSystemAvailable = typeof FileSystem !== 'undefined' && FileSystem !== null;
 
 // FOREGROUND-ONLY: All recording stops when app backgrounds
 const FOREGROUND_ONLY = true; // Enforces recording only when app is in foreground (docs: privacy protection)
@@ -445,10 +445,28 @@ const LOW_M4A: Audio.RecordingOptions = {
 export async function legacyStartRecording(): Promise<void> {
   try {
     console.log('🎤 [Legacy] Starting legacy recording (CM OFF mode)...');
+    console.log('[Legacy] Platform checks:', {
+      isAudioAvailable,
+      isFileSystemAvailable,
+      isSpeechAvailable,
+      Platform: Platform.OS
+    });
     
-    // Platform guard
+    // Platform guard with better error messaging
     if (!isAudioAvailable) {
-      throw new Error('Audio module not available on this platform');
+      console.error('[Legacy] Audio module not available!', {
+        Audio: typeof Audio,
+        AudioRecording: typeof Audio?.Recording,
+        isAudioAvailable,
+        platform: Platform.OS
+      });
+      
+      // Provide platform-specific error message
+      if (Platform.OS === 'web') {
+        throw new Error('Voice recording is not supported in web browser. Please use the mobile app.');
+      } else {
+        throw new Error('Audio recording module failed to load. Please restart the app.');
+      }
     }
     
     // Check if app is in foreground (FOREGROUND-ONLY enforcement)
