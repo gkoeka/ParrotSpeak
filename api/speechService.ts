@@ -425,7 +425,7 @@ function initializeLegacyAppStateListener() {
   console.log('✅ [Legacy] AppState listener initialized for foreground-only recording');
 }
 
-// Low-bitrate mono M4A optimized for Whisper (16kHz, 24kbps)
+// Low-bitrate mono M4A optimized for Whisper (16kHz, 24kbps) with metering
 const LOW_M4A: Audio.RecordingOptions = {
   android: { 
     extension: '.m4a', 
@@ -447,7 +447,12 @@ const LOW_M4A: Audio.RecordingOptions = {
     mimeType: 'audio/webm',
     bitsPerSecond: 24000,
   },
-  isMeteringEnabled: true
+  isMeteringEnabled: true,
+  // Add update interval to ensure we get timely metering updates
+  ...(('progressUpdateIntervalMillis' in Audio || 'progressUpdateInterval' in Audio) && {
+    progressUpdateIntervalMillis: 200,  // Try newer key name
+    progressUpdateInterval: 200         // Fallback to older key name
+  })
 };
 
 /**
@@ -556,7 +561,16 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
     // Create and start recording with error handling
     console.log('📱 [Legacy] Creating recording with createAsync...');
     try {
-      const { recording } = await Audio.Recording.createAsync(LOW_M4A);
+      // Create recording options with enhanced metering configuration
+      const recordingOptions = { ...LOW_M4A };
+      
+      // Try to add additional metering-related options if supported
+      if ('isMeteringEnabled' in Audio || 'isMeteringEnabled' in Audio.Recording) {
+        recordingOptions.isMeteringEnabled = true;
+        console.log('[Recording] Metering explicitly enabled in options');
+      }
+      
+      const { recording } = await Audio.Recording.createAsync(recordingOptions);
       legacyRecording = recording;
       legacyRecordingActive = true;
       console.log('✅ [Legacy] Recording started successfully');
@@ -619,6 +633,8 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
           meteringSupported = status.metering != null && status.metering !== undefined;
           if (!meteringSupported) {
             console.log('[SilenceTimer] unsupported (no metering)');
+          } else {
+            console.log('[SilenceTimer] metering active (rms dB available)');
           }
         }
         
