@@ -158,6 +158,8 @@ export default function VoiceInputControls({
   // Handle auto-stop processing without calling stop again
   const handleAutoStopProcessing = async (uri: string, durationMs: number, hadSpeech?: boolean, speechFrames?: number) => {
     try {
+      console.log(`[Filter] gate hadSpeech=${hadSpeech} frames=${speechFrames} duration=${durationMs}ms`);
+      
       // Guard 1: Minimum duration check (500ms) or no URI
       if (!uri || durationMs < 500) {
         console.log(`[Filter] short (<500ms) recording (${durationMs}ms), skipping`);
@@ -165,12 +167,13 @@ export default function VoiceInputControls({
         return;
       }
       
-      // Guard 2: No-speech guard - skip if no speech was detected
-      if (hadSpeech === false || (speechFrames !== undefined && speechFrames < 3)) {
+      // Guard 2: No-speech guard - only skip if hadSpeech is explicitly false
+      if (hadSpeech === false) {
         console.log('[Filter] no speech energy detected, skipping');
         setError('No speech detected');
         return;
       }
+      // If hadSpeech === true, ALWAYS proceed (ignore frames count)
       
       // Process any recording >= 500ms with a URI
       console.log(`✅ Auto-stopped recording. Duration: ${durationMs}ms`);
@@ -210,6 +213,8 @@ export default function VoiceInputControls({
       
       const { uri, duration, hadSpeechEnergy, hadSpeech, speechFrames } = await legacyStopRecording({ reason });
       
+      console.log(`[Filter] gate hadSpeech=${hadSpeech} frames=${speechFrames} duration=${duration}ms`);
+      
       // Guard 1: Minimum duration check (500ms) or no URI
       if (!uri || duration < 500) {
         console.log(`[Filter] short (<500ms) recording (${duration}ms), skipping`);
@@ -217,15 +222,16 @@ export default function VoiceInputControls({
         return;
       }
       
-      // Guard 2: No-speech guard - skip if no speech was detected
-      if (hadSpeech === false || (speechFrames !== undefined && speechFrames < 3)) {
+      // Guard 2: No-speech guard - only skip if hadSpeech is explicitly false
+      if (hadSpeech === false) {
         console.log('[Filter] no speech energy detected, skipping');
         setError('No speech detected');
         return;
       }
+      // If hadSpeech === true, ALWAYS proceed (ignore frames count)
       
-      // Guard 3: Energy heuristic (if metering was available)
-      if (hadSpeechEnergy === false) {
+      // Guard 3: Energy heuristic (legacy fallback if hadSpeech is undefined)
+      if (hadSpeech === undefined && hadSpeechEnergy === false) {
         console.log('[Filter] no speech energy detected (legacy), skipping');
         setError('No speech detected');
         return;
