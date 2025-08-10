@@ -51,7 +51,7 @@ export default function VoiceInputControls({
   const [longRecordingBannerShown, setLongRecordingBannerShown] = useState(false);
 
   // Check if source or target language supports speech
-  const normalizeLanguageCode = (code: string) => {
+  const getLanguageConfig = (code: string) => {
     if (code.includes('-') && code.length > 3) {
       const baseCode = code.split('-')[0];
       const specificLang = getLanguageByCode(code);
@@ -61,8 +61,8 @@ export default function VoiceInputControls({
     return getLanguageByCode(code);
   };
   
-  const sourceLanguageConfig = normalizeLanguageCode(sourceLanguage);
-  const targetLanguageConfig = normalizeLanguageCode(targetLanguage);
+  const sourceLanguageConfig = getLanguageConfig(sourceLanguage);
+  const targetLanguageConfig = getLanguageConfig(targetLanguage);
   const isSourceSpeechSupported = sourceLanguageConfig?.speechSupported ?? true;
   const isTargetSpeechSupported = targetLanguageConfig?.speechSupported ?? true;
 
@@ -188,7 +188,7 @@ export default function VoiceInputControls({
       metricsCollector.startTimer('whisper');
       // Don't pass language hint to allow Whisper to auto-detect the spoken language
       // This enables proper detection for the auto-detect feature
-      const transcriptionResult = await processRecording(uri, undefined);
+      const transcriptionResult = await processRecording(uri, '');
       metricsCollector.endTimer('whisper');
       
       // Handle both string and object responses
@@ -206,9 +206,12 @@ export default function VoiceInputControls({
       if (detectedLang) {
         console.log('Raw detected language:', detectedLang);
         // Normalize the language code (e.g., "german" → "de")
-        detectedLang = normalizeLanguageCode(detectedLang);
+        const normalizedLang = normalizeLanguageCode(detectedLang);
+        detectedLang = normalizedLang;
         console.log('Normalized language:', detectedLang);
-        metricsCollector.setDetectedLanguage(detectedLang);
+        if (normalizedLang) {
+          metricsCollector.setDetectedLanguage(normalizedLang);
+        }
       }
       
       if (!transcription || transcription.trim() === '') {
@@ -318,7 +321,7 @@ export default function VoiceInputControls({
       onMessage(message);
       
       // Step 6: TTS for translation
-      const targetLangConfig = normalizeLanguageCode(actualTargetLang);
+      const targetLangConfig = getLanguageConfig(actualTargetLang);
       const isTargetSupported = targetLangConfig?.speechSupported ?? true;
       
       if (isTargetSupported && translationResult.translation) {
