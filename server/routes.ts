@@ -1015,6 +1015,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { transcribeAudio } = await import('./services/openai');
       const { normalizeLanguageCode } = await import('../utils/languageNormalization');
       
+      // Helper function to get language name from code
+      const getLanguageName = (code: string): string => {
+        const languageNames: { [key: string]: string } = {
+          'en': 'English',
+          'es': 'Spanish',
+          'fr': 'French',
+          'de': 'German',
+          'it': 'Italian',
+          'pt': 'Portuguese',
+          'nl': 'Dutch',
+          'pl': 'Polish',
+          'ru': 'Russian',
+          'zh': 'Chinese',
+          'ja': 'Japanese',
+          'ko': 'Korean',
+          'ar': 'Arabic',
+          'hi': 'Hindi',
+          'tr': 'Turkish',
+          'sv': 'Swedish',
+          'da': 'Danish',
+          'no': 'Norwegian',
+          'fi': 'Finnish'
+        };
+        return languageNames[code] || code.toUpperCase();
+      };
+      
       // Convert Base64 audio data to buffer
       const audioBuffer = Buffer.from(audio, 'base64');
       
@@ -1039,7 +1065,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (detectedLang !== expectedLang) {
           shouldPreventTranslation = true;
-          wrongLanguageError = `Wrong language detected! Expected ${expectedLang} but heard ${detectedLang}. Enable Auto-detect speakers in Settings for automatic language switching.`;
+          const detectedName = getLanguageName(detectedLang || '');
+          const expectedName = getLanguageName(expectedLang || '');
+          wrongLanguageError = `Wrong language detected! Expected ${expectedName} but heard ${detectedName}. Enable Auto-detect speakers in Settings for automatic language switching.`;
           console.log(`[Manual Mode] Blocking translation - language mismatch`);
         }
       }
