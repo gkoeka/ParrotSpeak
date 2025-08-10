@@ -314,6 +314,8 @@ export interface SpeechRecognitionResult {
 let legacyRecording: Audio.Recording | null = null;
 let legacyRecordingActive: boolean = false;
 let isStoppingRecording: boolean = false; // Guard flag to prevent overlapping stops
+let isStarting: boolean = false; // Guard flag to prevent overlapping starts
+let isStopping: boolean = false; // Guard flag for stop operations
 
 // AppState listener for legacy mode
 let appStateSubscription: any = null;
@@ -446,6 +448,13 @@ const LOW_M4A: Audio.RecordingOptions = {
  * Used when Conversation Mode is disabled
  */
 export async function legacyStartRecording(): Promise<void> {
+  // Check if already starting or stopping
+  if (isStarting || isStopping) {
+    console.log('[Start] ignored (busy)');
+    return;
+  }
+  
+  isStarting = true;
   try {
     console.log('🎤 [Legacy] Starting legacy recording (CM OFF mode)...');
     console.log('[Legacy] Platform checks:', {
@@ -620,6 +629,8 @@ export async function legacyStartRecording(): Promise<void> {
     // Invalidate late timers
     recId++;
     throw error;
+  } finally {
+    isStarting = false;
   }
 }
 
@@ -633,28 +644,32 @@ export function isLegacyRecordingActive(): boolean {
 }
 
 export async function legacyStopRecording(options?: { reason?: string }): Promise<{ uri: string; duration: number }> {
+  // Check if already stopping
+  if (isStopping) {
+    console.log('[Stop] ignored (already stopping)');
+    return { uri: '', duration: 0 };
+  }
+  
+  isStopping = true;
   try {
     const reason = options?.reason || 'manual';
     
-    // Make stop idempotent - check if already stopping
-    if (isStoppingRecording) {
-      console.log('[SilenceTimer] stop ignored (already stopped)');
-      return { uri: '', duration: 0 };
-    }
-    
-    // Clear silence timer on any stop (even if recording is already stopped)
+    // Clear silence timer on any stop
     if (silenceTimer) {
       clearTimeout(silenceTimer);
       silenceTimer = null;
       console.log('[SilenceTimer] cleared');
     }
     
-    // Invalidate late timers
-    recId++;
-    
     // Check if there's anything to stop
     if (!legacyRecording || !legacyRecordingActive) {
-      console.warn('⚠️ [Legacy] No active recording to stop - ignoring');
+      console.log('[Stop] no-op (already stopped)');
+      return { uri: '', duration: 0 };
+    }
+    
+    // Make stop idempotent - check if already stopping
+    if (isStoppingRecording) {
+      console.log('[SilenceTimer] stop ignored (already stopped)');
       return { uri: '', duration: 0 };
     }
     
@@ -733,10 +748,14 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
     if (silenceTimer) {
       clearTimeout(silenceTimer);
       silenceTimer = null;
-      console.log('[SilenceTimer] cleared (stop error)');
+      console.log('[SilenceTimer] cleared');
     }
     // Return empty result instead of throwing - prevents UI errors
     return { uri: '', duration: 0 };
+  } finally {
+    isStopping = false;
+    // Invalidate late timers
+    recId++;
   }
 }
 
