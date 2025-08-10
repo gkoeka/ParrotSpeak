@@ -320,7 +320,8 @@ let appStateSubscription: any = null;
 
 // Silence timer for auto-stop (2 seconds) - single timer per recording
 let silenceTimer: NodeJS.Timeout | null = null;
-let lastSpeechTime: number = Date.now();
+let inSilence: boolean = false;
+let recId: number = 0; // increment when a new recording starts
 
 /**
  * Helper to resolve interruption mode constants safely across Expo AV versions
@@ -390,8 +391,10 @@ function initializeLegacyAppStateListener() {
       if (silenceTimer) {
         clearTimeout(silenceTimer);
         silenceTimer = null;
-        console.log('[SilenceTimer] cleared (app background)');
+        console.log('[SilenceTimer] cleared');
       }
+      // Invalidate late timers
+      recId++;
       
       if (legacyRecordingActive && legacyRecording) {
         console.log('📱 [Legacy] App backgrounded/interrupted → stopping recording');
@@ -540,72 +543,57 @@ export async function legacyStartRecording(): Promise<void> {
       // Log initial audio route
       await logAudioRouteStatus('recording start');
       
-      // Clear any existing timer before arming new one (defensive)
+      // Increment recording ID for this session
+      recId++;
+      const myId = recId; // Capture current ID for this recording
+      
+      // Clear any existing timer before starting (defensive)
       if (silenceTimer) {
         clearTimeout(silenceTimer);
         silenceTimer = null;
       }
+      inSilence = false;
       
-      // Set up silence detection with status updates
-      console.log('[SilenceTimer] armed (2000ms)');
-      lastSpeechTime = Date.now();
-      
-      // Start monitoring for silence
-      let firstUpdate = true;
+      // Start monitoring for silence - do NOT arm timer yet, wait for status updates
       recording.setOnRecordingStatusUpdate((status) => {
         if (!legacyRecordingActive || isStoppingRecording) return; // Skip if not recording or already stopping
         
-        // Check if metering is available
-        if (status.metering != null && status.metering !== undefined) {
-          // Metering available: use -35 dB threshold
-          if (status.metering > -35) {
-            // Speech detected
-            console.log('[SilenceTimer] speech detected, resetting timer');
-            lastSpeechTime = Date.now();
-            
-            // Clear any existing timer
-            if (silenceTimer) {
-              clearTimeout(silenceTimer);
-              silenceTimer = null;
-            }
-            
-            // Set new timer for 2 seconds from now
-            silenceTimer = setTimeout(() => {
-              if (legacyRecordingActive && !isStoppingRecording) {
-                console.log('[SilenceTimer] 2 seconds of silence elapsed → auto-stop');
-                legacyStopRecording({ reason: 'silence' });
-              }
-            }, 2000);
-          } else if (firstUpdate) {
-            // No speech on first update - start timer
-            console.log('[SilenceTimer] initial silence, starting 2s timer');
-            silenceTimer = setTimeout(() => {
-              if (legacyRecordingActive && !isStoppingRecording) {
-                console.log('[SilenceTimer] 2 seconds elapsed without speech → auto-stop');
-                legacyStopRecording({ reason: 'silence' });
-              }
-            }, 2000);
-          }
+        // Detect metering availability
+        const hasMeter = status.metering != null && status.metering !== undefined;
+        
+        // Compute if speech is detected
+        let isSpeech: boolean;
+        if (hasMeter) {
+          isSpeech = status.metering! > -35;
         } else {
-          // Fallback for devices without metering
-          if (firstUpdate || (Date.now() - lastSpeechTime > 500)) {
-            console.log('[SilenceTimer] fallback timer reset');
-            lastSpeechTime = Date.now();
-            
-            // Clear and set timer
-            if (silenceTimer) {
-              clearTimeout(silenceTimer);
-              silenceTimer = null;
-            }
-            silenceTimer = setTimeout(() => {
-              if (legacyRecordingActive && !isStoppingRecording) {
-                console.log('[SilenceTimer] 2 seconds elapsed (fallback) → auto-stop');
-                legacyStopRecording({ reason: 'silence' });
-              }
-            }, 2000);
-          }
+          // Fallback: disable auto-stop if no metering
+          isSpeech = true;
         }
-        firstUpdate = false;
+        
+        // Handle transitions
+        if (isSpeech) {
+          // Speech detected
+          if (silenceTimer) {
+            clearTimeout(silenceTimer);
+            silenceTimer = null;
+            console.log('[SilenceTimer] reset (speech)');
+          }
+          inSilence = false;
+        } else {
+          // Silence detected
+          if (!silenceTimer) {
+            // Only arm timer when entering silence
+            silenceTimer = setTimeout(() => {
+              // Guard against late fires
+              if (myId !== recId) return;
+              // Call the single stop path (idempotent)
+              console.log('[SilenceTimer] elapsed → auto-stop');
+              legacyStopRecording({ reason: 'auto' });
+            }, 2000);
+            console.log('[SilenceTimer] armed (2000ms)');
+          }
+          inSilence = true;
+        }
       });
     } catch (createError: any) {
       // Handle specific error types with user-friendly messages
@@ -627,8 +615,10 @@ export async function legacyStartRecording(): Promise<void> {
     if (silenceTimer) {
       clearTimeout(silenceTimer);
       silenceTimer = null;
-      console.log('[SilenceTimer] cleared (start error)');
+      console.log('[SilenceTimer] cleared');
     }
+    // Invalidate late timers
+    recId++;
     throw error;
   }
 }
@@ -658,6 +648,9 @@ export async function legacyStopRecording(options?: { reason?: string }): Promis
       silenceTimer = null;
       console.log('[SilenceTimer] cleared');
     }
+    
+    // Invalidate late timers
+    recId++;
     
     // Check if there's anything to stop
     if (!legacyRecording || !legacyRecordingActive) {
