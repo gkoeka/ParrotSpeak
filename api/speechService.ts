@@ -641,10 +641,17 @@ export async function legacyStartRecording(options?: { onAutoStop?: () => void }
         // Only process silence detection if metering is supported
         if (meteringSupported) {
           // Compute if speech is detected (lower threshold for better detection)
-          const isSpeech = status.metering! > -40; // Changed from -35 to -40 for better sensitivity
+          const rmsValue = status.metering!;
+          const isSpeech = rmsValue > -40; // Changed from -35 to -40 for better sensitivity
+          
+          // Log RMS values for first 3 seconds to help debug
+          if (recordingDurationMillis <= 3000) {
+            const isArmed = silenceTimer !== null;
+            console.log(`[SilenceTimer] rms=${rmsValue}dB, isSpeech=${isSpeech}, armed=${isArmed}`);
+          }
           
           // Track if we've seen any speech energy
-          if (status.metering! > -45) {
+          if (rmsValue > -45) {
             globalHadSpeechEnergy = true;
           }
           
