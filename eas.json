@@ -1,42 +1,19 @@
 {
-  "cli": {
-    "version": ">= 3.18.0"
-  },
+  "cli": { "version": ">= 11.0.0" },
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "android": {
-        "env": {
-          "EXPO_USE_NEW_ARCH": "0"
-        }
-      }
+      "android": { "buildType": "apk" }
     },
     "preview": {
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk",
-        "env": {
-          "EXPO_USE_NEW_ARCH": "0"
-        }
-      }
+      "distribution": "internal"
     },
     "production": {
-      "android": {
-        "buildType": "apk",
-        "env": {
-          "EXPO_USE_NEW_ARCH": "0",
-          "EAS_NO_VCS": "1"
-        }
-      }
+      "autoIncrement": true
     }
   },
   "submit": {
-    "production": {
-      "android": {
-        "serviceAccountKeyPath": "./google-play-service-account.json",
-        "track": "production"
-      }
-    }
+    "production": {}
   }
 }

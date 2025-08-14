@@ -29,11 +29,14 @@
       },
       "package": "com.parrotspeak.app",
       "versionCode": 1,
-      "permissions": ["RECORD_AUDIO"],
-      "navigationBarColor": "#ffffff",
-      "navigationBarVisible": true
+      "permissions": ["RECORD_AUDIO"]
     },
-    "plugins": ["expo-av", "expo-file-system"],
+    "androidNavigationBar": {
+      "backgroundColor": "#ffffff",
+      "barStyle": "dark-content",
+      "visible": "leanback"
+    },
+    "plugins": ["expo-av", "expo-file-system", "expo-dev-client"],
     "experiments": {
       "turboModules": false
     },
