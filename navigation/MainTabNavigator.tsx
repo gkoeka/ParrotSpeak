@@ -208,22 +208,22 @@ export default function MainTabNavigator() {
       <Tab.Screen 
         name="ChatTab" 
         component={ChatStackNavigator}
-        options={{ tabBarLabel: 'Chat' }}
+        options={{ tabBarLabel: 'Chat•dev' }}
       />
       <Tab.Screen 
         name="HistoryTab" 
         component={HistoryStackNavigator}
-        options={{ tabBarLabel: 'History' }}
+        options={{ tabBarLabel: 'History•dev' }}
       />
       <Tab.Screen 
         name="FeedbackTab" 
         component={FeedbackStackNavigator}
-        options={{ tabBarLabel: 'Feedback' }}
+        options={{ tabBarLabel: 'Feedback•dev' }}
       />
       <Tab.Screen 
         name="SettingsTab" 
         component={SettingsStackNavigator}
-        options={{ tabBarLabel: 'Settings' }}
+        options={{ tabBarLabel: 'Settings•dev' }}
       />
     </Tab.Navigator>
   );
