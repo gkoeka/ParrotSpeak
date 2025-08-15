@@ -42,8 +42,10 @@ export default function ConversationScreen() {
   const conversationId = route.params?.id;
   const insets = useSafeAreaInsets();
 
-  // Space for the voice control button area
+  // Space for the voice control button area + tab bar
   const SPEAK_BUTTON_BLOCK = 88;
+  // Tab bar height matches MainTabNavigator configuration
+  const TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 49 : 56;
 
   // Configure Android navigation bar for this screen
   useEffect(() => {
@@ -337,7 +339,9 @@ export default function ConversationScreen() {
 
       <ScrollView
         style={styles.messagesContainer}
-        contentContainerStyle={{ paddingBottom: SPEAK_BUTTON_BLOCK + 12 }}
+        contentContainerStyle={{ 
+          paddingBottom: SPEAK_BUTTON_BLOCK + TAB_BAR_HEIGHT + insets.bottom + 12 
+        }}
         // Avoid keyboard / nav issues a bit on Android
         keyboardShouldPersistTaps="handled"
       >
@@ -463,11 +467,10 @@ export default function ConversationScreen() {
           styles.controlsContainer,
           isDarkMode && styles.controlsContainerDark,
           {
-            // Use Math.max to ensure minimum 12px padding even on devices without
-            // navigation bars, while respecting safe area on devices with gesture
-            // navigation or notches. This prevents voice controls from being hidden
-            // behind Android system navigation bars.
-            paddingBottom: Math.max(12, insets.bottom),
+            // Account for tab bar height + system navigation bar
+            // Tab bar is 56px on Android, and we add safe area bottom inset
+            // This ensures voice controls are visible above the tab bar
+            paddingBottom: TAB_BAR_HEIGHT + insets.bottom + 8,
           },
         ]}
       >
