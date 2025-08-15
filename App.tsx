@@ -1,6 +1,6 @@
 import { StatusBar } from "react-native";
 import React, { useEffect, useState } from "react";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -166,12 +166,9 @@ function AppContent() {
         backgroundColor={isDarkMode ? "#1a1a1a" : "#ffffff"}
         translucent={false}
       />
-      {/* NEW: Safe area wrapper so top/bottom never get hidden */}
-      <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
-        <NavigationContainer>
-          <AuthNavigator />
-        </NavigationContainer>
-      </SafeAreaView>
+      <NavigationContainer>
+        <AuthNavigator />
+      </NavigationContainer>
     </>
   );
 }

@@ -1,14 +1,20 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
 import ParrotSpeakLogo from './ParrotSpeakLogo';
 import PreviewStatusPill from './PreviewStatusPill';
 
 export default function Header() {
   const { isDarkMode } = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, isDarkMode && styles.containerDark]}>
+    <View style={[
+      styles.container, 
+      isDarkMode && styles.containerDark,
+      { paddingTop: insets.top }
+    ]}>
       <View style={styles.content}>
         {/* Left section with logo */}
         <View style={styles.leftSection}>
@@ -36,7 +42,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef',
-    paddingTop: 44, // For status bar
   },
   containerDark: {
     backgroundColor: '#1a1a1a',

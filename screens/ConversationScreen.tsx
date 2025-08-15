@@ -42,13 +42,8 @@ export default function ConversationScreen() {
   const conversationId = route.params?.id;
   const insets = useSafeAreaInsets();
 
-  // ---- Safe-area helpers so footer & tab bar never overlap ----
-  // Typical tab bar height ~56–64; give ourselves a little cushion.
-  const TAB_BAR_HEIGHT = 64;
-  const SPEAK_BUTTON_BLOCK = 88; // space for the big blue button area
-  const bottomInset = Math.max(insets.bottom, 12);
-  // Extra padding so scroll content clears the footer + tab bar + system bar
-  const scrollBottomPad = bottomInset + TAB_BAR_HEIGHT + SPEAK_BUTTON_BLOCK;
+  // Space for the voice control button area
+  const SPEAK_BUTTON_BLOCK = 88;
 
   // Configure Android navigation bar for this screen
   useEffect(() => {
@@ -253,7 +248,7 @@ export default function ConversationScreen() {
   if (!hasActiveSubscription) {
     return (
       <SafeAreaView
-        edges={['top']}
+        edges={['bottom']}
         style={[styles.container, isDarkMode && styles.containerDark]}
       >
         <Header />
@@ -324,9 +319,7 @@ export default function ConversationScreen() {
 
   return (
     <SafeAreaView
-      // We only use the TOP safe area here; bottom is handled manually so
-      // we can stack the footer and still keep the tab bar visible.
-      edges={['top']}
+      edges={['bottom']}
       style={[styles.container, isDarkMode && styles.containerDark]}
     >
       <Header />
@@ -344,7 +337,7 @@ export default function ConversationScreen() {
 
       <ScrollView
         style={styles.messagesContainer}
-        contentContainerStyle={{ paddingBottom: scrollBottomPad }}
+        contentContainerStyle={{ paddingBottom: SPEAK_BUTTON_BLOCK + 12 }}
         // Avoid keyboard / nav issues a bit on Android
         keyboardShouldPersistTaps="handled"
       >
@@ -470,9 +463,7 @@ export default function ConversationScreen() {
           styles.controlsContainer,
           isDarkMode && styles.controlsContainerDark,
           {
-            // Keep the blue button block above the Android system nav & tab bar
-            paddingBottom:
-              (Platform.OS === 'android' ? bottomInset : insets.bottom) + 8,
+            paddingBottom: Math.max(12, insets.bottom),
           },
         ]}
       >
