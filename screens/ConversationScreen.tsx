@@ -463,6 +463,10 @@ export default function ConversationScreen() {
           styles.controlsContainer,
           isDarkMode && styles.controlsContainerDark,
           {
+            // Use Math.max to ensure minimum 12px padding even on devices without
+            // navigation bars, while respecting safe area on devices with gesture
+            // navigation or notches. This prevents voice controls from being hidden
+            // behind Android system navigation bars.
             paddingBottom: Math.max(12, insets.bottom),
           },
         ]}
