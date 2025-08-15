@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, I18nManager, ActivityIndicator, Button, Platform } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Platform,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
 import Header from '../components/Header';
 import VoiceInputControls from '../components/VoiceInputControls';
-import { isRTLLanguage, rtlStyle, getWritingDirection } from '../utils/rtlSupport';
+import { isRTLLanguage } from '../utils/rtlSupport';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useParticipants } from '../contexts/ParticipantsContext';
@@ -20,7 +28,10 @@ import LanguageSelector from '../components/LanguageSelectorMobile';
 import PerformanceIndicator from '../components/PerformanceMonitor';
 import StatusPill, { PipelineStatus } from '../components/StatusPill';
 
-type ConversationNavigationProp = StackNavigationProp<RootStackParamList, 'Conversation'>;
+type ConversationNavigationProp = StackNavigationProp<
+  RootStackParamList,
+  'Conversation'
+>;
 
 export default function ConversationScreen() {
   const { isDarkMode } = useTheme();
@@ -30,83 +41,131 @@ export default function ConversationScreen() {
   const route = useRoute<any>();
   const conversationId = route.params?.id;
   const insets = useSafeAreaInsets();
-  
-  // Probe functionality removed - no longer needed after recording fixes
-  
-  const [messages, setMessages] = useState<Array<{
-    id: string;
-    text: string;
-    translation: string;
-    fromLanguage: string;
-    toLanguage: string;
-    timestamp: Date;
-  }>>([]);
-  
-  const [sourceLanguage, setSourceLanguage] = useState('en');
-  const [targetLanguage, setTargetLanguage] = useState('es');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
-  const [currentConversationId, setCurrentConversationId] = useState<string | undefined>(conversationId);
-  const [pipelineStatus, setPipelineStatus] = useState<PipelineStatus>('idle');
 
-  // Check subscription status
-  const hasActiveSubscription = user?.subscriptionStatus === 'active' || user?.subscriptionTier === 'lifetime';
-  
+  // ---- Safe-area helpers so footer & tab bar never overlap ----
+  // Typical tab bar height ~56–64; give ourselves a little cushion.
+  const TAB_BAR_HEIGHT = 64;
+  const SPEAK_BUTTON_BLOCK = 88; // space for the big blue button area
+  const bottomInset = Math.max(insets.bottom, 12);
+  // Extra padding so scroll content clears the footer + tab bar + system bar
+  const scrollBottomPad = bottomInset + TAB_BAR_HEIGHT + SPEAK_BUTTON_BLOCK;
+
   // Configure Android navigation bar for this screen
   useEffect(() => {
     configureNavigationBar(isDarkMode);
   }, [isDarkMode]);
 
-  // Get all supported languages for flag display
+  const [messages, setMessages] = useState<
+    Array<{
+      id: string;
+      text: string;
+      translation: string;
+      fromLanguage: string;
+      toLanguage: string;
+      timestamp: Date;
+    }>
+  >([]);
+
+  const [sourceLanguage, setSourceLanguage] = useState('en');
+  const [targetLanguage, setTargetLanguage] = useState('es');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState<
+    string | undefined
+  >(conversationId);
+  const [pipelineStatus, setPipelineStatus] = useState<PipelineStatus>('idle');
+
+  const hasActiveSubscription =
+    user?.subscriptionStatus === 'active' || user?.subscriptionTier === 'lifetime';
+
   const allLanguages = getSupportedLanguages();
 
-  // Enhanced flag mapping for all languages
   const getFlagEmoji = (code: string) => {
     const flagMap: { [key: string]: string } = {
-      'en': '🇺🇸', 'es-ES': '🇪🇸', 'es-419': '🇲🇽', 'fr': '🇫🇷', 'de': '🇩🇪',
-      'it': '🇮🇹', 'pt-BR': '🇧🇷', 'pt': '🇵🇹', 'ru': '🇷🇺', 'zh': '🇨🇳',
-      'ja': '🇯🇵', 'ko': '🇰🇷', 'ar': '🇸🇦', 'hi': '🇮🇳', 'nl': '🇳🇱',
-      'sv': '🇸🇪', 'no': '🇳🇴', 'da': '🇩🇰', 'fi': '🇫🇮', 'pl': '🇵🇱',
-      'tr': '🇹🇷', 'he': '🇮🇱', 'th': '🇹🇭', 'vi': '🇻🇳', 'uk': '🇺🇦',
-      'cs': '🇨🇿', 'sk': '🇸🇰', 'hu': '🇭🇺', 'ro': '🇷🇴', 'bg': '🇧🇬',
-      'hr': '🇭🇷', 'sr': '🇷🇸', 'sl': '🇸🇮', 'et': '🇪🇪', 'lv': '🇱🇻',
-      'lt': '🇱🇹', 'mt': '🇲🇹', 'ga': '🇮🇪', 'cy': '🏴󠁧󠁢󠁷󠁬󠁳󞁿', 'is': '🇮🇸',
-      'mk': '🇲🇰', 'sq': '🇦🇱', 'eu': '🏴󠁥󠁳󠁰󠁶󞁿', 'ca': '🏴󠁥󠁳󠁣󠁴󞁿', 'gl': '🏴󠁥󠁳󠁧󠁡󞁿',
-      'af': '🇿🇦', 'sw': '🇰🇪', 'zu': '🇿🇦', 'xh': '🇿🇦', 'yo': '🇳🇬',
-      'ig': '🇳🇬', 'ha': '🇳🇬', 'am': '🇪🇹', 'or': '🇮🇳', 'as': '🇮🇳',
-      'bn': '🇧🇩', 'gu': '🇮🇳', 'kn': '🇮🇳', 'ml': '🇮🇳', 'mr': '🇮🇳',
-      'ne': '🇳🇵', 'pa': '🇮🇳', 'si': '🇱🇰', 'ta': '🇮🇳', 'te': '🇮🇳',
-      'ur': '🇵🇰', 'sher': '🇳🇵', 'dz': '🇧🇹'
+      en: '🇺🇸',
+      'es-ES': '🇪🇸',
+      'es-419': '🇲🇽',
+      fr: '🇫🇷',
+      de: '🇩🇪',
+      it: '🇮🇹',
+      'pt-BR': '🇧🇷',
+      pt: '🇵🇹',
+      ru: '🇷🇺',
+      zh: '🇨🇳',
+      ja: '🇯🇵',
+      ko: '🇰🇷',
+      ar: '🇸🇦',
+      hi: '🇮🇳',
+      nl: '🇳🇱',
+      sv: '🇸🇪',
+      no: '🇳🇴',
+      da: '🇩🇰',
+      fi: '🇫🇮',
+      pl: '🇵🇱',
+      tr: '🇹🇷',
+      he: '🇮🇱',
+      th: '🇹🇭',
+      vi: '🇻🇳',
+      uk: '🇺🇦',
+      cs: '🇨🇿',
+      sk: '🇸🇰',
+      hu: '🇭🇺',
+      ro: '🇷🇴',
+      bg: '🇧🇬',
+      hr: '🇭🇷',
+      sr: '🇷🇸',
+      sl: '🇸🇮',
+      et: '🇪🇪',
+      lv: '🇱🇻',
+      lt: '🇱🇹',
+      mt: '🇲🇹',
+      ga: '🇮🇪',
+      cy: '🏴󞁿',
+      is: '🇮🇸',
+      mk: '🇲🇰',
+      sq: '🇦🇱',
+      eu: '🏴󞁿',
+      ca: '🏴󞁿',
+      gl: '🏴󞁿',
+      af: '🇿🇦',
+      sw: '🇰🇪',
+      zu: '🇿🇦',
+      xh: '🇿🇦',
+      yo: '🇳🇬',
+      ig: '🇳🇬',
+      ha: '🇳🇬',
+      am: '🇪🇹',
+      or: '🇮🇳',
+      as: '🇮🇳',
+      bn: '🇧🇩',
+      gu: '🇮🇳',
+      kn: '🇮🇳',
+      ml: '🇮🇳',
+      mr: '🇮🇳',
+      ne: '🇳🇵',
+      pa: '🇮🇳',
+      si: '🇱🇰',
+      ta: '🇮🇳',
+      te: '🇮🇳',
+      ur: '🇵🇰',
+      sher: '🇳🇵',
+      dz: '🇧🇹',
     };
-    
-    // Handle 'es' specifically to determine the correct flag
-    if (code === 'es') {
-      return '🇲🇽'; // Default to Mexico flag for generic Spanish
-    }
-    
+
+    if (code === 'es') return '🇲🇽';
     return flagMap[code] || '🌍';
   };
 
-  const getLanguageDisplay = (code: string) => {
-    const language = allLanguages.find(lang => lang.code === code);
-    if (!language) return code;
-    
-    const flag = getFlagEmoji(code);
-    return { flag, name: language.name, code };
-  };
-
-  // Load language preferences on mount for new conversations
   useEffect(() => {
     const loadLanguagePreferences = async () => {
-      // Only load preferences for new conversations (no conversationId)
       if (!conversationId && !preferencesLoaded) {
-        const preferences = await LanguagePreferencesStorage.getLanguagePreferences();
+        const preferences =
+          await LanguagePreferencesStorage.getLanguagePreferences();
         if (preferences) {
           setSourceLanguage(preferences.sourceLanguage);
           setTargetLanguage(preferences.targetLanguage);
         } else {
-          // Use defaults if no preferences exist
           const defaults = LanguagePreferencesStorage.getDefaultLanguages();
           setSourceLanguage(defaults.sourceLanguage);
           setTargetLanguage(defaults.targetLanguage);
@@ -118,34 +177,31 @@ export default function ConversationScreen() {
     loadLanguagePreferences();
   }, [conversationId, preferencesLoaded]);
 
-  // Save language preferences when they change (only for new conversations)
   useEffect(() => {
     const savePreferences = async () => {
-      // Only save preferences if it's a new conversation and preferences have been loaded
       if (!conversationId && preferencesLoaded) {
-        await LanguagePreferencesStorage.saveLanguagePreferences(sourceLanguage, targetLanguage);
+        await LanguagePreferencesStorage.saveLanguagePreferences(
+          sourceLanguage,
+          targetLanguage
+        );
       }
     };
 
     savePreferences();
   }, [sourceLanguage, targetLanguage, conversationId, preferencesLoaded]);
 
-  // Sync participant languages with UI selections
   useEffect(() => {
-    // Only update after preferences are loaded
     if (preferencesLoaded && sourceLanguage) {
       setParticipantLanguage('A', sourceLanguage);
     }
   }, [sourceLanguage, preferencesLoaded, setParticipantLanguage]);
 
   useEffect(() => {
-    // Only update after preferences are loaded
     if (preferencesLoaded && targetLanguage) {
       setParticipantLanguage('B', targetLanguage);
     }
   }, [targetLanguage, preferencesLoaded, setParticipantLanguage]);
 
-  // Load conversation data if viewing from history
   useEffect(() => {
     if (conversationId && hasActiveSubscription) {
       loadConversation();
@@ -156,33 +212,32 @@ export default function ConversationScreen() {
     try {
       setIsLoading(true);
       setError(null);
-      
-      const response = await fetch(`${API_BASE_URL}/api/conversations/${conversationId}`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
 
-      if (!response.ok) {
-        throw new Error('Failed to load conversation');
-      }
+      const response = await fetch(
+        `${API_BASE_URL}/api/conversations/${conversationId}`,
+        {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      if (!response.ok) throw new Error('Failed to load conversation');
 
       const data = await response.json();
-      
-      // Set the conversation messages
+
       if (data.messages && Array.isArray(data.messages)) {
-        setMessages(data.messages.map((msg: any) => ({
-          id: msg.id,
-          text: msg.originalText,
-          translation: msg.translatedText,
-          fromLanguage: msg.fromLanguage,
-          toLanguage: msg.toLanguage,
-          timestamp: new Date(msg.createdAt),
-        })));
+        setMessages(
+          data.messages.map((msg: any) => ({
+            id: msg.id,
+            text: msg.originalText,
+            translation: msg.translatedText,
+            fromLanguage: msg.fromLanguage,
+            toLanguage: msg.toLanguage,
+            timestamp: new Date(msg.createdAt),
+          }))
+        );
       }
 
-      // Set the language pair from the first message
       if (data.messages && data.messages.length > 0) {
         setSourceLanguage(data.messages[0].fromLanguage);
         setTargetLanguage(data.messages[0].toLanguage);
@@ -195,220 +250,309 @@ export default function ConversationScreen() {
     }
   };
 
-  // Show subscription required screen for non-subscribers
   if (!hasActiveSubscription) {
     return (
-      <View style={[styles.container, isDarkMode && styles.containerDark]}>
+      <SafeAreaView
+        edges={['top']}
+        style={[styles.container, isDarkMode && styles.containerDark]}
+      >
         <Header />
-        
+
         <View style={styles.subscriptionRequiredContainer}>
-          <Ionicons 
-            name="lock-closed" 
-            size={64} 
-            color={isDarkMode ? '#5c8cff' : '#3366FF'} 
+          <Ionicons
+            name="lock-closed"
+            size={64}
+            color={isDarkMode ? '#5c8cff' : '#3366FF'}
           />
-          <Text style={[styles.subscriptionTitle, isDarkMode && styles.subscriptionTitleDark]}>
+          <Text
+            style={[
+              styles.subscriptionTitle,
+              isDarkMode && styles.subscriptionTitleDark,
+            ]}
+          >
             Subscription Required
           </Text>
-          <Text style={[styles.subscriptionMessage, isDarkMode && styles.subscriptionMessageDark]}>
+          <Text
+            style={[
+              styles.subscriptionMessage,
+              isDarkMode && styles.subscriptionMessageDark,
+            ]}
+          >
             Voice-to-voice translation is available to active subscribers only.
           </Text>
-          <TouchableOpacity 
-            style={[styles.subscribeButton, isDarkMode && styles.subscribeButtonDark]}
+          <TouchableOpacity
+            style={[
+              styles.subscribeButton,
+              isDarkMode && styles.subscribeButtonDark,
+            ]}
             onPress={() => navigation.navigate('Pricing')}
           >
             <Text style={styles.subscribeButtonText}>Choose a Plan</Text>
           </TouchableOpacity>
-          
-          <Text style={[styles.accessInfo, isDarkMode && styles.accessInfoDark]}>
+
+          <Text
+            style={[styles.accessInfo, isDarkMode && styles.accessInfoDark]}
+          >
             As a free user, you can access:
           </Text>
           <View style={styles.accessList}>
-            <Text style={[styles.accessItem, isDarkMode && styles.accessItemDark]}>• Profile Settings</Text>
-            <Text style={[styles.accessItem, isDarkMode && styles.accessItemDark]}>• Help Center</Text>
-            <Text style={[styles.accessItem, isDarkMode && styles.accessItemDark]}>• Manage Plan</Text>
-            <Text style={[styles.accessItem, isDarkMode && styles.accessItemDark]}>• Account Settings</Text>
+            <Text
+              style={[styles.accessItem, isDarkMode && styles.accessItemDark]}
+            >
+              • Profile Settings
+            </Text>
+            <Text
+              style={[styles.accessItem, isDarkMode && styles.accessItemDark]}
+            >
+              • Help Center
+            </Text>
+            <Text
+              style={[styles.accessItem, isDarkMode && styles.accessItemDark]}
+            >
+              • Manage Plan
+            </Text>
+            <Text
+              style={[styles.accessItem, isDarkMode && styles.accessItemDark]}
+            >
+              • Account Settings
+            </Text>
           </View>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={[styles.container, isDarkMode && styles.containerDark]}>
+    <SafeAreaView
+      // We only use the TOP safe area here; bottom is handled manually so
+      // we can stack the footer and still keep the tab bar visible.
+      edges={['top']}
+      style={[styles.container, isDarkMode && styles.containerDark]}
+    >
       <Header />
-      
+
       <StatusPill status={pipelineStatus} />
-      
-      <LanguageSelector 
+
+      <LanguageSelector
         sourceLanguage={sourceLanguage}
         targetLanguage={targetLanguage}
         onSourceLanguageChange={setSourceLanguage}
         onTargetLanguageChange={setTargetLanguage}
       />
-      
+
       <PerformanceIndicator showDetails={false} />
-      
-      <ScrollView style={styles.messagesContainer}>
+
+      <ScrollView
+        style={styles.messagesContainer}
+        contentContainerStyle={{ paddingBottom: scrollBottomPad }}
+        // Avoid keyboard / nav issues a bit on Android
+        keyboardShouldPersistTaps="handled"
+      >
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={isDarkMode ? '#5c8cff' : '#3366FF'} />
-            <Text style={[styles.loadingText, isDarkMode && styles.loadingTextDark]}>
+            <ActivityIndicator
+              size="large"
+              color={isDarkMode ? '#5c8cff' : '#3366FF'}
+            />
+            <Text
+              style={[
+                styles.loadingText,
+                isDarkMode && styles.loadingTextDark,
+              ]}
+            >
               Loading conversation...
             </Text>
           </View>
         ) : error ? (
           <View style={styles.errorContainer}>
-            <Ionicons 
-              name="alert-circle" 
-              size={48} 
-              color={isDarkMode ? '#ff6b6b' : '#dc3545'} 
+            <Ionicons
+              name="alert-circle"
+              size={48}
+              color={isDarkMode ? '#ff6b6b' : '#dc3545'}
             />
-            <Text style={[styles.errorText, isDarkMode && styles.errorTextDark]}>
+            <Text
+              style={[styles.errorText, isDarkMode && styles.errorTextDark]}
+            >
               {error}
             </Text>
           </View>
         ) : messages.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons 
-              name="globe-outline" 
-              size={48} 
-              color={isDarkMode ? '#666' : '#ccc'} 
+            <Ionicons
+              name="globe-outline"
+              size={48}
+              color={isDarkMode ? '#666' : '#ccc'}
             />
-            <Text style={[styles.emptyStateText, isDarkMode && styles.emptyStateTextDark]}>
-              {conversationId ? 'No messages in this conversation' : 'Welcome! Your translations will appear here'}
+            <Text
+              style={[
+                styles.emptyStateText,
+                isDarkMode && styles.emptyStateTextDark,
+              ]}
+            >
+              {conversationId
+                ? 'No messages in this conversation'
+                : 'Welcome! Your translations will appear here'}
             </Text>
           </View>
         ) : (
           messages.map((message) => {
             const isSourceRTL = isRTLLanguage(message.fromLanguage);
             const isTargetRTL = isRTLLanguage(message.toLanguage);
-            
+
             return (
-              <View key={message.id} style={[styles.messageCard, isDarkMode && styles.messageCardDark]}>
-                <View style={[
-                  styles.originalSection,
-                  isSourceRTL && styles.rtlSection
-                ]}>
-                  <Text style={[styles.languageLabel, isDarkMode && styles.languageLabelDark]}>Original</Text>
-                  <Text style={[
-                    styles.originalText,
-                    isDarkMode && styles.originalTextDark,
-                    isSourceRTL && styles.rtlText
-                  ]}>{message.text}</Text>
+              <View
+                key={message.id}
+                style={[styles.messageCard, isDarkMode && styles.messageCardDark]}
+              >
+                <View
+                  style={[styles.originalSection, isSourceRTL && styles.rtlSection]}
+                >
+                  <Text
+                    style={[
+                      styles.languageLabel,
+                      isDarkMode && styles.languageLabelDark,
+                    ]}
+                  >
+                    Original
+                  </Text>
+                  <Text
+                    style={[
+                      styles.originalText,
+                      isDarkMode && styles.originalTextDark,
+                      isSourceRTL && styles.rtlText,
+                    ]}
+                  >
+                    {message.text}
+                  </Text>
                 </View>
                 <View style={[styles.divider, isDarkMode && styles.dividerDark]} />
-                <View style={[
-                  styles.translationSection,
-                  isTargetRTL && styles.rtlSection
-                ]}>
-                  <Text style={[styles.languageLabel, isDarkMode && styles.languageLabelDark]}>Translation</Text>
-                  <Text style={[
-                    styles.translatedText,
-                    isDarkMode && styles.translatedTextDark,
-                    isTargetRTL && styles.rtlText
-                  ]}>{message.translation}</Text>
+                <View
+                  style={[
+                    styles.translationSection,
+                    isTargetRTL && styles.rtlSection,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.languageLabel,
+                      isDarkMode && styles.languageLabelDark,
+                    ]}
+                  >
+                    Translation
+                  </Text>
+                  <Text
+                    style={[
+                      styles.translatedText,
+                      isDarkMode && styles.translatedTextDark,
+                      isTargetRTL && styles.rtlText,
+                    ]}
+                  >
+                    {message.translation}
+                  </Text>
                 </View>
-                <Text style={[styles.languagePair, isDarkMode && styles.languagePairDark]}>
-                  {getFlagEmoji(message.fromLanguage)} {message.fromLanguage} → {getFlagEmoji(message.toLanguage)} {message.toLanguage}
+                <Text
+                  style={[
+                    styles.languagePair,
+                    isDarkMode && styles.languagePairDark,
+                  ]}
+                >
+                  {getFlagEmoji(message.fromLanguage)} {message.fromLanguage} →{' '}
+                  {getFlagEmoji(message.toLanguage)} {message.toLanguage}
                 </Text>
               </View>
             );
           })
         )}
       </ScrollView>
-      
-      <View style={[
-        styles.controlsContainer, 
-        isDarkMode && styles.controlsContainerDark,
-        { 
-          paddingBottom: Platform.OS === 'android' 
-            ? Math.max(8, insets.bottom) // Android: ensure gap above system nav
-            : insets.bottom // iOS: use safe area directly
-        }
-      ]}>
-        <VoiceInputControls 
+
+      <View
+        style={[
+          styles.controlsContainer,
+          isDarkMode && styles.controlsContainerDark,
+          {
+            // Keep the blue button block above the Android system nav & tab bar
+            paddingBottom:
+              (Platform.OS === 'android' ? bottomInset : insets.bottom) + 8,
+          },
+        ]}
+      >
+        <VoiceInputControls
           onStatusChange={setPipelineStatus}
           onMessage={async (message) => {
-            // Create conversation if it doesn't exist yet and user is authenticated
             if (!currentConversationId && hasActiveSubscription) {
               try {
                 const response = await fetch(`${API_BASE_URL}/api/conversations`, {
                   method: 'POST',
                   credentials: 'include',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
+                  headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     sourceLanguage: message.fromLanguage,
                     targetLanguage: message.toLanguage,
-                    title: `${getFlagEmoji(message.fromLanguage)} ${message.fromLanguage} → ${getFlagEmoji(message.toLanguage)} ${message.toLanguage}`,
+                    title: `${getFlagEmoji(message.fromLanguage)} ${
+                      message.fromLanguage
+                    } → ${getFlagEmoji(message.toLanguage)} ${
+                      message.toLanguage
+                    }`,
                   }),
                 });
 
                 if (response.ok) {
                   const newConversation = await response.json();
                   setCurrentConversationId(newConversation.id);
-                  
-                  // Save the message to the new conversation
-                  await fetch(`${API_BASE_URL}/api/conversations/${newConversation.id}/messages`, {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      text: message.text,
-                      sourceLanguage: message.fromLanguage,
-                      targetLanguage: message.toLanguage,
-                    }),
-                  });
+
+                  await fetch(
+                    `${API_BASE_URL}/api/conversations/${newConversation.id}/messages`,
+                    {
+                      method: 'POST',
+                      credentials: 'include',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        text: message.text,
+                        sourceLanguage: message.fromLanguage,
+                        targetLanguage: message.toLanguage,
+                      }),
+                    }
+                  );
                 }
               } catch (error) {
                 console.error('Error creating conversation:', error);
               }
             } else if (currentConversationId && hasActiveSubscription) {
-              // Save message to existing conversation
               try {
-                await fetch(`${API_BASE_URL}/api/conversations/${currentConversationId}/messages`, {
-                  method: 'POST',
-                  credentials: 'include',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    text: message.text,
-                    sourceLanguage: message.fromLanguage,
-                    targetLanguage: message.toLanguage,
-                  }),
-                });
+                await fetch(
+                  `${API_BASE_URL}/api/conversations/${currentConversationId}/messages`,
+                  {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      text: message.text,
+                      sourceLanguage: message.fromLanguage,
+                      targetLanguage: message.toLanguage,
+                    }),
+                  }
+                );
               } catch (error) {
                 console.error('Error saving message:', error);
               }
             }
-            
-            setMessages(prev => [...prev, message]);
+
+            setMessages((prev) => [...prev, message]);
           }}
           sourceLanguage={sourceLanguage}
           targetLanguage={targetLanguage}
         />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  containerDark: {
-    backgroundColor: '#1a1a1a',
-  },
-  messagesContainer: {
-    flex: 1,
-    padding: 16,
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
+  containerDark: { backgroundColor: '#1a1a1a' },
+
+  messagesContainer: { flex: 1, paddingHorizontal: 16 },
+
   emptyState: {
     flex: 1,
     justifyContent: 'center',
@@ -421,23 +565,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 12,
   },
-  emptyStateTextDark: {
-    color: '#666',
-  },
+  emptyStateTextDark: { color: '#666' },
+
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 40,
   },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#666',
-  },
-  loadingTextDark: {
-    color: '#999',
-  },
+  loadingText: { marginTop: 12, fontSize: 16, color: '#666' },
+  loadingTextDark: { color: '#999' },
+
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -450,27 +588,21 @@ const styles = StyleSheet.create({
     color: '#dc3545',
     textAlign: 'center',
   },
-  errorTextDark: {
-    color: '#ff6b6b',
-  },
+  errorTextDark: { color: '#ff6b6b' },
+
   messageCard: {
     backgroundColor: '#f8f9fa',
     padding: 16,
     borderRadius: 12,
-    marginBottom: 12,
+    marginTop: 12,
     borderWidth: 1,
     borderColor: '#e9ecef',
   },
-  messageCardDark: {
-    backgroundColor: '#2a2a2a',
-    borderColor: '#3a3a3a',
-  },
-  originalSection: {
-    marginBottom: 12,
-  },
-  translationSection: {
-    marginBottom: 12,
-  },
+  messageCardDark: { backgroundColor: '#2a2a2a', borderColor: '#3a3a3a' },
+
+  originalSection: { marginBottom: 12 },
+  translationSection: { marginBottom: 12 },
+
   languageLabel: {
     fontSize: 12,
     fontWeight: '600',
@@ -478,48 +610,33 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     textTransform: 'uppercase',
   },
-  languageLabelDark: {
-    color: '#999',
-  },
+  languageLabelDark: { color: '#999' },
+
   originalText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1a1a1a',
     lineHeight: 22,
   },
-  originalTextDark: {
-    color: '#fff',
-  },
+  originalTextDark: { color: '#fff' },
+
   translatedText: {
     fontSize: 16,
     color: '#3366FF',
     lineHeight: 22,
     fontWeight: '500',
   },
-  translatedTextDark: {
-    color: '#5c8cff',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#f0f0f0',
-    marginVertical: 8,
-  },
-  dividerDark: {
-    backgroundColor: '#3a3a3a',
-  },
-  languagePair: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '500',
-    textAlign: 'right',
-  },
-  languagePairDark: {
-    color: '#999',
-  },
+  translatedTextDark: { color: '#5c8cff' },
+
+  divider: { height: 1, backgroundColor: '#f0f0f0', marginVertical: 8 },
+  dividerDark: { backgroundColor: '#3a3a3a' },
+
+  languagePair: { fontSize: 12, color: '#666', fontWeight: '500', textAlign: 'right' },
+  languagePairDark: { color: '#999' },
+
   controlsContainer: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 16,
     borderTopWidth: 1,
     borderTopColor: '#e9ecef',
     backgroundColor: '#ffffff',
@@ -528,13 +645,10 @@ const styles = StyleSheet.create({
     borderTopColor: '#3a3a3a',
     backgroundColor: '#1a1a1a',
   },
-  rtlSection: {
-    alignItems: 'flex-end',
-  },
-  rtlText: {
-    textAlign: 'right',
-    writingDirection: 'rtl',
-  },
+
+  rtlSection: { alignItems: 'flex-end' },
+  rtlText: { textAlign: 'right', writingDirection: 'rtl' },
+
   // Subscription required styles
   subscriptionRequiredContainer: {
     flex: 1,
@@ -549,9 +663,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 12,
   },
-  subscriptionTitleDark: {
-    color: '#fff',
-  },
+  subscriptionTitleDark: { color: '#fff' },
   subscriptionMessage: {
     fontSize: 16,
     color: '#666',
@@ -559,9 +671,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     lineHeight: 24,
   },
-  subscriptionMessageDark: {
-    color: '#ccc',
-  },
+  subscriptionMessageDark: { color: '#ccc' },
   subscribeButton: {
     backgroundColor: '#3366FF',
     paddingHorizontal: 32,
@@ -569,32 +679,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 32,
   },
-  subscribeButtonDark: {
-    backgroundColor: '#5c8cff',
-  },
-  subscribeButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  accessInfo: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 16,
-  },
-  accessInfoDark: {
-    color: '#999',
-  },
-  accessList: {
-    alignItems: 'flex-start',
-  },
-  accessItem: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-    lineHeight: 20,
-  },
-  accessItemDark: {
-    color: '#999',
-  },
+  subscribeButtonDark: { backgroundColor: '#5c8cff' },
+  subscribeButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  accessInfo: { fontSize: 14, color: '#666', marginBottom: 16 },
+  accessInfoDark: { color: '#999' },
+  accessList: { alignItems: 'flex-start' },
+  accessItem: { fontSize: 14, color: '#666', marginBottom: 8, lineHeight: 20 },
+  accessItemDark: { color: '#999' },
 });

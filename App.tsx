@@ -1,11 +1,13 @@
 import { StatusBar } from "react-native";
 import React, { useEffect, useState } from "react";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { ActivityIndicator, View, Platform } from "react-native";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { configureNavigationBar, logNavigationBarStatus } from './utils/navigationBarConfig';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  configureNavigationBar,
+  logNavigationBarStatus,
+} from "./utils/navigationBarConfig";
 
 // Auth Provider
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -15,8 +17,6 @@ import { ParticipantsProvider } from "./contexts/ParticipantsContext";
 
 // Tab Navigator
 import MainTabNavigator from "./navigation/MainTabNavigator";
-
-
 
 // Screens
 import WelcomeScreen from "./screens/WelcomeScreen";
@@ -77,27 +77,27 @@ function AuthNavigator() {
 
   const checkFirstLaunch = async () => {
     try {
-      const hasLaunched = await AsyncStorage.getItem('hasLaunched');
-      
+      const hasLaunched = await AsyncStorage.getItem("hasLaunched");
+
       // Special case: greg@gregkoeka.com always shows welcome screen for testing
-      if (user?.email === 'greg@gregkoeka.com') {
+      if (user?.email === "greg@gregkoeka.com") {
         setIsFirstLaunch(true);
         return;
       }
-      
+
       // For unauthenticated users, check normal first launch logic
       if (!user) {
         setIsFirstLaunch(hasLaunched === null);
         if (hasLaunched === null) {
-          await AsyncStorage.setItem('hasLaunched', 'true');
+          await AsyncStorage.setItem("hasLaunched", "true");
         }
         return;
       }
-      
+
       // For other authenticated users, don't show welcome screen
       setIsFirstLaunch(false);
     } catch (error) {
-      console.error('Error checking first launch:', error);
+      console.error("Error checking first launch:", error);
       setIsFirstLaunch(false);
     }
   };
@@ -108,15 +108,20 @@ function AuthNavigator() {
 
   const getInitialRoute = () => {
     // Special case: greg@gregkoeka.com always sees welcome screen for testing
-    if (user?.email === 'greg@gregkoeka.com') return "Welcome";
-    
+    if (user?.email === "greg@gregkoeka.com") return "Welcome";
+
     if (user) return "MainTabs";
     if (isFirstLaunch) return "Welcome";
     return "Auth";
   };
 
   // Debug logging to see what's happening
-  console.log('Auth Navigator state:', { user: !!user, isLoading, isFirstLaunch, initialRoute: getInitialRoute() });
+  console.log("Auth Navigator state:", {
+    user: !!user,
+    isLoading,
+    isFirstLaunch,
+    initialRoute: getInitialRoute(),
+  });
 
   return (
     <Stack.Navigator
@@ -125,7 +130,7 @@ function AuthNavigator() {
         headerShown: false,
       }}
     >
-      {user && user.email !== 'greg@gregkoeka.com' ? (
+      {user && user.email !== "greg@gregkoeka.com" ? (
         // Authenticated screens - Use Tab Navigator (except test user)
         <Stack.Screen name="MainTabs" component={MainTabNavigator} />
       ) : (
@@ -135,7 +140,7 @@ function AuthNavigator() {
           <Stack.Screen name="Auth" component={AuthScreen} />
           <Stack.Screen name="PasswordReset" component={PasswordResetScreen} />
           <Stack.Screen name="NewPassword" component={NewPasswordScreen} />
-          {user?.email === 'greg@gregkoeka.com' && (
+          {user?.email === "greg@gregkoeka.com" && (
             <Stack.Screen name="MainTabs" component={MainTabNavigator} />
           )}
         </>
@@ -146,24 +151,27 @@ function AuthNavigator() {
 
 function AppContent() {
   const { isDarkMode } = useTheme();
-  
+
   // Configure Android navigation bar
   useEffect(() => {
     configureNavigationBar(isDarkMode);
     // Log status for debugging
     logNavigationBarStatus();
   }, [isDarkMode]);
-  
+
   return (
     <>
-      <StatusBar 
+      <StatusBar
         barStyle={isDarkMode ? "light-content" : "dark-content"}
         backgroundColor={isDarkMode ? "#1a1a1a" : "#ffffff"}
         translucent={false}
       />
-      <NavigationContainer>
-        <AuthNavigator />
-      </NavigationContainer>
+      {/* NEW: Safe area wrapper so top/bottom never get hidden */}
+      <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
+        <NavigationContainer>
+          <AuthNavigator />
+        </NavigationContainer>
+      </SafeAreaView>
     </>
   );
 }
