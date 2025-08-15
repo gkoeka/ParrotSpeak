@@ -97,7 +97,8 @@
     "uuid": "^11.1.0",
     "ws": "^8.18.1",
     "zod": "^3.23.8",
-    "zod-validation-error": "^3.4.0"
+    "zod-validation-error": "^3.4.0",
+    "expo-updates": "~0.28.17"
   },
   "devDependencies": {
     "@expo/config-plugins": "~10.1.1",
