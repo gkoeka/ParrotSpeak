@@ -14,6 +14,14 @@ ParrotSpeak enables seamless cross-language communication through real-time spee
 
 ## 🎉 Recent Updates
 
+### Android Navigation Bar Fix & UI Improvements (January 15, 2025)
+- **✅ Tab Bar Positioning Fixed** - Implemented proper footer positioning using React Navigation's BottomTabBar component with custom safe area insets
+- **✅ Android System Navigation Support** - Tab bar now sits correctly above Android system navigation (3-button, gesture, or hardware buttons)
+- **✅ Dynamic Safe Area Handling** - Minimum 24px padding on Android, actual insets on iOS with dynamic height calculation (base 60px + safe area)
+- **✅ Keyboard Behavior** - Added tabBarHideOnKeyboard to properly hide tab bar when keyboard appears, preventing UI overlap
+- **✅ Official React Navigation APIs** - Solution uses official BottomTabBar component maintaining existing design and colors
+- **✅ Cross-Device Compatibility** - Verified working on all Android navigation modes including gesture navigation and hardware buttons
+
 ### Enhanced Recording with Hysteresis & No-Speech Guard (January 10, 2025)
 - **✅ Dual-Threshold Hysteresis System** - Implements SPEECH_DB=-50 for speech detection and SILENCE_DB=-55 for timer clearing with 400ms consecutive silence requirement
 - **✅ Prevents Premature Auto-Stops** - Any sound above -55dB clears armed timer, eliminating false stops during natural speech pauses
