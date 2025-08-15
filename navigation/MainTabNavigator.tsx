@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createBottomTabNavigator, BottomTabBar } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
@@ -143,11 +143,25 @@ function FeedbackStackNavigator() {
 export default function MainTabNavigator() {
   const { isDarkMode } = useTheme();
   const insets = useSafeAreaInsets();
+  
+  // Calculate the bottom safe area: use minimum 24px on Android, actual insets on iOS
+  const bottomSafeArea = Platform.OS === 'android' 
+    ? Math.max(insets.bottom, 24) 
+    : insets.bottom;
 
   return (
     <Tab.Navigator
+      // Custom tabBar to properly handle safe area insets
+      tabBar={(props) => (
+        <BottomTabBar
+          {...props}
+          // Override safe area insets to ensure proper positioning above system navigation
+          safeAreaInsets={{ bottom: bottomSafeArea }}
+        />
+      )}
       screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarHideOnKeyboard: true, // Keep keyboard behavior
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap;
 
@@ -172,10 +186,8 @@ export default function MainTabNavigator() {
           borderTopColor: isDarkMode ? '#333' : '#e0e0e0',
           borderTopWidth: 1,
           paddingTop: 10,
-          paddingBottom: Platform.OS === 'android' ? insets.bottom : 0,
-          height: Platform.OS === 'ios' 
-            ? 49 + insets.bottom // iOS standard tab bar height + safe area
-            : 56 + insets.bottom, // Android standard + safe area
+          // Calculate height: base height (60) + bottom safe area
+          height: 60 + bottomSafeArea,
           elevation: 8, // Android shadow
           shadowColor: '#000', // iOS shadow
           shadowOffset: { width: 0, height: -2 },
