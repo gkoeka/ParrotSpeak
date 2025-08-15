@@ -61,7 +61,7 @@ ParrotSpeak enables seamless cross-language communication through real-time spee
 - **✅ Welcome Screen for New Users** - Added first-time launch detection with dedicated welcome screen showing app benefits and "Get Started" button
 - **✅ Header Redesign Complete** - Logo positioned left, "ParrotSpeak" brand name centered, settings icon right with full dark mode support
 - **✅ Status Bar Dark Mode** - System status bar (time, wifi, battery) now adapts to theme with light icons in dark mode, dark icons in light mode
-- **✅ Flag Display Enhancement** - All 67 languages now show appropriate country flags in conversations with special handling for Spanish dialects
+- **✅ Flag Display Enhancement** - All 70+ languages now show appropriate country flags in conversations with special handling for Spanish dialects
 - **✅ Language Persistence** - User's last selected languages automatically load for new conversations, eliminating repetitive selection
 
 ### Subscription Verification & IAP Integration (February 2, 2025)
@@ -74,7 +74,7 @@ ParrotSpeak enables seamless cross-language communication through real-time spee
 - **✅ Git Branch Management** - Documented workflow for creating feature branches (e.g., restore-subscription-logic-phase2) for code preservation
 
 ### Language Expansion & RTL Support (August 2, 2025)
-- **✅ Extended to 65 Languages** - Added Filipino, Cantonese, Kazakh, Uzbek, Azerbaijani, Sinhala, Slovenian, Icelandic, Maltese, and Albanian
+- **✅ Extended to 70+ Languages** - Added Filipino, Cantonese, Kazakh, Uzbek, Azerbaijani, Sinhala, Slovenian, Icelandic, Maltese, Albanian, and many more including Lao and Khmer
 - **✅ Full RTL Layout Support** - Implemented right-to-left layouts for Arabic, Hebrew, Persian, and Urdu with automatic text direction detection
 - **✅ Enhanced Speech Synthesis** - Fixed Slovenian and other language audio with locale-specific mapping (sl-SI, fil-PH) and async fallback mechanisms
 - **✅ Low-Resolution Device Support** - Optimized UI components for devices as small as 320x480 with proper scrolling and touch targets
@@ -273,7 +273,7 @@ Please report security vulnerabilities to security@parrotspeak.com. Do not creat
 - **✅ Security Hardened**: Command injection prevention, WebSocket security, and automated regression testing
 - **✅ Enhanced Recording**: Dual-threshold hysteresis system prevents premature auto-stops, no-speech guard saves API costs
 - **✅ User Experience**: Welcome screen for new users, persistent dark mode, centered header design
-- **✅ Language Features**: Flag display for all 67 languages, automatic language preference persistence
+- **✅ Language Features**: Flag display for all 70+ languages, automatic language preference persistence
 - **✅ API Protection**: All translation endpoints require active subscription with proper access control
 - **✅ TypeScript Safety**: Zero compilation errors, proper navigation types, only 9 type casts in entire codebase
 - **✅ Database Migrations**: Automatic SQL migration system with conversation_metrics table for performance tracking

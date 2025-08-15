@@ -250,7 +250,7 @@ export default function CheckoutScreen() {
                   color="#4169E1" 
                 />
                 <Text style={[styles.featureText, isDarkMode && styles.featureTextDark]}>
-                  All 65 supported languages
+                  All 70+ supported languages
                 </Text>
               </View>
               <View style={styles.featureRow}>

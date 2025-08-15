@@ -65,7 +65,7 @@ export default function PricingScreen() {
     type: 'subscription',
     features: [
       'Unlimited voice-to-voice translations',
-      'All 68 supported languages',
+      'All 70+ supported languages',
       'Real-time conversation mode',
       'Conversation history'
     ]
@@ -83,7 +83,7 @@ export default function PricingScreen() {
       features: [
         '7 days of access',
         'Unlimited voice-to-voice translations',
-        'All 68 supported languages',
+        'All 70+ supported languages',
         'Real-time conversation mode',
         'Conversation history'
       ]
@@ -100,7 +100,7 @@ export default function PricingScreen() {
       features: [
         '30 days of access',
         'Unlimited voice-to-voice translations',
-        'All 68 supported languages',
+        'All 70+ supported languages',
         'Real-time conversation mode',
         'Conversation history'
       ]
@@ -116,7 +116,7 @@ export default function PricingScreen() {
       features: [
         '90 days of access',
         'Unlimited voice-to-voice translations',
-        'All 68 supported languages',
+        'All 70+ supported languages',
         'Real-time conversation mode',
         'Conversation history'
       ]
@@ -132,7 +132,7 @@ export default function PricingScreen() {
       features: [
         '180 days of access',
         'Unlimited voice-to-voice translations',
-        'All 68 supported languages',
+        'All 70+ supported languages',
         'Real-time conversation mode',
         'Conversation history'
       ]
