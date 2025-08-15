@@ -76,7 +76,8 @@ export default function TermsConditionsScreen() {
           <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Not for critical/medical/legal use</Text>
           <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Voice recordings immediately deleted</Text>
           <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Auto-renewal unless cancelled</Text>
-          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Refunds through app store only</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• No partial refunds for unused time</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Access continues until billing period ends</Text>
           <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Must be 13+ years old to use</Text>
         </View>
 
