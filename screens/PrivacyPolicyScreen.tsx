@@ -48,23 +48,36 @@ export default function PrivacyPolicyScreen() {
 
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
         <Text style={[styles.lastUpdated, isDarkMode && styles.lastUpdatedDark]}>
-          Last updated: January 2025
+          Last updated: August 15, 2025
         </Text>
 
         <Text style={[styles.description, isDarkMode && styles.descriptionDark]}>
-          Your privacy is important to us. Our Privacy Policy explains how we collect, use, and protect your personal information when you use ParrotSpeak.
+          ParrotSpeak is committed to protecting your privacy. Our Privacy Policy explains how we collect, use, and safeguard your information.
         </Text>
 
-        <Text style={[styles.description, isDarkMode && styles.descriptionDark]}>
-          The policy covers:
+        <Text style={[styles.sectionTitle, isDarkMode && styles.sectionTitleDark]}>
+          Key Privacy Features:
         </Text>
 
         <View style={styles.bulletList}>
-          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Information we collect</Text>
-          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• How we use your data</Text>
-          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Data security measures</Text>
-          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Your rights and choices</Text>
-          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Contact information</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Voice recordings processed and immediately deleted</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• AES-256 encryption for all data</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• We never sell your personal data</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• GDPR and CCPA compliant</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• SOC 2 Type II certified</Text>
+        </View>
+
+        <Text style={[styles.sectionTitle, isDarkMode && styles.sectionTitleDark]}>
+          Policy Sections:
+        </Text>
+
+        <View style={styles.bulletList}>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Information We Collect</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• How We Use Your Information</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Data Protection & Encryption</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Your Rights (GDPR/CCPA)</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Data Retention Policies</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Auto Listen Feature Privacy</Text>
         </View>
 
         <TouchableOpacity 
@@ -160,8 +173,18 @@ const styles = StyleSheet.create({
     color: '#ccc',
   },
   bulletList: {
-    marginBottom: 30,
+    marginBottom: 20,
     marginLeft: 10,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+    marginTop: 10,
+  },
+  sectionTitleDark: {
+    color: '#fff',
   },
   bulletPoint: {
     fontSize: 15,
