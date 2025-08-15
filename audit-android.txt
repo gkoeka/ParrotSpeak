@@ -1,0 +1,440 @@
+
+[1m🧾 ParrotSpeak Android Audit — 2025-08-15 02:18:10 UTC[0m
+
+[1m■ Environment[0m
+v20.19.3
+10.8.2
+0.24.20
+eas-cli/16.17.4 linux-x64 node-v20.19.3
+
+[1m■ Core package matrix (expected Expo 53.x / React 18.2.0 / RN 0.76.x)[0m
+{
+  "expo": "~53.0.0",
+  "react": "18.2.0",
+  "react-native": "0.76.6",
+  "overrides": {
+    "react": "18.2.0",
+    "react-native-renderer": "18.2.0",
+    "react-native": "0.76.6"
+  }
+}
+
+[1m■ Top-level deps (depth=0)[0m
+rest-express@1.0.0 /home/runner/workspace
+├── @expo/config-plugins@10.1.2
+├── @expo/ngrok@4.1.3
+├── @expo/prebuild-config@9.0.11
+├── @expo/vector-icons@14.1.0
+├── @hookform/resolvers@5.2.1
+├── @jridgewell/trace-mapping@0.3.30
+├── @neondatabase/serverless@0.10.4
+├── @react-native-async-storage/async-storage@2.2.0
+├── @react-native-google-signin/google-signin@15.0.0
+├── @react-navigation/bottom-tabs@7.4.6
+├── @react-navigation/native@7.1.17
+├── @react-navigation/stack@7.4.7
+├── @sendgrid/mail@8.1.5
+├── @stripe/react-stripe-js@3.9.0
+├── @stripe/stripe-js@7.8.0
+├── @tanstack/react-query@5.85.3
+├── @testing-library/jest-native@5.4.3
+├── @testing-library/react-native@13.2.2
+├── @types/bcryptjs@2.4.6
+├── @types/compression@1.8.1
+├── @types/connect-pg-simple@7.0.3
+├── @types/express-session@1.18.2
+├── @types/express@4.17.21
+├── @types/jest@30.0.0
+├── @types/jsonwebtoken@9.0.10
+├── @types/memoizee@0.4.12
+├── @types/multer@1.4.13
+├── @types/node@20.16.11
+├── @types/passport-google-oauth20@2.0.16
+├── @types/passport-local@1.0.38
+├── @types/passport@1.0.17
+├── @types/qrcode@1.5.5
+├── @types/react@18.3.3
+├── @types/speakeasy@2.0.10
+├── @types/uuid@10.0.0
+├── @types/ws@8.18.1
+├── @typescript-eslint/eslint-plugin@8.39.1
+├── @typescript-eslint/parser@8.39.1
+├── babel-jest@30.0.5
+├── bcryptjs@3.0.2
+├── bufferutil@4.0.9
+├── compression@1.8.1
+├── concurrently@9.2.0
+├── connect-pg-simple@10.0.0
+├── date-fns@3.6.0
+├── drizzle-kit@0.27.2
+├── drizzle-orm@0.38.4
+├── drizzle-seed@0.3.1
+├── drizzle-zod@0.6.1
+├── esbuild@0.24.2
+├── eslint@9.33.0
+├── expo-apple-authentication@7.2.4
+├── expo-auth-session@6.2.1
+├── expo-av@15.1.7
+├── expo-crypto@14.1.5
+├── expo-dev-client@5.2.4
+├── expo-file-system@18.1.11
+├── expo-haptics@14.1.4
+├── expo-modules-core@2.5.0
+├── expo-navigation-bar@4.2.7
+├── expo-secure-store@14.2.3
+├── expo-speech@13.1.7
+├── expo@53.0.20
+├── express-rate-limit@7.5.1
+├── express-session@1.18.2
+├── express-slow-down@2.1.0
+├── express-validator@7.2.1
+├── express@4.21.2
+├── form-data@4.0.4
+├── googleapis@152.0.0
+├── helmet@8.1.0
+├── jest-expo@53.0.9
+├── jest@29.7.0
+├── jsonwebtoken@9.0.2
+├── memoizee@0.4.17
+├── metro-config@0.82.5
+├── metro-resolver@0.82.5
+├── metro@0.82.5
+├── mixpanel@0.18.1
+├── multer@2.0.2
+├── node-fetch@2.7.0
+├── openai@4.104.0
+├── openid-client@6.6.4
+├── ora@8.2.0
+├── passport-google-oauth20@2.0.0
+├── passport-local@1.0.0
+├── passport@0.7.0
+├── qrcode@1.5.4
+├── react-native-gesture-handler@2.24.0
+├── react-native-iap@13.0.4
+├── react-native-reanimated@3.17.5
+├── react-native-safe-area-context@5.6.0
+├── react-native-screens@4.11.1
+├── react-native@0.76.6 overridden
+├── react-test-renderer@19.1.1
+├── react@18.2.0 overridden
+├── speakeasy@2.0.0
+├── stripe@18.4.0
+├── tsx@4.20.4
+├── typescript@5.8.3
+├── uuid@11.1.0
+├── ws@8.18.3
+├── zod-validation-error@3.5.3
+└── zod@3.25.76
+
+
+[1m■ Check for problematic web deps in runtime (react-dom should NOT be in dependencies)[0m
+{
+  "runtime_has_react_dom": false,
+  "dev_has_react_dom": false
+}
+
+[1m■ Expo config (resolved public view)[0m
+env: load .env.local
+env: export newArchEnabled EXPO_PUBLIC_API_URL DEBUG_ENV_VARS
+
+{
+  name: [32m'ParrotSpeak'[39m,
+  slug: [32m'parrotspeak'[39m,
+  owner: [32m'gkoeka'[39m,
+  version: [32m'1.0.1'[39m,
+  sdkVersion: [32m'53.0.0'[39m,
+  orientation: [32m'portrait'[39m,
+  icon: [32m'./assets/icon.png'[39m,
+  userInterfaceStyle: [32m'automatic'[39m,
+  assetBundlePatterns: [
+    [32m'**/*'[39m
+  ],
+  plugins: [
+    [32m'expo-av'[39m,
+    [32m'expo-file-system'[39m,
+    [32m'./plugins/withIapPlayFlavor.cjs'[39m
+  ],
+  description: [90mundefined[39m,
+  platforms: [
+    [32m'ios'[39m,
+    [32m'android'[39m,
+    [32m'web'[39m
+  ],
+  splash: {
+    image: [32m'./assets/splash.png'[39m,
+    resizeMode: [32m'contain'[39m,
+    backgroundColor: [32m'#4F46E5'[39m
+  },
+  ios: {
+    supportsTablet: [33mtrue[39m,
+    bundleIdentifier: [32m'com.parrotspeak.app'[39m,
+    buildNumber: [32m'1'[39m,
+    infoPlist: {
+      NSMicrophoneUsageDescription: [32m'ParrotSpeak needs access to your microphone to translate your speech.'[39m
+    }
+  },
+  android: {
+    package: [32m'com.parrotspeak.app'[39m,
+    versionCode: [33m1[39m,
+    permissions: [
+      [32m'RECORD_AUDIO'[39m,
+      [32m'android.permission.RECORD_AUDIO'[39m,
+      [32m'android.permission.MODIFY_AUDIO_SETTINGS'[39m,
+      [32m'android.permission.READ_EXTERNAL_STORAGE'[39m,
+      [32m'android.permission.WRITE_EXTERNAL_STORAGE'[39m,
+      [32m'android.permission.INTERNET'[39m
+    ],
+    adaptiveIcon: {
+      foregroundImage: [32m'./assets/adaptive-icon.png'[39m,
+      backgroundColor: [32m'#4F46E5'[39m
+    }
+  },
+  androidNavigationBar: {
+    backgroundColor: [32m'#ffffff'[39m,
+    barStyle: [32m'dark-content'[39m,
+    visible: [32m'leanback'[39m
+  },
+  experiments: {
+    turboModules: [33mfalse[39m
+  },
+  extra: {
+    [32m'expo-module-scripts'[39m: {
+      android: {
+        jsEngine: [32m'hermes'[39m,
+        enableNewArchitecture: [33mfalse[39m
+      }
+    },
+    eas: {
+      projectId: [32m'432bc810-3ba5-4443-ac0d-25978617b7e5'[39m
+    }
+  }
+}
+
+
+[1m■ Validate app.json keys likely to break schema[0m
+{
+  "badAndroidKeys": [],
+  "hasNavPlugin": false
+}
+
+[1m■ Expo Doctor (verbose)[0m
+Need to install the following packages:
+expo-doctor@1.13.5
+Ok to proceed? (y) 
+env: load .env.local
+env: export newArchEnabled EXPO_PUBLIC_API_URL DEBUG_ENV_VARS
+Running 15 checks on your project...
+✔ Check package.json for common issues
+✔ Check Expo config for common issues
+✔ Check for common project setup issues
+✖ Check dependencies for packages that should not be installed directly
+✔ Check native tooling versions
+✔ Check if the project meets version requirements for submission to app stores
+✖ Check for app config fields that may not be synced in a non-CNG project
+✔ Check for issues with Metro config
+✖ Validate packages against React Native Directory package metadata
+✔ Check Expo config (app.json/ app.config.js) schema
+✔ Check npm/yarn versions
+✖ Check that packages match versions required by installed Expo SDK
+✔ Check for legacy global CLI installed locally
+✔ Check that native modules do not use incompatible support packages
+✖ Check that native modules use compatible support package versions for installed Expo SDK
+
+10/15 checks passed. 5 checks failed. Possible issues detected:
+
+✖ Check dependencies for packages that should not be installed directly
+The package "expo-modules-core" should not be installed directly in your project. It is a dependency of other Expo packages, which will install it automatically as needed.
+Advice:
+Remove these packages from your package.json.
+
+✖ Check that native modules use compatible support package versions for installed Expo SDK
+Expected package metro@^0.82.0
+Found invalid:
+  metro@0.81.5
+  (for more info, run: npm why metro)
+Expected package metro-resolver@^0.82.0
+Found invalid:
+  metro-resolver@0.81.5
+  (for more info, run: npm why metro-resolver)
+Expected package metro-config@^0.82.0
+Found invalid:
+  metro-config@0.81.5
+  (for more info, run: npm why metro-config)
+Advice:
+Upgrade dependencies that are using the invalid package versions.
+
+✖ Check for app config fields that may not be synced in a non-CNG project
+This project contains native project folders but also has native configuration properties in app.json, indicating it is configured to use Prebuild. When the android/ios folders are present, EAS Build will not sync the following properties: orientation, icon, userInterfaceStyle, splash, ios, android, androidNavigationBar, plugins. 
+
+Advice:
+Add '/android' and '/ios' to your .gitignore file if you intend to use CNG / Prebuild. Learn more: https://docs.expo.dev/workflow/prebuild/#usage-with-eas-build
+
+✖ Validate packages against React Native Directory package metadata
+The following issues were found when validating your dependencies against React Native Directory:
+  Untested on New Architecture: react-native-iap
+  No metadata available: @jridgewell/trace-mapping, @neondatabase/serverless, @sendgrid/mail, @stripe/react-stripe-js, @stripe/stripe-js, @testing-library/jest-native, bcryptjs, compression, concurrently, connect-pg-simple, drizzle-seed, express, express-rate-limit, express-session, express-slow-down, express-validator, form-data, googleapis, helmet, jsonwebtoken, memoizee, mixpanel, multer, node-fetch, openai, openid-client, ora, passport, passport-google-oauth20, passport-local, qrcode, react-test-renderer, speakeasy, stripe, uuid, ws, zod-validation-error, expo-modules-core
+Advice:
+Use libraries that are actively maintained and support the New Architecture. Find alternative libraries with https://reactnative.directory.
+Add packages to expo.doctor.reactNativeDirectoryCheck.exclude in package.json to selectively skip validations, if the warning is not relevant.
+Update React Native Directory to include metadata for unknown packages. Alternatively, set expo.doctor.reactNativeDirectoryCheck.listUnknownPackages in package.json to false to skip warnings about packages with no metadata, if the warning is not relevant.
+
+✖ Check that packages match versions required by installed Expo SDK
+The following packages should be updated for best compatibility with the installed expo version:
+  @react-native-async-storage/async-storage@2.2.0 - expected version: 2.1.2
+  react@18.2.0 - expected version: 19.0.0
+  react-native@0.76.6 - expected version: 0.79.5
+  react-native-safe-area-context@5.6.0 - expected version: 5.4.0
+  @types/react@18.3.3 - expected version: ~19.0.10
+Your project may not work correctly until you install the expected versions of the packages.
+Found outdated dependencies
+Advice:
+Use 'npx expo install --check' to review and upgrade your dependencies.
+
+
+[1m■ eas.json (profiles)[0m
+{
+  "cli": {
+    "version": ">= 11.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": { "buildType": "apk" }
+    },
+    "production": {
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
+
+[1m■ Android gradle properties (Kotlin/KSP pins, newArch, Hermes)[0m
+# Project-wide Gradle settings.
+
+# IDE (e.g. Android Studio) users:
+# Gradle settings configured through the IDE *will override*
+# any settings specified in this file.
+
+# For more details on how to configure your build environment visit
+# http://www.gradle.org/docs/current/userguide/build_environment.html
+
+# Specifies the JVM arguments used for the daemon process.
+# The setting is particularly useful for tweaking memory settings.
+# Default value: -Xmx512m -XX:MaxMetaspaceSize=256m
+org.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=512m
+
+# When configured, Gradle will run in incubating parallel mode.
+# This option should only be used with decoupled projects. More details, visit
+# http://www.gradle.org/docs/current/userguide/multi_project_builds.html#sec:decoupled_projects
+# org.gradle.parallel=true
+
+# AndroidX package structure to make it clearer which packages are bundled with the
+# Android operating system, and which are packaged with your app's APK
+# https://developer.android.com/topic/libraries/support-library/androidx-rn
+android.useAndroidX=true
+
+# Enable AAPT2 PNG crunching
+android.enablePngCrunchInReleaseBuilds=true
+
+# Use this property to specify which architecture you want to build.
+# You can also override it from the CLI using
+# ./gradlew <task> -PreactNativeArchitectures=x86_64
+reactNativeArchitectures=armeabi-v7a,arm64-v8a,x86,x86_64
+
+# Use this property to enable support to the new architecture.
+# This will allow you to use TurboModules and the Fabric render in
+# your application. You should enable this flag either if you want
+# to write custom TurboModules/Fabric components OR use libraries that
+# are providing them.
+newArchEnabled=true
+
+# Use this property to enable or disable the Hermes JS engine.
+# If set to false, you will be using JSC instead.
+hermesEnabled=true
+
+# Enable GIF support in React Native images (~200 B increase)
+expo.gif.enabled=true
+# Enable webp support in React Native images (~85 KB increase)
+expo.webp.enabled=true
+# Enable animated webp support (~3.4 MB increase)
+# Disabled by default because iOS doesn't support animated webp
+expo.webp.animated=false
+
+# Enable network inspector
+EX_DEV_CLIENT_NETWORK_INSPECTOR=true
+
+# Use legacy packaging to compress native libraries in the resulting APK.
+expo.useLegacyPackaging=false
+
+# Whether the app is configured to use edge-to-edge via the app config or `react-native-edge-to-edge` plugin
+expo.edgeToEdgeEnabled=false
+[1m■ android/build.gradle (header)[0m
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+  repositories {
+    google()
+    mavenCentral()
+  }
+  dependencies {
+    classpath('com.android.tools.build:gradle')
+    classpath('com.facebook.react:react-native-gradle-plugin')
+    classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
+  }
+}
+
+def reactNativeAndroidDir = new File(
+  providers.exec {
+    workingDir(rootDir)
+    commandLine("node", "--print", "require.resolve('react-native/package.json')")
+  }.standardOutput.asText.get().trim(),
+  "../android"
+)
+
+allprojects {
+  repositories {
+    maven {
+      // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+      url(reactNativeAndroidDir)
+    }
+
+    google()
+    mavenCentral()
+    maven { url 'https://www.jitpack.io' }
+  }
+}
+
+apply plugin: "expo-root-project"
+apply plugin: "com.facebook.react.rootproject"
+
+[1m■ Look for custom config plugins that might be CJS (require) instead of ESM (import)[0m
+plugins/withIapPlayFlavor.cjs:2:const { withAppBuildGradle } = require("@expo/config-plugins");
+plugins/withIapPlayFlavor.cjs:8:module.exports = function withIapPlayFlavor(config) {
+
+[1m■ Known native-bridge conflict suspects[0m
+- react-native-reanimated:
+rest-express@1.0.0 /home/runner/workspace
+└── react-native-reanimated@3.17.5
+
+- react-native-worklets:
+rest-express@1.0.0 /home/runner/workspace
+└── (empty)
+
+- react-native-iap:
+rest-express@1.0.0 /home/runner/workspace
+└── react-native-iap@13.0.4
+
+- @react-native-google-signin/google-signin:
+rest-express@1.0.0 /home/runner/workspace
+└── @react-native-google-signin/google-signin@15.0.0
+
+
+[1m■ Search for hard-pinned Android versions (compileSdk, targetSdk, Kotlin) in android/[0m
+android/app/build.gradle:88:    compileSdk rootProject.ext.compileSdkVersion
+android/app/build.gradle:94:        targetSdkVersion rootProject.ext.targetSdkVersion
+
+[1m✅ Audit complete.[0m

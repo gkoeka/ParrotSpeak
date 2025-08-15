@@ -1,0 +1,53 @@
+# --- FIX MATRIX FOR EXPO 53 (React 19.0.0 / RN 0.79.5) ---
+
+# 0) Log file name
+LOG="fix-matrix-$(date +%s).log"
+
+{
+  echo "== Start $(date -u) =="
+
+  echo "## Step 1: Ensure core versions (React 19.0.0 / RN 0.79.5 / remove overrides)"
+  npm pkg set "dependencies.react=19.0.0" "dependencies.react-native=0.79.5"
+  # Remove Expo-managed core and any overrides that fight resolution
+  npm pkg delete dependencies["expo-modules-core"] || true
+  npm pkg delete overrides || true
+
+  echo "## Step 2: Make web/test libs match React 19.0.0 (dev-only)"
+  # Keep react-dom ONLY in devDependencies and match React 19.0.0 to avoid ^19.1.x pull-ins
+  npm pkg set "devDependencies.react-dom=19.0.0"
+  npm pkg set "devDependencies.react-test-renderer=19.0.0"
+  # RN 0.79.x expects @types/react ~19
+  npm pkg set "devDependencies.@types/react=~19.0.10"
+
+  echo "## Step 3: Metro versions Expo Doctor expects"
+  npm pkg set "devDependencies.metro=^0.82.0" "devDependencies.metro-resolver=^0.82.0" "devDependencies.metro-config=^0.82.0"
+
+  echo "## Step 4: Clean node_modules & lockfiles"
+  rm -rf node_modules package-lock.json pnpm-lock.yaml yarn.lock
+
+  echo "## Step 5: Re-sync RN/React via Expo (respects SDK 53)"
+  npx expo install react@19.0.0 react-native@0.79.5
+
+  echo "## Step 6: Install"
+  npm install
+
+  echo "## Step 7: Sanity print — these should be:"
+  echo "   react = 19.0.0"
+  echo "   react-native = 0.79.5"
+  echo "   react-dom (dev) = 19.0.0"
+  echo "   react-test-renderer (dev) = 19.0.0"
+  echo "   @types/react (dev) ~19.0.10"
+  node -p "({
+    react: require('react/package.json').version,
+    rn: require('react-native/package.json').version,
+    reactDom: (function(){try{return require('react-dom/package.json').version}catch(e){return null}})(),
+    rtr: (function(){try{return require('react-test-renderer/package.json').version}catch(e){return null}})(),
+    typesReact: (function(){try{return require('@types/react/package.json').version}catch(e){return null}})(),
+    metro: (function(){try{return require('metro/package.json').version}catch(e){return null}})()
+  })"
+
+  echo "== End $(date -u) =="
+} 2>&1 | tee "$LOG"
+
+echo
+echo "Saved log to: $LOG"

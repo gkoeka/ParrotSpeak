@@ -36,7 +36,7 @@
       "barStyle": "dark-content",
       "visible": "leanback"
     },
-    "plugins": ["expo-av", "expo-file-system", "expo-dev-client"],
+    "plugins": ["expo-av", "expo-file-system", "./plugins/withIapPlayFlavor.cjs"],
     "experiments": {
       "turboModules": false
     },
