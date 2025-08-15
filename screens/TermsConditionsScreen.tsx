@@ -48,24 +48,36 @@ export default function TermsConditionsScreen() {
 
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
         <Text style={[styles.lastUpdated, isDarkMode && styles.lastUpdatedDark]}>
-          Last updated: January 2025
+          Last updated: August 15, 2025
         </Text>
 
         <Text style={[styles.description, isDarkMode && styles.descriptionDark]}>
-          These Terms & Conditions govern your use of the ParrotSpeak mobile application and services. By using our app, you agree to these terms.
+          By using ParrotSpeak, you agree to these Terms of Service. Our app provides AI-powered voice translation across 70+ languages.
         </Text>
 
-        <Text style={[styles.description, isDarkMode && styles.descriptionDark]}>
-          Key sections include:
+        <Text style={[styles.sectionTitle, isDarkMode && styles.sectionTitleDark]}>
+          Subscription Plans:
         </Text>
 
         <View style={styles.bulletList}>
-          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Acceptance of terms</Text>
-          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Service description</Text>
-          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• User responsibilities</Text>
-          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Subscription and payments</Text>
-          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Intellectual property</Text>
-          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Limitation of liability</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Weekly: $4.99 (7 days)</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Monthly: $9.99 (30 days)</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• 3-Month: $39.99 (90 days)</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• 6-Month: $69.99 (180 days)</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Annual: $99.00 (365 days)</Text>
+        </View>
+
+        <Text style={[styles.sectionTitle, isDarkMode && styles.sectionTitleDark]}>
+          Important Terms:
+        </Text>
+
+        <View style={styles.bulletList}>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Translations are automated and may contain errors</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Not for critical/medical/legal use</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Voice recordings immediately deleted</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Auto-renewal unless cancelled</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Refunds through app store only</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Must be 13+ years old to use</Text>
         </View>
 
         <TouchableOpacity 
@@ -161,8 +173,18 @@ const styles = StyleSheet.create({
     color: '#ccc',
   },
   bulletList: {
-    marginBottom: 30,
+    marginBottom: 20,
     marginLeft: 10,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+    marginTop: 10,
+  },
+  sectionTitleDark: {
+    color: '#fff',
   },
   bulletPoint: {
     fontSize: 15,
