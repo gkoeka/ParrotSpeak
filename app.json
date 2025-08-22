@@ -59,7 +59,8 @@
       "expo-av",
       "expo-file-system",
       "./plugins/withIapPlayFlavor.cjs",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-font"
     ],
     "experiments": {
       "turboModules": false
