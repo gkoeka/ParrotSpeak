@@ -58,7 +58,8 @@
     "plugins": [
       "expo-av",
       "expo-file-system",
-      "./plugins/withIapPlayFlavor.cjs"
+      "./plugins/withIapPlayFlavor.cjs",
+      "expo-secure-store"
     ],
     "experiments": {
       "turboModules": false
