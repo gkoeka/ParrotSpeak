@@ -9,32 +9,24 @@ export default {
   splash: {
     image: "./assets/splash.png",
     resizeMode: "contain",
-    backgroundColor: "#ffffff"
+    backgroundColor: "#ffffff",
   },
-  updates: {
-    fallbackToCacheTimeout: 0
-  },
+  updates: { fallbackToCacheTimeout: 0 },
   assetBundlePatterns: ["**/*"],
   ios: {
     supportsTablet: true,
-    bundleIdentifier: "com.parrotspeak.com", // <-- your App ID here
+    bundleIdentifier: "com.parrotspeak.app", // <-- make sure this matches your App ID
     buildNumber: "1.0.0",
     infoPlist: {
       NSMicrophoneUsageDescription:
         "ParrotSpeak needs the microphone for live translation.",
       NSSpeechRecognitionUsageDescription:
-        "ParrotSpeak uses speech recognition to transcribe your voice."
-    }
+        "ParrotSpeak uses speech recognition to transcribe your voice.",
+    },
   },
   android: {
-    adaptiveIcon: {
-      foregroundImage: "./assets/adaptive-icon.png",
-      backgroundColor: "#ffffff"
-    },
-    package: "com.parrotspeak.com"
+    package: "com.parrotspeak.app", // usually mirror iOS for consistency
   },
-  web: {
-    favicon: "./assets/favicon.png"
-  },
-  plugins: []
+  web: { favicon: "./assets/favicon.png" },
+  plugins: [],
 };
