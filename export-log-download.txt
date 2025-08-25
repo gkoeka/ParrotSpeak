@@ -1,0 +1,18 @@
+env: load .env.local
+env: export newArchEnabled EXPO_PUBLIC_API_URL DEBUG_ENV_VARS
+
+Expo Metro config:
+- Version: 0.20.17
+- Extensions: ts, tsx, mjs, js, jsx, json, cjs, scss, sass, css
+- React Native: /home/runner/workspace/node_modules/react-native
+- Watch Folders: 
+- Node Module Paths: 
+- Sass: null
+- Reanimated: 3.17.5
+
+Starting Metro Bundler
+Android ./index.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 94.2% (1124/1200)
+Android Bundled 1444ms index.js (1302 modules)
+Writing bundle output to: /tmp/km4qcyqvv/index.js
+Copying 39 asset files
+Done writing bundle output

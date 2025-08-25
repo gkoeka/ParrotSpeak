@@ -171,7 +171,7 @@ export class InAppPurchaseService {
 
   private async validatePurchase(purchase: any): Promise<void> {
     try {
-      const { API_BASE_URL } = await import('../config/api');
+      const { API_BASE_URL } = await import('../api/config');
       const response = await fetch(`${API_BASE_URL}/api/validate-purchase`, {
         method: 'POST',
         headers: {

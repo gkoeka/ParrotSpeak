@@ -1,3 +1,4 @@
+// app.config.js
 export default {
   name: "ParrotSpeak",
   slug: "parrotspeak",
@@ -6,27 +7,28 @@ export default {
   icon: "./assets/icon.png",
   scheme: "parrotspeak",
   userInterfaceStyle: "light",
-  splash: {
-    image: "./assets/splash.png",
-    resizeMode: "contain",
-    backgroundColor: "#ffffff",
-  },
+  splash: { image: "./assets/splash.png", resizeMode: "contain", backgroundColor: "#ffffff" },
   updates: { fallbackToCacheTimeout: 0 },
   assetBundlePatterns: ["**/*"],
   ios: {
     supportsTablet: true,
-    bundleIdentifier: "com.parrotspeak.app", // <-- make sure this matches your App ID
+    bundleIdentifier: "com.parrotspeak.app",
     buildNumber: "1.0.0",
     infoPlist: {
-      NSMicrophoneUsageDescription:
-        "ParrotSpeak needs the microphone for live translation.",
-      NSSpeechRecognitionUsageDescription:
-        "ParrotSpeak uses speech recognition to transcribe your voice.",
-    },
+      NSMicrophoneUsageDescription: "ParrotSpeak needs the microphone for live translation.",
+      NSSpeechRecognitionUsageDescription: "ParrotSpeak uses speech recognition to transcribe your voice."
+    }
   },
   android: {
-    package: "com.parrotspeak.app", // usually mirror iOS for consistency
+    package: "com.parrotspeak.app"
   },
   web: { favicon: "./assets/favicon.png" },
-  plugins: [],
+
+  extra: {
+    eas: {
+      projectId: "432bc810-3ba5-4443-ac0d-25978617b7e5"
+    }
+  },
+
+  plugins: []
 };
