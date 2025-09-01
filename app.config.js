@@ -42,8 +42,6 @@ module.exports = {
       }
     ],
 
-    // bump when shipping to Play Store
-    versionCode: 2
   },
 
   web: { favicon: "./assets/favicon.png" },
