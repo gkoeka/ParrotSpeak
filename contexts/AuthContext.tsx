@@ -5,6 +5,7 @@ interface User {
   id: string;
   email: string;
   name?: string;
+  picture?: string;
   subscriptionStatus?: string;
   subscriptionTier?: string;
   subscriptionExpiresAt?: Date | null;
@@ -13,16 +14,27 @@ interface User {
   previewStartedAt?: Date | null;
 }
 
+interface GoogleSignInParams {
+  idToken: string;
+  accessToken: string;
+  profile: {
+    id: string;
+    email: string;
+    name?: string;
+    picture?: string;
+  };
+}
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, firstName: string, lastName?: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
+  signInWithGoogle: (params: GoogleSignInParams) => Promise<void>;
   loginWithApple: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<{ success: boolean; message: string }>;
   refreshUserData: () => Promise<void>;
-  logout: () => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -58,6 +70,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           id: userData.id,
           email: userData.email,
           name: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.email,
+          picture: userData.picture,
           subscriptionStatus: userData.subscriptionStatus || 'free',
           subscriptionTier: userData.subscriptionTier,
           subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null,
@@ -99,6 +112,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           id: userData.id,
           email: userData.email,
           name: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.email,
+          picture: userData.picture,
           subscriptionStatus: userData.subscriptionStatus || 'free',
           subscriptionTier: userData.subscriptionTier,
           subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null,
@@ -132,6 +146,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           id: userData.id,
           email: userData.email,
           name: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.email,
+          picture: userData.picture,
           subscriptionStatus: userData.subscriptionStatus || 'free',
           subscriptionTier: userData.subscriptionTier,
           subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null,
@@ -151,30 +166,41 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const loginWithGoogle = async () => {
+  const signInWithGoogle = async ({ idToken, accessToken, profile }: GoogleSignInParams) => {
     try {
-      const { OAuthService } = await import('../services/oauthService');
-      const response = await OAuthService.signInWithGoogle();
+      // For now, set the user directly from the profile
+      // Later, you can send idToken to your backend for verification
+      const userInfo: User = {
+        id: profile.id,
+        email: profile.email,
+        name: profile.name,
+        picture: profile.picture,
+        subscriptionStatus: 'free',
+        subscriptionTier: undefined,
+        subscriptionExpiresAt: null,
+        previewExpiresAt: null,
+        hasUsedPreview: false,
+        previewStartedAt: null
+      };
       
-      if (response && response.user) {
-        const userData = response.user;
-        const userInfo = {
-          id: userData.id,
-          email: userData.email,
-          name: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.email,
-          subscriptionStatus: userData.subscriptionStatus || 'free',
-          subscriptionTier: userData.subscriptionTier,
-          subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null,
-          previewExpiresAt: userData.previewExpiresAt ? new Date(userData.previewExpiresAt) : null,
-          hasUsedPreview: userData.hasUsedPreview || false,
-          previewStartedAt: userData.previewStartedAt ? new Date(userData.previewStartedAt) : null
-        };
-        setUser(userInfo);
-        await SecureStorage.setUserData(userInfo);
+      // TODO: Send idToken to backend for verification and get user data
+      // const { googleSignIn } = await import('../api/authService');
+      // const response = await googleSignIn({ idToken, accessToken });
+      // if (response && response.user) {
+      //   const userData = response.user;
+      //   userInfo = { ...userInfo, ...userData };
+      // }
+      
+      setUser(userInfo);
+      await SecureStorage.setUserData(userInfo);
+      
+      // Store the tokens for future API calls
+      if (accessToken) {
+        await SecureStorage.setAuthToken(accessToken);
       }
     } catch (error) {
-      console.error('Google login failed:', error);
-      throw new Error('Google login failed. Please try again.');
+      console.error('Google sign-in failed:', error);
+      throw new Error('Google sign-in failed. Please try again.');
     }
   };
 
@@ -189,6 +215,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           id: userData.id,
           email: userData.email,
           name: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.email,
+          picture: userData.picture,
           subscriptionStatus: userData.subscriptionStatus || 'free',
           subscriptionTier: userData.subscriptionTier,
           subscriptionExpiresAt: userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null,
@@ -233,6 +260,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           id: freshUserData.id,
           email: freshUserData.email,
           name: freshUserData.firstName ? `${freshUserData.firstName} ${freshUserData.lastName || ''}`.trim() : freshUserData.email,
+          picture: freshUserData.picture,
           subscriptionStatus: freshUserData.subscriptionStatus || 'free',
           subscriptionTier: freshUserData.subscriptionTier,
           subscriptionExpiresAt: freshUserData.subscriptionExpiresAt ? new Date(freshUserData.subscriptionExpiresAt) : null
@@ -245,7 +273,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const logout = async () => {
+  const signOut = async () => {
     try {
       // Import the real auth service
       const { logout: apiLogout } = await import('../api/authService');
@@ -275,11 +303,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isLoading,
     login,
     register,
-    loginWithGoogle,
+    signInWithGoogle,
     loginWithApple,
     requestPasswordReset,
     refreshUserData,
-    logout,
+    signOut,
   };
 
   return (

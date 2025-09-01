@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import { makeRedirectUri } from 'expo-auth-session';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
+
+// Complete auth session for web
+WebBrowser.maybeCompleteAuthSession();
 
 type AuthScreenRouteProp = RouteProp<RootStackParamList, 'Auth'>;
 type AuthScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Auth'>;
@@ -20,19 +26,70 @@ export default function AuthScreen() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { login, register, loginWithGoogle, loginWithApple } = useAuth();
+  const { login, register, signInWithGoogle, loginWithApple } = useAuth();
   const { isDarkMode, loadThemePreference } = useTheme();
+
+  // Configure Google auth
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID!,
+    scopes: ['openid', 'profile', 'email'],
+    redirectUri: makeRedirectUri({ scheme: 'parrotspeak' }),
+  });
 
   useEffect(() => {
     checkAppleAuthAvailability();
   }, []);
 
+  useEffect(() => {
+    handleGoogleResponse();
+  }, [response]);
+
   const checkAppleAuthAvailability = async () => {
     if (Platform.OS === 'ios') {
       const isAvailable = await AppleAuthentication.isAvailableAsync();
       setIsAppleAuthAvailable(isAvailable);
+    }
+  };
+
+  const handleGoogleResponse = async () => {
+    if (response?.type === 'success') {
+      setGoogleLoading(true);
+      try {
+        const { authentication } = response;
+        
+        if (authentication?.accessToken) {
+          // Fetch user profile from Google
+          const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers: {
+              Authorization: `Bearer ${authentication.accessToken}`,
+            },
+          });
+          
+          const profile = await userInfoResponse.json();
+          
+          // Sign in with the profile data
+          await signInWithGoogle({
+            idToken: authentication.idToken || '',
+            accessToken: authentication.accessToken,
+            profile: {
+              id: profile.id,
+              email: profile.email,
+              name: profile.name,
+              picture: profile.picture,
+            },
+          });
+          
+          // Reload theme after successful login
+          await loadThemePreference();
+        }
+      } catch (error: any) {
+        Alert.alert('Error', error.message || 'Google sign in failed');
+      } finally {
+        setGoogleLoading(false);
+      }
     }
   };
 
@@ -66,15 +123,12 @@ export default function AuthScreen() {
   };
 
   const handleGoogleSignIn = async () => {
-    setLoading(true);
+    setGoogleLoading(true);
     try {
-      await loginWithGoogle();
-      // Reload theme after successful login
-      await loadThemePreference();
+      await promptAsync();
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Google sign in failed');
-    } finally {
-      setLoading(false);
+      setGoogleLoading(false);
     }
   };
 
@@ -179,12 +233,18 @@ export default function AuthScreen() {
           <View style={styles.oauthContainer}>
             {/* Google Sign In */}
             <TouchableOpacity 
-              style={styles.oauthButton} 
+              style={[styles.oauthButton, googleLoading && styles.oauthButtonDisabled]} 
               onPress={handleGoogleSignIn}
-              disabled={loading}
+              disabled={!request || loading || googleLoading}
             >
-              <Ionicons name="logo-google" size={20} color="#DB4437" />
-              <Text style={styles.oauthButtonText}>Google</Text>
+              {googleLoading ? (
+                <ActivityIndicator size="small" color="#DB4437" />
+              ) : (
+                <Ionicons name="logo-google" size={20} color="#DB4437" />
+              )}
+              <Text style={styles.oauthButtonText}>
+                {googleLoading ? 'Signing in...' : 'Google'}
+              </Text>
             </TouchableOpacity>
 
             {/* Apple Sign In - only show on iOS */}
@@ -356,6 +416,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginHorizontal: 5,
     backgroundColor: '#fff',
+  },
+  oauthButtonDisabled: {
+    opacity: 0.6,
   },
   appleButton: {
     backgroundColor: '#000',
