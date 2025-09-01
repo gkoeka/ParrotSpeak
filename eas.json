@@ -7,13 +7,21 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "android": { "buildType": "apk" }
+      "android": { "buildType": "apk" },
+      "env": {
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "xxxxxxxx-upload.apps.googleusercontent.com"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "xxxxxxxx-play.apps.googleusercontent.com"
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "track": "internal"
+    }
   }
 }

@@ -65,6 +65,7 @@
     "expo-secure-store": "~14.2.4",
     "expo-speech": "~13.1.7",
     "expo-updates": "~0.28.17",
+    "expo-web-browser": "^14.2.0",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
     "express-session": "^1.18.1",
