@@ -1,7 +1,13 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
-
+// === Auto versionCode (no manual bumps) ===
+// Use epoch seconds so each build gets a unique, ever-increasing int (safe until 2038).
+def isReleaseBuild = gradle.startParameter.taskNames.any { it.toLowerCase().contains("release") }
+def AUTO_VERSION_CODE = (System.currentTimeMillis() / 1000L) as int
+// For debug builds you can keep it small; Play only cares about release builds.
+def DEBUG_VERSION_CODE = 1
+// ==========================================
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
 /**
@@ -92,7 +98,7 @@ android {
         applicationId 'com.parrotspeak.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 10
+        versionCode isReleaseBuild ? AUTO_VERSION_CODE : DEBUG_VERSION_CODE
         versionName "1.0.0"
         missingDimensionStrategy 'store', 'play'
     }
