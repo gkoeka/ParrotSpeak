@@ -1,27 +1,20 @@
 {
-  "cli": {
-    "version": ">= 11.0.0",
-    "appVersionSource": "remote"
-  },
+  "cli": { "version": ">= 11.0.0", "appVersionSource": "remote" },
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
       "android": { "buildType": "apk" },
       "env": {
-        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "xxxxxxxx-upload.apps.googleusercontent.com"
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "1019059465821-uf4emi73l2nugqcq4g3fpdrln272oghh.apps.googleusercontent.com.apps.googleusercontent.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "xxxxxxxx-play.apps.googleusercontent.com"
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "1019059465821-cd87brn1vui4058erkmn49msq8l2nbjs.apps.googleusercontent.com.apps.googleusercontent.com"
       }
     }
   },
-  "submit": {
-    "production": {
-      "track": "internal"
-    }
-  }
+  "submit": { "production": { "track": "internal" } }
 }
