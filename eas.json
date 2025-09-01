@@ -1,5 +1,8 @@
 {
-  "cli": { "version": ">= 11.0.0", "appVersionSource": "remote" },
+  "cli": {
+    "version": ">= 11.0.0",
+    "appVersionSource": "remote"
+  },
   "build": {
     "development": {
       "developmentClient": true,
@@ -16,5 +19,11 @@
       }
     }
   },
-  "submit": { "production": { "track": "internal" } }
+  "submit": {
+    "production": {
+      "android": {
+        "track": "internal"
+      }
+    }
+  }
 }

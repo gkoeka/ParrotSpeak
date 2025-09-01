@@ -8,7 +8,7 @@ module.exports = {
 
   // required for OAuth redirect
   scheme: "parrotspeak",
-
+  runtimeVersion: { policy: "appVersion" },
   userInterfaceStyle: "light",
   splash: {
     image: "./assets/splash.png",
