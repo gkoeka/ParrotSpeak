@@ -11,7 +11,7 @@ import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
 
-// Complete auth session for web
+// Complete auth session for web/native
 WebBrowser.maybeCompleteAuthSession();
 
 type AuthScreenRouteProp = RouteProp<RootStackParamList, 'Auth'>;
@@ -32,11 +32,19 @@ export default function AuthScreen() {
   const { login, register, signInWithGoogle, loginWithApple } = useAuth();
   const { isDarkMode, loadThemePreference } = useTheme();
 
+  // IMPORTANT: Make the redirect EXACTLY parrotspeak://redirect to match your intent-filter
+  const redirectUri = makeRedirectUri({
+    scheme: 'parrotspeak',
+    path: 'redirect',
+  });
+  // Debug once to confirm in your Play build logs:
+  console.log('Redirect URI in this build:', redirectUri);
+
   // Configure Google auth
   const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID!,
     scopes: ['openid', 'profile', 'email'],
-    redirectUri: makeRedirectUri({ scheme: 'parrotspeak' }),
+    redirectUri, // <-- now "parrotspeak://redirect"
   });
 
   useEffect(() => {
@@ -59,7 +67,7 @@ export default function AuthScreen() {
       setGoogleLoading(true);
       try {
         const { authentication } = response;
-        
+
         if (authentication?.accessToken) {
           // Fetch user profile from Google
           const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
@@ -67,9 +75,9 @@ export default function AuthScreen() {
               Authorization: `Bearer ${authentication.accessToken}`,
             },
           });
-          
+
           const profile = await userInfoResponse.json();
-          
+
           // Sign in with the profile data
           await signInWithGoogle({
             idToken: authentication.idToken || '',
@@ -81,7 +89,7 @@ export default function AuthScreen() {
               picture: profile.picture,
             },
           });
-          
+
           // Reload theme after successful login
           await loadThemePreference();
         }
@@ -108,11 +116,9 @@ export default function AuthScreen() {
     try {
       if (isLogin) {
         await login(email, password);
-        // Reload theme after successful login
         await loadThemePreference();
       } else {
         await register(email, password, firstName, lastName);
-        // Reload theme after successful registration
         await loadThemePreference();
       }
     } catch (error: any) {
@@ -136,7 +142,6 @@ export default function AuthScreen() {
     setLoading(true);
     try {
       await loginWithApple();
-      // Reload theme after successful login
       await loadThemePreference();
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Apple sign in failed');
@@ -176,7 +181,7 @@ export default function AuthScreen() {
               />
             </>
           )}
-          
+
           <TextInput
             style={[styles.input, isDarkMode && styles.inputDark]}
             placeholder="Email"
@@ -186,7 +191,7 @@ export default function AuthScreen() {
             autoCapitalize="none"
             keyboardType="email-address"
           />
-          
+
           <View style={styles.passwordContainer}>
             <TextInput
               style={[styles.passwordInput, isDarkMode && styles.inputDark]}
@@ -201,25 +206,25 @@ export default function AuthScreen() {
               onPress={() => setShowPassword(!showPassword)}
               testID="password-toggle"
               accessible={true}
-              accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+              accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
               accessibilityRole="button"
             >
-              <Ionicons 
-                name={showPassword ? "eye-off" : "eye"} 
-                size={24} 
+              <Ionicons
+                name={showPassword ? 'eye-off' : 'eye'}
+                size={24}
                 color={isDarkMode ? '#999' : '#666'}
                 testID="password-toggle-icon"
               />
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.submitButton, loading && styles.submitButtonDisabled]}
             onPress={handleSubmit}
             disabled={loading}
           >
             <Text style={styles.submitButtonText}>
-              {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
+              {loading ? 'Please wait...' : isLogin ? 'Sign In' : 'Create Account'}
             </Text>
           </TouchableOpacity>
 
@@ -232,8 +237,8 @@ export default function AuthScreen() {
 
           <View style={styles.oauthContainer}>
             {/* Google Sign In */}
-            <TouchableOpacity 
-              style={[styles.oauthButton, googleLoading && styles.oauthButtonDisabled]} 
+            <TouchableOpacity
+              style={[styles.oauthButton, googleLoading && styles.oauthButtonDisabled]}
               onPress={handleGoogleSignIn}
               disabled={!request || loading || googleLoading}
             >
@@ -249,8 +254,8 @@ export default function AuthScreen() {
 
             {/* Apple Sign In - only show on iOS */}
             {isAppleAuthAvailable && (
-              <TouchableOpacity 
-                style={[styles.oauthButton, styles.appleButton]} 
+              <TouchableOpacity
+                style={[styles.oauthButton, styles.appleButton]}
                 onPress={handleAppleSignIn}
                 disabled={loading}
               >
@@ -260,7 +265,7 @@ export default function AuthScreen() {
             )}
           </View>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.switchButton}
             onPress={() => {
               setIsLogin(!isLogin);
@@ -268,13 +273,13 @@ export default function AuthScreen() {
             }}
           >
             <Text style={styles.switchButtonText}>
-              {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+              {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
             </Text>
           </TouchableOpacity>
 
           {/* Forgot Password Link */}
           {isLogin && (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.forgotPasswordButton}
               onPress={() => navigation.navigate('PasswordReset')}
             >
@@ -290,160 +295,34 @@ export default function AuthScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  containerDark: {
-    backgroundColor: '#1a1a1a',
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-    color: '#1a1a1a',
-  },
-  titleDark: {
-    color: '#fff',
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    color: '#666',
-    marginBottom: 40,
-  },
-  subtitleDark: {
-    color: '#999',
-  },
-  form: {
-    gap: 16,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 16,
-    backgroundColor: '#f8f9fa',
-    color: '#1a1a1a',
-  },
-  inputDark: {
-    backgroundColor: '#2a2a2a',
-    borderColor: '#333',
-    color: '#fff',
-  },
-  passwordContainer: {
-    position: 'relative',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  passwordInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingRight: 50,
-    fontSize: 16,
-    backgroundColor: '#f8f9fa',
-    color: '#1a1a1a',
-  },
-  eyeIcon: {
-    position: 'absolute',
-    right: 12,
-    padding: 8,
-  },
-  submitButton: {
-    backgroundColor: '#3366FF',
-    paddingVertical: 16,
-    borderRadius: 12,
-    marginTop: 8,
-  },
-  submitButtonDisabled: {
-    opacity: 0.6,
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  switchButton: {
-    paddingVertical: 16,
-  },
-  switchButtonText: {
-    color: '#3366FF',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#ddd',
-  },
-  dividerText: {
-    marginHorizontal: 15,
-    color: '#666',
-    fontSize: 14,
-  },
-  oauthContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  oauthButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginHorizontal: 5,
-    backgroundColor: '#fff',
-  },
-  oauthButtonDisabled: {
-    opacity: 0.6,
-  },
-  appleButton: {
-    backgroundColor: '#000',
-    borderColor: '#000',
-  },
-  oauthButtonText: {
-    marginLeft: 8,
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-  },
-  appleButtonText: {
-    color: '#fff',
-  },
-  forgotPasswordButton: {
-    alignItems: 'center',
-    paddingVertical: 10,
-    marginTop: 10,
-  },
-  forgotPasswordText: {
-    color: '#3366FF',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  forgotPasswordTextDark: {
-    color: '#5B8FFF',
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
+  containerDark: { backgroundColor: '#1a1a1a' },
+  content: { flex: 1, padding: 20, justifyContent: 'center' },
+  title: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', marginBottom: 8, color: '#1a1a1a' },
+  titleDark: { color: '#fff' },
+  subtitle: { fontSize: 16, textAlign: 'center', color: '#666', marginBottom: 40 },
+  subtitleDark: { color: '#999' },
+  form: { gap: 16 },
+  input: { borderWidth: 1, borderColor: '#e9ecef', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, fontSize: 16, backgroundColor: '#f8f9fa', color: '#1a1a1a' },
+  inputDark: { backgroundColor: '#2a2a2a', borderColor: '#333', color: '#fff' },
+  passwordContainer: { position: 'relative', flexDirection: 'row', alignItems: 'center' },
+  passwordInput: { flex: 1, borderWidth: 1, borderColor: '#e9ecef', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, paddingRight: 50, fontSize: 16, backgroundColor: '#f8f9fa', color: '#1a1a1a' },
+  eyeIcon: { position: 'absolute', right: 12, padding: 8 },
+  submitButton: { backgroundColor: '#3366FF', paddingVertical: 16, borderRadius: 12, marginTop: 8 },
+  submitButtonDisabled: { opacity: 0.6 },
+  submitButtonText: { color: '#fff', fontSize: 18, fontWeight: '600', textAlign: 'center' },
+  switchButton: { paddingVertical: 16 },
+  switchButtonText: { color: '#3366FF', fontSize: 16, textAlign: 'center' },
+  dividerContainer: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
+  divider: { flex: 1, height: 1, backgroundColor: '#ddd' },
+  dividerText: { marginHorizontal: 15, color: '#666', fontSize: 14 },
+  oauthContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
+  oauthButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#ddd', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 16, marginHorizontal: 5, backgroundColor: '#fff' },
+  oauthButtonDisabled: { opacity: 0.6 },
+  appleButton: { backgroundColor: '#000', borderColor: '#000' },
+  oauthButtonText: { marginLeft: 8, fontSize: 14, fontWeight: '500', color: '#333' },
+  appleButtonText: { color: '#fff' },
+  forgotPasswordButton: { alignItems: 'center', paddingVertical: 10, marginTop: 10 },
+  forgotPasswordText: { color: '#3366FF', fontSize: 14, fontWeight: '500' },
+  forgotPasswordTextDark: { color: '#5B8FFF' },
 });
