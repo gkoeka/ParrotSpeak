@@ -33,11 +33,11 @@ module.exports = {
   android: {
     package: "com.parrotspeak.app",
 
-    // handles parrotspeak://oauth-native-callback after Google sign-in
+    // handles parrotspeak://auth after Google sign-in
     intentFilters: [
       {
         action: "VIEW",
-        data: [{ scheme: "parrotspeak", host: "oauth-native-callback" }],
+        data: [{ scheme: "parrotspeak", host: "auth" }],
         category: ["BROWSABLE", "DEFAULT"]
       }
     ],
@@ -49,6 +49,6 @@ module.exports = {
   extra: {
     eas: { projectId: "432bc810-3ba5-4443-ac0d-25978617b7e5" },
     CLERK_PUBLISHABLE_KEY: process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || "",
-    REDIRECT_URI: "parrotspeak://oauth-native-callback"
+    REDIRECT_URI: "parrotspeak://auth"
   }
 };

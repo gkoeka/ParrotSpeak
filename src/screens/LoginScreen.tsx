@@ -38,43 +38,36 @@ export default function LoginScreen() {
     try {
       setLoading(true);
       
-      // Explicitly set the redirect URL
-      const redirectUrl = Linking.createURL('/oauth-native-callback', {
-        scheme: 'parrotspeak'
-      });
-      
+      // Temporary logging code
+      const redirectUrl = Linking.createURL("auth"); // parrotspeak://auth
       console.log('Starting OAuth with redirect URL:', redirectUrl);
       
-      const { createdSessionId, setActive } = await startOAuthFlow({
-        redirectUrl: redirectUrl,
-      });
+      const { createdSessionId, setActive, signIn, signUp } =
+        await startOAuthFlow({ redirectUrl });
       
       console.log('OAuth completed, sessionId:', createdSessionId);
       
       if (createdSessionId) {
-        await setActive({ session: createdSessionId });
+        await setActive!({ session: createdSessionId });
         await syncUserToBackend(createdSessionId);
         navigation.navigate('Main' as never);
       }
-    } catch (err: any) {
-      console.error('Google sign-in error:', err);
-      console.error('Error status:', err?.status);
-      console.error('Error message:', err?.message);
-      console.error('Error errors:', err?.errors);
+    } catch (e: any) {
+      console.log("[CLERK OAUTH ERROR]", JSON.stringify(e, null, 2));
       
       // Check for specific error types
-      if (err?.errors?.[0]?.code === 'captcha_required' || err?.message?.includes('CAPTCHA')) {
+      if (e?.errors?.[0]?.code === 'captcha_required' || e?.message?.includes('CAPTCHA')) {
         Alert.alert(
           'Configuration Issue', 
           'Bot protection needs to be disabled in Clerk Dashboard. Go to User & Authentication → Attack Protection and turn off Bot sign-up protection.'
         );
-      } else if (err?.status === 400 || err?.message?.includes('redirect_uri_mismatch')) {
+      } else if (e?.status === 400 || e?.message?.includes('redirect_uri_mismatch')) {
         Alert.alert(
           'OAuth Configuration Error',
-          `Redirect URL issue. Make sure:\n1. Go to Clerk Dashboard → Paths → Native applications\n2. Add: parrotspeak://oauth-native-callback\n3. Check User & Authentication settings - Username should NOT be required\n\nDebug: ${redirectUrl}`
+          `Redirect URL issue. Make sure:\n1. Go to Clerk Dashboard → Paths → Native applications\n2. Add: parrotspeak://auth\n3. Check User & Authentication settings - Username should NOT be required\n\nDebug: ${redirectUrl}`
         );
       } else {
-        Alert.alert('Error', err.errors?.[0]?.message || err.message || 'Failed to sign in with Google');
+        Alert.alert('Error', e.errors?.[0]?.message || e.message || 'Failed to sign in with Google');
       }
     } finally {
       setLoading(false);
