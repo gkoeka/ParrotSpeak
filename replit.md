@@ -62,6 +62,25 @@ ParrotSpeak is built as a mobile-first TypeScript application with a clean API b
 - **Android Navigation Bar Layout Fix**: Fixed safe area handling across the app to prevent UI elements being hidden by Android navigation bars. Header component now uses `useSafeAreaInsets()`.
 - **Tab Bar Positioning Fix**: Implemented proper footer positioning using React Navigation's BottomTabBar component with custom safe area insets. Tab bar now sits correctly above Android system navigation.
 
+## Clerk OAuth Solution for Expo
+
+### IMPORTANT: Expo Go Limitation
+**Google OAuth does NOT work in Expo Go** - This is a documented limitation. Expo Go uses `exp://` URLs that OAuth providers reject.
+
+### Working Solutions:
+1. **For Development Testing**: Use email verification codes (already implemented and working)
+2. **For Google OAuth**: Create a development build using:
+   ```bash
+   npx expo prebuild
+   npx expo run:android  # or run:ios
+   ```
+3. **Clerk Allowlist**: Add `parrotspeak://auth` to Native Applications redirect URLs in Clerk Dashboard
+
+### Why This Happened:
+- Expo Go generates `exp://` URLs which are invalid for OAuth
+- Clerk/Google reject these URLs before they reach the app
+- Development builds use proper custom schemes (`parrotspeak://`)
+
 ## External Dependencies
 
 ### Core Services
