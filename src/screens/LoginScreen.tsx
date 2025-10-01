@@ -55,19 +55,35 @@ export default function LoginScreen() {
     } catch (e: any) {
       console.log("[CLERK OAUTH ERROR]", JSON.stringify(e, null, 2));
       
+      // Create detailed error message
+      const errorDetails = {
+        message: e?.message || 'Unknown error',
+        status: e?.status,
+        errors: e?.errors,
+        code: e?.errors?.[0]?.code,
+        longMessage: e?.errors?.[0]?.long_message || e?.errors?.[0]?.message,
+        redirectUrl: redirectUrl,
+      };
+      
+      // Show the full error details in an alert
+      Alert.alert(
+        'OAuth Error Details',
+        `Status: ${errorDetails.status}\n\n` +
+        `Message: ${errorDetails.message}\n\n` +
+        `Code: ${errorDetails.code || 'N/A'}\n\n` +
+        `Details: ${errorDetails.longMessage || 'No additional details'}\n\n` +
+        `Redirect URL: ${errorDetails.redirectUrl}\n\n` +
+        `Full Error: ${JSON.stringify(e?.errors || e, null, 2).substring(0, 500)}`
+      );
+      
       // Check for specific error types
       if (e?.errors?.[0]?.code === 'captcha_required' || e?.message?.includes('CAPTCHA')) {
-        Alert.alert(
-          'Configuration Issue', 
-          'Bot protection needs to be disabled in Clerk Dashboard. Go to User & Authentication → Attack Protection and turn off Bot sign-up protection.'
-        );
-      } else if (e?.status === 400 || e?.message?.includes('redirect_uri_mismatch')) {
-        Alert.alert(
-          'OAuth Configuration Error',
-          `Redirect URL issue. Make sure:\n1. Go to Clerk Dashboard → Paths → Native applications\n2. Add: parrotspeak://auth\n3. Check User & Authentication settings - Username should NOT be required\n\nDebug: ${redirectUrl}`
-        );
-      } else {
-        Alert.alert('Error', e.errors?.[0]?.message || e.message || 'Failed to sign in with Google');
+        setTimeout(() => {
+          Alert.alert(
+            'Configuration Issue', 
+            'Bot protection needs to be disabled in Clerk Dashboard. Go to User & Authentication → Attack Protection and turn off Bot sign-up protection.'
+          );
+        }, 100);
       }
     } finally {
       setLoading(false);
