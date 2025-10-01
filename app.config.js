@@ -47,6 +47,8 @@ module.exports = {
   web: { favicon: "./assets/favicon.png" },
 
   extra: {
-    eas: { projectId: "432bc810-3ba5-4443-ac0d-25978617b7e5" }
+    eas: { projectId: "432bc810-3ba5-4443-ac0d-25978617b7e5" },
+    CLERK_PUBLISHABLE_KEY: process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || "",
+    REDIRECT_URI: "parrotspeak://auth"
   }
 };

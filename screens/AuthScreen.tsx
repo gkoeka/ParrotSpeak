@@ -107,8 +107,8 @@ export default function AuthScreen() {
       return;
     }
 
-    if (!isLogin && !firstName) {
-      Alert.alert('Error', 'Please enter your first name');
+    if (!isLogin && (!firstName || !lastName)) {
+      Alert.alert('Error', 'Please enter your first and last name');
       return;
     }
 
@@ -173,7 +173,7 @@ export default function AuthScreen() {
               />
               <TextInput
                 style={[styles.input, isDarkMode && styles.inputDark]}
-                placeholder="Last Name (optional)"
+                placeholder="Last Name"
                 placeholderTextColor={isDarkMode ? '#999' : '#666'}
                 value={lastName}
                 onChangeText={setLastName}
