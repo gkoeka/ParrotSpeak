@@ -38,8 +38,16 @@ export default function LoginScreen() {
     try {
       setLoading(true);
       
-      // Let Clerk handle the redirect URL automatically
-      const { createdSessionId, setActive } = await startOAuthFlow();
+      // Explicitly set the redirect URL
+      const redirectUrl = Linking.createURL('/oauth-native-callback', {
+        scheme: 'parrotspeak'
+      });
+      
+      console.log('Starting OAuth with redirect URL:', redirectUrl);
+      
+      const { createdSessionId, setActive } = await startOAuthFlow({
+        redirectUrl: redirectUrl,
+      });
       
       console.log('OAuth completed, sessionId:', createdSessionId);
       
@@ -50,6 +58,9 @@ export default function LoginScreen() {
       }
     } catch (err: any) {
       console.error('Google sign-in error:', err);
+      console.error('Error status:', err?.status);
+      console.error('Error message:', err?.message);
+      console.error('Error errors:', err?.errors);
       
       // Check for specific error types
       if (err?.errors?.[0]?.code === 'captcha_required' || err?.message?.includes('CAPTCHA')) {
@@ -57,10 +68,10 @@ export default function LoginScreen() {
           'Configuration Issue', 
           'Bot protection needs to be disabled in Clerk Dashboard. Go to User & Authentication → Attack Protection and turn off Bot sign-up protection.'
         );
-      } else if (err?.status === 400) {
+      } else if (err?.status === 400 || err?.message?.includes('redirect_uri_mismatch')) {
         Alert.alert(
           'OAuth Configuration Error',
-          'Please ensure:\n1. Bot protection is disabled in Clerk\n2. Google OAuth is properly configured with Web Application credentials\n3. The redirect URI is allowlisted in Clerk'
+          `Redirect URL issue. Make sure:\n1. Go to Clerk Dashboard → Paths → Native applications\n2. Add: parrotspeak://oauth-native-callback\n3. Check User & Authentication settings - Username should NOT be required\n\nDebug: ${redirectUrl}`
         );
       } else {
         Alert.alert('Error', err.errors?.[0]?.message || err.message || 'Failed to sign in with Google');
