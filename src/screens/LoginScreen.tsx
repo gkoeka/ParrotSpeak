@@ -35,19 +35,12 @@ export default function LoginScreen() {
   const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
 
   const handleGoogleSignIn = async () => {
-    // Move redirectUrl outside try block so it's accessible in catch
-    const redirectUrl = Linking.createURL("auth"); // This becomes exp://... in Expo Go!
-    
-    // Show what redirect URL we're actually using
-    Alert.alert('Redirect URL', `Using: ${redirectUrl}\n\nAdd this to Clerk's allowlist if not already there.`);
-    
+    // Don't use custom redirect - let Clerk handle it automatically
     try {
       setLoading(true);
       
-      console.log('Starting OAuth with redirect URL:', redirectUrl);
-      
       const { createdSessionId, setActive, signIn, signUp } =
-        await startOAuthFlow({ redirectUrl });
+        await startOAuthFlow();
       
       console.log('OAuth completed, sessionId:', createdSessionId);
       
@@ -65,9 +58,8 @@ export default function LoginScreen() {
         status: e?.status,
         errors: e?.errors,
         code: e?.errors?.[0]?.code,
-        longMessage: e?.errors?.[0]?.long_message || e?.errors?.[0]?.message,
-        redirectUrl: redirectUrl, // Now this won't crash
-      
+        longMessage: e?.errors?.[0]?.long_message || e?.errors?.[0]?.message
+      };
       // Show the full error details in an alert
       Alert.alert(
         'OAuth Error Details',
@@ -75,7 +67,6 @@ export default function LoginScreen() {
         `Message: ${errorDetails.message}\n\n` +
         `Code: ${errorDetails.code || 'N/A'}\n\n` +
         `Details: ${errorDetails.longMessage || 'No additional details'}\n\n` +
-        `Redirect URL: ${errorDetails.redirectUrl}\n\n` +
         `Full Error: ${JSON.stringify(e?.errors || e, null, 2).substring(0, 500)}`
       );
       
