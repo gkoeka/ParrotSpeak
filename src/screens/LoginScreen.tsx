@@ -35,11 +35,15 @@ export default function LoginScreen() {
   const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
 
   const handleGoogleSignIn = async () => {
+    // Move redirectUrl outside try block so it's accessible in catch
+    const redirectUrl = Linking.createURL("auth"); // This becomes exp://... in Expo Go!
+    
+    // Show what redirect URL we're actually using
+    Alert.alert('Redirect URL', `Using: ${redirectUrl}\n\nAdd this to Clerk's allowlist if not already there.`);
+    
     try {
       setLoading(true);
       
-      // Temporary logging code
-      const redirectUrl = Linking.createURL("auth"); // parrotspeak://auth
       console.log('Starting OAuth with redirect URL:', redirectUrl);
       
       const { createdSessionId, setActive, signIn, signUp } =
@@ -62,8 +66,7 @@ export default function LoginScreen() {
         errors: e?.errors,
         code: e?.errors?.[0]?.code,
         longMessage: e?.errors?.[0]?.long_message || e?.errors?.[0]?.message,
-        redirectUrl: redirectUrl,
-      };
+        redirectUrl: redirectUrl, // Now this won't crash
       
       // Show the full error details in an alert
       Alert.alert(

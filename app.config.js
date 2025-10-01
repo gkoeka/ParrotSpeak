@@ -13,7 +13,7 @@ module.exports = {
   splash: {
     image: "./assets/splash.png",
     resizeMode: "contain",
-    backgroundColor: "#ffffff"
+    backgroundColor: "#ffffff",
   },
   updates: { fallbackToCacheTimeout: 0 },
   assetBundlePatterns: ["**/*"],
@@ -26,8 +26,8 @@ module.exports = {
       NSMicrophoneUsageDescription:
         "ParrotSpeak needs the microphone for live translation.",
       NSSpeechRecognitionUsageDescription:
-        "ParrotSpeak uses speech recognition to transcribe your voice."
-    }
+        "ParrotSpeak uses speech recognition to transcribe your voice.",
+    },
   },
 
   android: {
@@ -38,10 +38,9 @@ module.exports = {
       {
         action: "VIEW",
         data: [{ scheme: "parrotspeak", host: "auth" }],
-        category: ["BROWSABLE", "DEFAULT"]
-      }
+        category: ["BROWSABLE", "DEFAULT"],
+      },
     ],
-
   },
 
   web: { favicon: "./assets/favicon.png" },
@@ -49,6 +48,6 @@ module.exports = {
   extra: {
     eas: { projectId: "432bc810-3ba5-4443-ac0d-25978617b7e5" },
     CLERK_PUBLISHABLE_KEY: process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || "",
-    REDIRECT_URI: "parrotspeak://auth"
-  }
+    REDIRECT_URI: "parrotspeak://auth",
+  },
 };
