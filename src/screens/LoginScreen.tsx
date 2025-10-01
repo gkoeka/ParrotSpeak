@@ -213,8 +213,14 @@ export default function LoginScreen() {
         onPress={handleGoogleSignIn}
         disabled={loading}
       >
-        <Ionicons name="logo-google" size={20} color="white" style={styles.icon} />
-        <Text style={styles.buttonText}>Continue with Google</Text>
+        {loading ? (
+          <ActivityIndicator color="white" size="small" />
+        ) : (
+          <>
+            <Text style={[styles.buttonText, { marginRight: 8 }]}>G</Text>
+            <Text style={styles.buttonText}>Continue with Google</Text>
+          </>
+        )}
       </TouchableOpacity>
 
       <View style={styles.divider}>
