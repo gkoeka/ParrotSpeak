@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityIndicator } from 'react-native';
 import { useSignIn, useSignUp, useOAuth } from '@clerk/clerk-expo';
 import * as WebBrowser from 'expo-web-browser';
@@ -8,7 +8,19 @@ import { Ionicons } from '@expo/vector-icons';
 
 WebBrowser.maybeCompleteAuthSession();
 
+// Warm up the browser for better performance on Android
+const useWarmUpBrowser = () => {
+  useEffect(() => {
+    void WebBrowser.warmUpAsync();
+    return () => {
+      void WebBrowser.coolDownAsync();
+    };
+  }, []);
+};
+
 export default function LoginScreen() {
+  useWarmUpBrowser(); // Warm up browser for OAuth
+  
   const navigation = useNavigation();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -25,7 +37,11 @@ export default function LoginScreen() {
   const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
+      
+      // Let Clerk handle the redirect URL automatically
       const { createdSessionId, setActive } = await startOAuthFlow();
+      
+      console.log('OAuth completed, sessionId:', createdSessionId);
       
       if (createdSessionId) {
         await setActive({ session: createdSessionId });
@@ -34,7 +50,21 @@ export default function LoginScreen() {
       }
     } catch (err: any) {
       console.error('Google sign-in error:', err);
-      Alert.alert('Error', err.message || 'Failed to sign in with Google');
+      
+      // Check for specific error types
+      if (err?.errors?.[0]?.code === 'captcha_required' || err?.message?.includes('CAPTCHA')) {
+        Alert.alert(
+          'Configuration Issue', 
+          'Bot protection needs to be disabled in Clerk Dashboard. Go to User & Authentication → Attack Protection and turn off Bot sign-up protection.'
+        );
+      } else if (err?.status === 400) {
+        Alert.alert(
+          'OAuth Configuration Error',
+          'Please ensure:\n1. Bot protection is disabled in Clerk\n2. Google OAuth is properly configured with Web Application credentials\n3. The redirect URI is allowlisted in Clerk'
+        );
+      } else {
+        Alert.alert('Error', err.errors?.[0]?.message || err.message || 'Failed to sign in with Google');
+      }
     } finally {
       setLoading(false);
     }
