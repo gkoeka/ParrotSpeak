@@ -16,7 +16,7 @@ import { RootStackParamList } from '../App';
 import Header from '../components/Header';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
-import { useAuth } from '../contexts/AuthContext';
+import { useUser } from '@clerk/clerk-expo';
 
 type PricingNavigationProp = StackNavigationProp<RootStackParamList, 'Pricing'>;
 
@@ -39,7 +39,7 @@ interface Plan {
 export default function PricingScreen() {
   const navigation = useNavigation<PricingNavigationProp>();
   const { isDarkMode } = useTheme();
-  const { user } = useAuth();
+  const { user } = useUser();
   const [selectedBilling, setSelectedBilling] = useState<'monthly' | 'yearly'>('yearly');
   const [selectedTab, setSelectedTab] = useState<'subscription' | 'traveler'>('subscription');
   const slideAnim = useRef(new Animated.Value(0)).current;
