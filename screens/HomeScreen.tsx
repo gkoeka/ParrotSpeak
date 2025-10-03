@@ -8,7 +8,7 @@ import { TabParamList, ChatStackParamList } from '../navigation/MainTabNavigator
 import Header from '../components/Header';
 import PreviewExpiryWarning from '../components/PreviewExpiryWarning';
 import { useTheme } from '../contexts/ThemeContext';
-import { useAuth } from '../contexts/AuthContext';
+import { useUser } from '@clerk/clerk-expo';
 
 type HomeScreenNavigationProp = CompositeNavigationProp<
   StackNavigationProp<ChatStackParamList, 'Home'>,
@@ -18,7 +18,7 @@ type HomeScreenNavigationProp = CompositeNavigationProp<
 export default function HomeScreen() {
   const navigation = useNavigation<HomeScreenNavigationProp>();
   const { isDarkMode } = useTheme();
-  const { user } = useAuth();
+  const { user } = useUser();
   const [showPreviewWarning, setShowPreviewWarning] = useState(false);
 
   useEffect(() => {
