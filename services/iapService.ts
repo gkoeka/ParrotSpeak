@@ -76,8 +76,16 @@ export class InAppPurchaseService {
           PRODUCT_IDS.SIX_MONTH_PASS!
         ] });
       } else {
-        // Android
-        await IAP.getSubscriptions({ skus: [PRODUCT_IDS.MONTHLY!, PRODUCT_IDS.YEARLY!] });
+        // Android - Get subscriptions with offers
+        const subscriptions = await IAP.getSubscriptions({ skus: [PRODUCT_IDS.MONTHLY!, PRODUCT_IDS.YEARLY!] });
+        
+        // Log available offers for debugging
+        subscriptions.forEach((sub: any) => {
+          if (sub.subscriptionOfferDetails) {
+            console.log(`Offers for ${sub.productId}:`, sub.subscriptionOfferDetails);
+          }
+        });
+        
         await IAP.getProducts({ skus: [
           PRODUCT_IDS.WEEK_PASS!,
           PRODUCT_IDS.MONTH_PASS!,
@@ -126,9 +134,22 @@ export class InAppPurchaseService {
     });
   }
 
-  async purchaseSubscription(productId: string): Promise<void> {
+  async purchaseSubscription(productId: string, offerToken?: string): Promise<void> {
     try {
-      await IAP.requestSubscription({ sku: productId });
+      // For Android with subscription offers
+      if (Platform.OS === 'android' && offerToken) {
+        await IAP.requestSubscription({ 
+          sku: productId,
+          // @ts-ignore - subscriptionOffers is Android-specific
+          subscriptionOffers: [{
+            sku: productId,
+            offerToken: offerToken
+          }]
+        });
+      } else {
+        // Standard subscription purchase (iOS or Android without offers)
+        await IAP.requestSubscription({ sku: productId });
+      }
     } catch (error: any) {
       if (error.code === 'E_USER_CANCELLED') {
         // User cancelled, don't show error
