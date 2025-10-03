@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
-import { useAuth } from '../contexts/AuthContext';
+import { useUser, useAuth } from '@clerk/clerk-expo';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -12,11 +12,12 @@ import { API_BASE_URL } from '../api/config';
 type ProfileNavigationProp = StackNavigationProp<RootStackParamList, 'Profile'>;
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuth();
+  const { user } = useUser();
+  const { signOut } = useAuth();
   const { isDarkMode } = useTheme();
   const navigation = useNavigation<ProfileNavigationProp>();
-  const [name, setName] = useState(user?.name || '');
-  const [email, setEmail] = useState(user?.email || '');
+  const [name, setName] = useState(user?.fullName || '');
+  const [email, setEmail] = useState(user?.primaryEmailAddress?.emailAddress || '');
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
@@ -44,8 +45,8 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await logout();
-              navigation.navigate('Login' as never);
+              await signOut();
+              // Navigation will be handled automatically by SignedIn/SignedOut components
             } catch (error) {
               Alert.alert('Error', 'Failed to sign out');
             }
@@ -77,8 +78,8 @@ export default function ProfileScreen() {
 
               if (response.ok) {
                 Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
-                await logout();
-                navigation.navigate('Login' as never);
+                await signOut();
+                // Navigation will be handled automatically by SignedIn/SignedOut components
               } else {
                 throw new Error('Failed to delete account');
               }
