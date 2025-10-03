@@ -265,7 +265,7 @@ export default function SettingsScreen() {
               <Text style={[styles.optionText, isDarkMode && styles.optionTextDark]}>Version</Text>
               <Text style={[styles.optionValue, isDarkMode && styles.optionValueDark]}>1.0.0 (Build 100)</Text>
             </View>
-            {user?.email === 'greg@parrotspeak.com' && (
+            {user?.primaryEmailAddress?.emailAddress === 'greg@parrotspeak.com' && (
               <TouchableOpacity 
                 style={styles.appInfoItem}
                 onPress={() => navigation.navigate('PerformanceTest')}
@@ -277,7 +277,7 @@ export default function SettingsScreen() {
           </View>
         </View>
         
-        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+        <TouchableOpacity style={styles.logoutButton} onPress={signOut}>
           <Ionicons name="log-out-outline" size={24} color="#fff" style={styles.logoutIcon} />
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
