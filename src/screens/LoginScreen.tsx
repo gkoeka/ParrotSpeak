@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityIndicator } from 'react-native';
-import { useSignIn, useSignUp, useOAuth } from '@clerk/clerk-expo';
+import { useSignIn, useSignUp } from '@clerk/clerk-expo';
 import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-
-WebBrowser.maybeCompleteAuthSession();
+import { useGoogleOAuth } from '../auth/google';
 
 // Warm up the browser for better performance on Android
 const useWarmUpBrowser = () => {
@@ -32,53 +30,35 @@ export default function LoginScreen() {
   
   const { signIn, setActive: setActiveSignIn } = useSignIn() || {};
   const { signUp, setActive: setActiveSignUp } = useSignUp() || {};
-  const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
+  const { signInWithGoogle } = useGoogleOAuth();
 
   const handleGoogleSignIn = async () => {
-    // Don't use custom redirect - let Clerk handle it automatically
     try {
       setLoading(true);
       
-      const { createdSessionId, setActive, signIn, signUp } =
-        await startOAuthFlow();
+      const result = await signInWithGoogle();
       
-      console.log('OAuth completed, sessionId:', createdSessionId);
-      
-      if (createdSessionId) {
-        await setActive!({ session: createdSessionId });
-        await syncUserToBackend(createdSessionId);
-        navigation.navigate('Main' as never);
-      }
-    } catch (e: any) {
-      console.log("[CLERK OAUTH ERROR]", JSON.stringify(e, null, 2));
-      
-      // Create detailed error message
-      const errorDetails = {
-        message: e?.message || 'Unknown error',
-        status: e?.status,
-        errors: e?.errors,
-        code: e?.errors?.[0]?.code,
-        longMessage: e?.errors?.[0]?.long_message || e?.errors?.[0]?.message
-      };
-      // Show the full error details in an alert
-      Alert.alert(
-        'OAuth Error Details',
-        `Status: ${errorDetails.status}\n\n` +
-        `Message: ${errorDetails.message}\n\n` +
-        `Code: ${errorDetails.code || 'N/A'}\n\n` +
-        `Details: ${errorDetails.longMessage || 'No additional details'}\n\n` +
-        `Full Error: ${JSON.stringify(e?.errors || e, null, 2).substring(0, 500)}`
-      );
-      
-      // Check for specific error types
-      if (e?.errors?.[0]?.code === 'captcha_required' || e?.message?.includes('CAPTCHA')) {
-        setTimeout(() => {
+      if (result.success) {
+        console.log('[Google Sign-In] Success, sessionId:', result.sessionId);
+        await syncUserToBackend(result.sessionId!);
+        // Navigation will be handled automatically by SignedIn/SignedOut components
+      } else {
+        console.error('[Google Sign-In] Failed:', result.error);
+        
+        // Check for specific error types
+        if (result.details?.errors?.[0]?.code === 'captcha_required' || 
+            result.error?.includes('CAPTCHA')) {
           Alert.alert(
             'Configuration Issue', 
             'Bot protection needs to be disabled in Clerk Dashboard. Go to User & Authentication → Attack Protection and turn off Bot sign-up protection.'
           );
-        }, 100);
+        } else {
+          Alert.alert('Sign In Failed', result.error || 'Unable to sign in with Google');
+        }
       }
+    } catch (e: any) {
+      console.error('[Google Sign-In] Unexpected error:', e);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -105,13 +85,19 @@ export default function LoginScreen() {
           strategy: 'email_code',
         });
         
-        if (result?.status === 'needs_first_factor') {
+        if (result?.status === 'needs_first_factor' && result.supportedFirstFactors) {
           // Send the verification code
-          await signIn?.prepareFirstFactor({
-            strategy: 'email_code',
-            emailAddressId: result.supportedFirstFactors[0].emailAddressId
-          });
-          setPendingVerification(true);
+          const emailFactor = result.supportedFirstFactors.find(
+            (factor: any) => factor.strategy === 'email_code' && factor.emailAddressId
+          );
+          
+          if (emailFactor) {
+            await signIn?.prepareFirstFactor({
+              strategy: 'email_code',
+              emailAddressId: (emailFactor as any).emailAddressId
+            });
+            setPendingVerification(true);
+          }
         }
       } else {
         // Sign Up with email code
@@ -154,10 +140,10 @@ export default function LoginScreen() {
           code: verificationCode,
         });
         
-        if (result?.status === 'complete') {
+        if (result?.status === 'complete' && result.createdSessionId) {
           await setActiveSignIn?.({ session: result.createdSessionId });
           await syncUserToBackend(result.createdSessionId);
-          navigation.navigate('Main' as never);
+          // Navigation will be handled automatically by SignedIn/SignedOut components
         }
       } else {
         // Complete sign up
@@ -165,10 +151,10 @@ export default function LoginScreen() {
           code: verificationCode,
         });
         
-        if (result?.status === 'complete') {
+        if (result?.status === 'complete' && result.createdSessionId) {
           await setActiveSignUp?.({ session: result.createdSessionId });
           await syncUserToBackend(result.createdSessionId);
-          navigation.navigate('Main' as never);
+          // Navigation will be handled automatically by SignedIn/SignedOut components
         }
       }
     } catch (err: any) {
