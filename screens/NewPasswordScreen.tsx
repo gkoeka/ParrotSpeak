@@ -116,7 +116,7 @@ export default function NewPasswordScreen({ navigation, route }: NewPasswordScre
           [
             {
               text: 'OK',
-              onPress: () => navigation.navigate('Auth'),
+              onPress: () => navigation.navigate('Login' as never),
             },
           ]
         );

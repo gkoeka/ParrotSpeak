@@ -45,7 +45,6 @@ export type RootStackParamList = {
   PrivacyPolicy: undefined;
   TermsConditions: undefined;
   PerformanceTest: undefined;
-  Auth: { defaultToSignUp?: boolean };
   PasswordReset: { token?: string };
   NewPassword: { token: string };
 };
