@@ -16,7 +16,7 @@ import Header from '../components/Header';
 import VoiceInputControls from '../components/VoiceInputControls';
 import { isRTLLanguage } from '../utils/rtlSupport';
 import { useTheme } from '../contexts/ThemeContext';
-import { useAuth } from '../contexts/AuthContext';
+import { useUser } from '@clerk/clerk-expo';
 import { useParticipants } from '../contexts/ParticipantsContext';
 import { Ionicons } from '@expo/vector-icons';
 import { API_BASE_URL } from '../api/config';
@@ -35,7 +35,7 @@ type ConversationNavigationProp = StackNavigationProp<
 
 export default function ConversationScreen() {
   const { isDarkMode } = useTheme();
-  const { user } = useAuth();
+  const { user } = useUser();
   const { setParticipantLanguage } = useParticipants();
   const navigation = useNavigation<ConversationNavigationProp>();
   const route = useRoute<any>();
