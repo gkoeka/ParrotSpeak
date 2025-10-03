@@ -282,7 +282,12 @@ export default function ConversationScreen() {
               styles.subscribeButton,
               isDarkMode && styles.subscribeButtonDark,
             ]}
-            onPress={() => navigation.navigate('Pricing')}
+            onPress={() => {
+              // Navigate to Settings tab, then to Pricing screen
+              navigation.navigate('SettingsTab' as never, {
+                screen: 'Pricing'
+              } as never);
+            }}
           >
             <Text style={styles.subscribeButtonText}>Choose a Plan</Text>
           </TouchableOpacity>
