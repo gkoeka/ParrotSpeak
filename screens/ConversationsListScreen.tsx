@@ -5,7 +5,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
 import Header from '../components/Header';
 import { useTheme } from '../contexts/ThemeContext';
-import { useAuth } from '../contexts/AuthContext';
+import { useUser } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
 import { API_BASE_URL } from '../api/config';
 import { getFlagEmoji } from '../constants/languageConfiguration';
@@ -16,7 +16,7 @@ type ConversationsListNavigationProp = StackNavigationProp<RootStackParamList, '
 export default function ConversationsListScreen() {
   const navigation = useNavigation<ConversationsListNavigationProp>();
   const { isDarkMode } = useTheme();
-  const { user } = useAuth();
+  const { user } = useUser();
   
   // Check subscription status
   const hasActiveSubscription = user?.subscriptionStatus === 'active' || user?.subscriptionTier === 'lifetime';

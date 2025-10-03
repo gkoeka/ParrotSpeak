@@ -13,7 +13,7 @@ import {
   Animated
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../contexts/AuthContext';
+import { useSignIn } from '@clerk/clerk-expo';
 import { useTheme } from '../contexts/ThemeContext';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Header from '../components/Header';
@@ -28,7 +28,7 @@ export default function PasswordResetScreen({ navigation }: PasswordResetScreenP
   const [emailSent, setEmailSent] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [fadeAnim] = useState(new Animated.Value(0));
-  const { requestPasswordReset } = useAuth();
+  const { signIn } = useSignIn();
   const { isDarkMode } = useTheme();
 
   React.useEffect(() => {

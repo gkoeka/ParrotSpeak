@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Switch, Alert, ActivityIndicator, StyleSheet } from 'react-native';
 import Header from '../components/Header';
 import { useTheme } from '../contexts/ThemeContext';
-import { useAuth } from '../contexts/AuthContext';
+import { useUser } from '@clerk/clerk-expo';
 import { API_CONFIG } from '../api/config';
 import { authenticatedFetch } from '../utils/apiHelpers';
 
@@ -14,7 +14,7 @@ interface AnalyticsConsentStatus {
 
 export function AnalyticsPrivacyScreen() {
   const { isDarkMode } = useTheme();
-  const { user } = useAuth();
+  const { user } = useUser();
   const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

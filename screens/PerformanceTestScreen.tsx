@@ -13,12 +13,12 @@ import Header from '../components/Header';
 import { performanceTestRunner } from '../utils/performanceTestRunner';
 import { performanceMonitor } from '../utils/performanceMonitor';
 import { translationCache } from '../utils/translationCache';
-import { useAuth } from '../contexts/AuthContext';
+import { useUser } from '@clerk/clerk-expo';
 import { useNavigation } from '@react-navigation/native';
 
 export default function PerformanceTestScreen() {
   const { isDarkMode } = useTheme();
-  const { user } = useAuth();
+  const { user } = useUser();
   const navigation = useNavigation();
   const [isRunning, setIsRunning] = useState(false);
   const [testReport, setTestReport] = useState<string>('');
@@ -26,13 +26,13 @@ export default function PerformanceTestScreen() {
   
   // Restrict access to greg@parrotspeak.com only
   React.useEffect(() => {
-    if (!user || user.email !== 'greg@parrotspeak.com') {
+    if (!user || user?.primaryEmailAddress?.emailAddress !== 'greg@parrotspeak.com') {
       navigation.goBack();
     }
   }, [user, navigation]);
   
   // If not authorized, don't render
-  if (!user || user.email !== 'greg@parrotspeak.com') {
+  if (!user || user?.primaryEmailAddress?.emailAddress !== 'greg@parrotspeak.com') {
     return null;
   }
   

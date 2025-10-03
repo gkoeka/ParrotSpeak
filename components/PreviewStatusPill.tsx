@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import { useAuth } from '../contexts/AuthContext';
+import { useUser } from '@clerk/clerk-expo';
 
 export default function PreviewStatusPill() {
   const { isDarkMode } = useTheme();
-  const { user } = useAuth();
+  const { user } = useUser();
 
   // Only show for users with active preview access
   if (!user?.previewExpiresAt || !user?.hasUsedPreview) {

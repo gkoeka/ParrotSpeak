@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { useAuth } from '../contexts/AuthContext';
+import { useUser } from '@clerk/clerk-expo';
 import { SecureStorage } from '../utils/secureStorage';
 import { getCurrentUser } from '../api/authService';
 import { fetchConversations } from '../api/conversationService';
@@ -21,7 +21,7 @@ interface TestResult {
 }
 
 export default function AuthPersistenceTest() {
-  const { user, loading } = useAuth();
+  const { user, isLoaded } = useUser();
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [testing, setTesting] = useState(false);
 
