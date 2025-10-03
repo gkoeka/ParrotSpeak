@@ -8,7 +8,7 @@ import { RootStackParamList } from '../App';
 import { SettingsStackParamList } from '../navigation/MainTabNavigator';
 import { TabParamList } from '../navigation/MainTabNavigator';
 import Header from '../components/Header';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, useUser } from '@clerk/clerk-expo';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -21,7 +21,8 @@ type SettingsNavigationProp = CompositeNavigationProp<
 
 export default function SettingsScreen() {
   const navigation = useNavigation<SettingsNavigationProp>();
-  const { logout, user } = useAuth();
+  const { signOut } = useAuth();
+  const { user } = useUser();
   const { isDarkMode, toggleDarkMode } = useTheme();
 
   const { participants, setAutoDetectSpeakers } = useParticipants();
@@ -33,7 +34,7 @@ export default function SettingsScreen() {
       title: 'Profile', 
       screen: 'Profile',
       icon: 'person-outline',
-      subtitle: user?.email || 'Manage your profile',
+      subtitle: user?.primaryEmailAddress?.emailAddress || 'Manage your profile',
       isStack: true
     },
     { 
