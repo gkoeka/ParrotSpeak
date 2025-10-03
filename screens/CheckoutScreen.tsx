@@ -15,7 +15,7 @@ import { RootStackParamList } from '../App';
 import Header from '../components/Header';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
-import { useAuth } from '../contexts/AuthContext';
+import { useUser } from '@clerk/clerk-expo';
 import { iapService, PRODUCT_IDS } from '../services/iapService';
 
 type CheckoutNavigationProp = StackNavigationProp<RootStackParamList, 'Checkout'>;
@@ -31,7 +31,7 @@ export default function CheckoutScreen() {
   const navigation = useNavigation<CheckoutNavigationProp>();
   const route = useRoute<CheckoutRouteProp>();
   const { isDarkMode } = useTheme();
-  const { user, refreshUserData } = useAuth();
+  const { user } = useUser();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   
@@ -119,8 +119,7 @@ export default function CheckoutScreen() {
       }
       
       // Purchase validation happens in the IAP service listener
-      // After successful validation, refresh user data
-      await refreshUserData();
+      // Clerk automatically refreshes user data
       
       // Navigate to success screen or home
       Alert.alert(
@@ -149,7 +148,7 @@ export default function CheckoutScreen() {
       const restored = await iapService.restorePurchases();
       
       if (restored) {
-        await refreshUserData();
+        // Clerk automatically refreshes user data
         Alert.alert(
           'Success!',
           'Your purchases have been restored.',
