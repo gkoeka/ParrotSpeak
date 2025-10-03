@@ -1,7 +1,7 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
-// === Auto versionCode (no manual bumps) ===
+// === Auto versionCode 1
 // Use epoch seconds so each build gets a unique, ever-increasing int (safe until 2038).
 def isReleaseBuild = gradle.startParameter.taskNames.any { it.toLowerCase().contains("release") }
 def AUTO_VERSION_CODE = (System.currentTimeMillis() / 1000L) as int

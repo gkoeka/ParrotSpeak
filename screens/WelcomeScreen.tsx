@@ -18,7 +18,7 @@ export default function WelcomeScreen() {
     setIsNavigating(true);
     // Add 1.6 second delay before navigating
     setTimeout(() => {
-      navigation.navigate('Auth', { defaultToSignUp: true });
+      navigation.replace('Login');
     }, 1600);
   };
 
