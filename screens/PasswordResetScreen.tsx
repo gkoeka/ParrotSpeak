@@ -71,17 +71,8 @@ export default function PasswordResetScreen({ navigation }: PasswordResetScreenP
     try {
       const result = await requestPasswordReset(email);
       if (result.success) {
-        setEmailSent(true);
-        Alert.alert(
-          'Reset Email Sent',
-          'If an account exists with that email, you will receive a password reset link.',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.goBack(),
-            },
-          ]
-        );
+        // Navigate to code + new password screen
+        navigation.navigate('NewPassword', { email });
       } else {
         setEmailError(result.message || 'Failed to send reset email. Please try again.');
       }
@@ -125,7 +116,7 @@ export default function PasswordResetScreen({ navigation }: PasswordResetScreenP
             Forgot Your Password?
           </Text>
           <Text style={[styles.subtitle, dynamicStyles.subtitle]}>
-            Enter your email address and we'll send you instructions to reset your password.
+            Enter your email address and we'll send you a 6-digit code to reset your password.
           </Text>
 
           <View style={styles.form}>

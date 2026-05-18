@@ -49,7 +49,7 @@ export type RootStackParamList = {
   MainTabs: undefined;
   Auth: { defaultToSignUp?: boolean };
   PasswordReset: { token?: string };
-  NewPassword: { token: string };
+  NewPassword: { email: string };
   // Legacy routes for deep linking
   Home: undefined;
   Conversation: { id?: string };
