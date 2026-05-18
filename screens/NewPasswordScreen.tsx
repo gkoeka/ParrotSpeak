@@ -159,11 +159,7 @@ export default function NewPasswordScreen({ navigation, route }: NewPasswordScre
       style={[styles.container, dynamicStyles.container]} 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <Header 
-        title="Set New Password" 
-        showBack={true} 
-        onBackPress={() => navigation.goBack()}
-      />
+      <Header />
       
       <ScrollView 
         contentContainerStyle={styles.scrollContent}

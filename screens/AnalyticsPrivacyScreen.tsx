@@ -103,7 +103,7 @@ export function AnalyticsPrivacyScreen() {
   if (loading) {
     return (
       <View style={[styles.container, isDarkMode && styles.containerDark]}>
-        <Header showBackButton={true} />
+        <Header />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={isDarkMode ? '#5B8FFF' : '#3366FF'} />
           <Text style={[styles.loadingText, isDarkMode && styles.loadingTextDark]}>
@@ -116,7 +116,7 @@ export function AnalyticsPrivacyScreen() {
 
   return (
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
-      <Header showBackButton={true} />
+      <Header />
       
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>

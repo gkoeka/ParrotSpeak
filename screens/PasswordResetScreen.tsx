@@ -102,11 +102,7 @@ export default function PasswordResetScreen({ navigation }: PasswordResetScreenP
       style={[styles.container, dynamicStyles.container]} 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <Header 
-        title="Reset Password" 
-        showBack={true} 
-        onBackPress={() => navigation.goBack()}
-      />
+      <Header />
       
       <ScrollView 
         contentContainerStyle={styles.scrollContent}

@@ -108,7 +108,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
-      <Header showBackButton={true} />
+      <Header />
       
       <ScrollView 
         style={styles.content}

@@ -174,7 +174,7 @@ export default function CheckoutScreen() {
   if (isInitializing) {
     return (
       <View style={[styles.container, isDarkMode && styles.containerDark]}>
-        <Header showBackButton={true} />
+        <Header />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={isDarkMode ? '#4169E1' : '#4169E1'} />
           <Text style={[styles.loadingText, isDarkMode && styles.loadingTextDark]}>
@@ -187,7 +187,7 @@ export default function CheckoutScreen() {
 
   return (
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
-      <Header showBackButton={true} />
+      <Header />
       
       <ScrollView 
         style={styles.content}

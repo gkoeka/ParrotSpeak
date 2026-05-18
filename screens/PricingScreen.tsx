@@ -160,7 +160,7 @@ export default function PricingScreen() {
 
   return (
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
-      <Header showBackButton={true} />
+      <Header />
       
       <ScrollView 
         style={styles.content}
