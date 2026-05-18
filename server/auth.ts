@@ -130,13 +130,12 @@ export function setupAuth(app: Express) {
 }
 
 // Middleware to check if user is authenticated
+// Supports both Clerk JWT tokens (set by clerkAuthMiddleware) and legacy Passport sessions
 export function requireAuth(req: Request, res: any, next: any) {
-  // Check for demo mode header for testing
   const isDemoMode = req.headers['x-demo-mode'] === 'true';
-  
+
   if (isDemoMode) {
     console.log('[Auth] Demo mode access granted');
-    // Simulate demo user for testing
     req.user = {
       id: 1,
       email: 'demo@parrotspeak.com',
@@ -148,8 +147,8 @@ export function requireAuth(req: Request, res: any, next: any) {
     next();
     return;
   }
-  
-  if (!req.isAuthenticated()) {
+
+  if (!req.user && !req.isAuthenticated()) {
     return res.status(401).json({ message: 'Authentication required' });
   }
   next();

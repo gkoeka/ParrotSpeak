@@ -7,7 +7,7 @@ import helmet from "helmet";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { jwtAuthMiddleware } from "./middleware/jwt-auth";
+import { clerkAuthMiddleware } from "./middleware/clerk-auth";
 
 // ES module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -45,8 +45,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(generalLimiter);
   app.use(slowDownMiddleware);
   
-  // JWT Authentication middleware - runs before session auth
-  app.use(jwtAuthMiddleware);
+  // Clerk authentication middleware — verifies JWT tokens from the mobile app
+  app.use(clerkAuthMiddleware);
 
   app.use(helmet({
     contentSecurityPolicy: {

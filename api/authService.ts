@@ -1,21 +1,11 @@
 import { API_BASE_URL } from "../api/config";
-import { SecureStorage } from "../utils/secureStorage";
+import { getAuthToken } from "./authToken";
 
-const requestHeaders = {
-  "Content-Type": "application/json",
-};
-
-// Get auth headers with token if available
+// Get auth headers — token comes from Clerk via AuthContext
 async function getAuthHeaders(): Promise<HeadersInit> {
-  const token = await SecureStorage.getAuthToken();
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-  };
-  
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-  
+  const token = await getAuthToken();
+  const headers: HeadersInit = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
   return headers;
 }
 

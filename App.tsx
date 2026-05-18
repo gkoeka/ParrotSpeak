@@ -4,10 +4,14 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ClerkProvider, ClerkLoaded } from "@clerk/clerk-expo";
+import { tokenCache } from "./utils/clerkTokenCache";
 import {
   configureNavigationBar,
   logNavigationBarStatus,
 } from "./utils/navigationBarConfig";
+
+const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
 // Auth Provider
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -175,16 +179,20 @@ function AppContent() {
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <ThemeProvider>
-          <ParticipantsProvider>
-            <ConversationProvider>
-              <AppContent />
-            </ConversationProvider>
-          </ParticipantsProvider>
-        </ThemeProvider>
-      </AuthProvider>
-    </SafeAreaProvider>
+    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
+      <ClerkLoaded>
+        <SafeAreaProvider>
+          <AuthProvider>
+            <ThemeProvider>
+              <ParticipantsProvider>
+                <ConversationProvider>
+                  <AppContent />
+                </ConversationProvider>
+              </ParticipantsProvider>
+            </ThemeProvider>
+          </AuthProvider>
+        </SafeAreaProvider>
+      </ClerkLoaded>
+    </ClerkProvider>
   );
 }

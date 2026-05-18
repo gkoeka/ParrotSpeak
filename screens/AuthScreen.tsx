@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Platform, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as AppleAuthentication from 'expo-apple-authentication';
 import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
-import { makeRedirectUri } from 'expo-auth-session';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../App';
 
-// Complete auth session for web/native
+// Required for Clerk's OAuth web browser flow to complete properly
 WebBrowser.maybeCompleteAuthSession();
 
 type AuthScreenRouteProp = RouteProp<RootStackParamList, 'Auth'>;
@@ -27,86 +24,16 @@ export default function AuthScreen() {
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { login, register, signInWithGoogle, loginWithApple } = useAuth();
   const { isDarkMode, loadThemePreference } = useTheme();
-
-  // IMPORTANT: Make the redirect EXACTLY parrotspeak://redirect to match your intent-filter
-  const redirectUri = makeRedirectUri({
-    scheme: 'parrotspeak',
-    path: 'redirect',
-  });
-  // Debug once to confirm in your Play build logs:
-  console.log('Redirect URI in this build:', redirectUri);
-
-  // Configure Google auth
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID!,
-    scopes: ['openid', 'profile', 'email'],
-    redirectUri, // <-- now "parrotspeak://redirect"
-  });
-
-  useEffect(() => {
-    checkAppleAuthAvailability();
-  }, []);
-
-  useEffect(() => {
-    handleGoogleResponse();
-  }, [response]);
-
-  const checkAppleAuthAvailability = async () => {
-    if (Platform.OS === 'ios') {
-      const isAvailable = await AppleAuthentication.isAvailableAsync();
-      setIsAppleAuthAvailable(isAvailable);
-    }
-  };
-
-  const handleGoogleResponse = async () => {
-    if (response?.type === 'success') {
-      setGoogleLoading(true);
-      try {
-        const { authentication } = response;
-
-        if (authentication?.accessToken) {
-          // Fetch user profile from Google
-          const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-            headers: {
-              Authorization: `Bearer ${authentication.accessToken}`,
-            },
-          });
-
-          const profile = await userInfoResponse.json();
-
-          // Sign in with the profile data
-          await signInWithGoogle({
-            idToken: authentication.idToken || '',
-            accessToken: authentication.accessToken,
-            profile: {
-              id: profile.id,
-              email: profile.email,
-              name: profile.name,
-              picture: profile.picture,
-            },
-          });
-
-          // Reload theme after successful login
-          await loadThemePreference();
-        }
-      } catch (error: any) {
-        Alert.alert('Error', error.message || 'Google sign in failed');
-      } finally {
-        setGoogleLoading(false);
-      }
-    }
-  };
 
   const handleSubmit = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-
     if (!isLogin && !firstName) {
       Alert.alert('Error', 'Please enter your first name');
       return;
@@ -116,11 +43,10 @@ export default function AuthScreen() {
     try {
       if (isLogin) {
         await login(email, password);
-        await loadThemePreference();
       } else {
         await register(email, password, firstName, lastName);
-        await loadThemePreference();
       }
+      await loadThemePreference();
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Authentication failed');
     } finally {
@@ -131,22 +57,24 @@ export default function AuthScreen() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      await promptAsync();
+      await signInWithGoogle();
+      await loadThemePreference();
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Google sign in failed');
+    } finally {
       setGoogleLoading(false);
     }
   };
 
   const handleAppleSignIn = async () => {
-    setLoading(true);
+    setAppleLoading(true);
     try {
       await loginWithApple();
       await loadThemePreference();
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Apple sign in failed');
     } finally {
-      setLoading(false);
+      setAppleLoading(false);
     }
   };
 
@@ -228,7 +156,6 @@ export default function AuthScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* OAuth Options */}
           <View style={styles.dividerContainer}>
             <View style={styles.divider} />
             <Text style={styles.dividerText}>or continue with</Text>
@@ -236,11 +163,10 @@ export default function AuthScreen() {
           </View>
 
           <View style={styles.oauthContainer}>
-            {/* Google Sign In */}
             <TouchableOpacity
               style={[styles.oauthButton, googleLoading && styles.oauthButtonDisabled]}
               onPress={handleGoogleSignIn}
-              disabled={!request || loading || googleLoading}
+              disabled={loading || googleLoading}
             >
               {googleLoading ? (
                 <ActivityIndicator size="small" color="#DB4437" />
@@ -252,15 +178,20 @@ export default function AuthScreen() {
               </Text>
             </TouchableOpacity>
 
-            {/* Apple Sign In - only show on iOS */}
-            {isAppleAuthAvailable && (
+            {Platform.OS === 'ios' && (
               <TouchableOpacity
-                style={[styles.oauthButton, styles.appleButton]}
+                style={[styles.oauthButton, styles.appleButton, appleLoading && styles.oauthButtonDisabled]}
                 onPress={handleAppleSignIn}
-                disabled={loading}
+                disabled={loading || appleLoading}
               >
-                <Ionicons name="logo-apple" size={20} color="#000" />
-                <Text style={[styles.oauthButtonText, styles.appleButtonText]}>Apple</Text>
+                {appleLoading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Ionicons name="logo-apple" size={20} color="#000" />
+                )}
+                <Text style={[styles.oauthButtonText, styles.appleButtonText]}>
+                  {appleLoading ? 'Signing in...' : 'Apple'}
+                </Text>
               </TouchableOpacity>
             )}
           </View>
@@ -269,7 +200,7 @@ export default function AuthScreen() {
             style={styles.switchButton}
             onPress={() => {
               setIsLogin(!isLogin);
-              setShowPassword(false); // Reset password visibility when switching modes
+              setShowPassword(false);
             }}
           >
             <Text style={styles.switchButtonText}>
@@ -277,7 +208,6 @@ export default function AuthScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Forgot Password Link */}
           {isLogin && (
             <TouchableOpacity
               style={styles.forgotPasswordButton}
