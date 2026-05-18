@@ -69,24 +69,27 @@ export default function PasswordResetScreen({ navigation }: PasswordResetScreenP
     setEmailError('');
     
     try {
-      const result = await requestPasswordReset(email);
-      if (result.success) {
-        setEmailSent(true);
-        Alert.alert(
-          'Reset Email Sent',
-          'If an account exists with that email, you will receive a password reset link.',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.goBack(),
-            },
-          ]
-        );
-      } else {
-        setEmailError(result.message || 'Failed to send reset email. Please try again.');
+      if (!signIn) {
+        setEmailError('Authentication is not ready. Please try again.');
+        return;
       }
-    } catch (error) {
-      setEmailError('Something went wrong. Please try again later.');
+      await signIn.create({
+        strategy: 'reset_password_email_code',
+        identifier: email,
+      });
+      setEmailSent(true);
+      Alert.alert(
+        'Reset Email Sent',
+        'If an account exists with that email, you will receive a password reset code.',
+        [
+          {
+            text: 'OK',
+            onPress: () => (navigation as any).navigate('NewPassword', { email }),
+          },
+        ]
+      );
+    } catch (error: any) {
+      setEmailError(error?.errors?.[0]?.longMessage || 'Something went wrong. Please try again later.');
     } finally {
       setLoading(false);
     }

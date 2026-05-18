@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Header from '../components/Header';
-import { resetPassword } from '../api/passwordResetService';
+import { useSignIn } from '@clerk/clerk-expo';
 import type { RootStackParamList } from '../App';
 
 type NewPasswordNavigationProp = StackNavigationProp<RootStackParamList, 'NewPassword'>;
@@ -25,12 +25,14 @@ interface NewPasswordScreenProps {
   navigation: NewPasswordNavigationProp;
   route: {
     params: {
-      token: string;
+      email: string;
     };
   };
 }
 
 export default function NewPasswordScreen({ navigation, route }: NewPasswordScreenProps) {
+  const [code, setCode] = useState('');
+  const [codeError, setCodeError] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,7 +42,8 @@ export default function NewPasswordScreen({ navigation, route }: NewPasswordScre
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
   const { isDarkMode } = useTheme();
-  const { token } = route.params;
+  const { signIn, setActive } = useSignIn();
+  const { email } = route.params;
 
   React.useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -94,25 +97,39 @@ export default function NewPasswordScreen({ navigation, route }: NewPasswordScre
   };
 
   const handleResetPassword = async () => {
-    const passwordError = validatePassword(password);
-    const confirmError = validateConfirmPassword(confirmPassword, password);
-    
-    if (passwordError || confirmError) {
-      setPasswordError(passwordError);
-      setConfirmError(confirmError);
+    const passwordErr = validatePassword(password);
+    const confirmErr = validateConfirmPassword(confirmPassword, password);
+    const codeErr = !code ? 'Please enter the verification code sent to your email' : '';
+
+    if (passwordErr || confirmErr || codeErr) {
+      setPasswordError(passwordErr);
+      setConfirmError(confirmErr);
+      setCodeError(codeErr);
       return;
     }
 
     setLoading(true);
     setPasswordError('');
     setConfirmError('');
-    
+    setCodeError('');
+
     try {
-      const result = await resetPassword(token, password);
-      if (result.success) {
+      if (!signIn) {
+        setPasswordError('Authentication is not ready. Please try again.');
+        return;
+      }
+      const result = await signIn.attemptFirstFactor({
+        strategy: 'reset_password_email_code',
+        code,
+        password,
+      });
+      if (result.status === 'complete') {
+        if (setActive && result.createdSessionId) {
+          await setActive({ session: result.createdSessionId });
+        }
         Alert.alert(
           'Password Reset Successful',
-          'Your password has been updated. Please sign in with your new password.',
+          'Your password has been updated and you are now signed in.',
           [
             {
               text: 'OK',
@@ -121,10 +138,15 @@ export default function NewPasswordScreen({ navigation, route }: NewPasswordScre
           ]
         );
       } else {
-        setPasswordError(result.message || 'Failed to reset password. Please try again.');
+        setPasswordError('Could not complete password reset. Please try again.');
       }
-    } catch (error) {
-      setPasswordError('Something went wrong. Please try again later.');
+    } catch (error: any) {
+      const msg = error?.errors?.[0]?.longMessage || 'Something went wrong. Please try again later.';
+      if (/code/i.test(msg)) {
+        setCodeError(msg);
+      } else {
+        setPasswordError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -163,11 +185,34 @@ export default function NewPasswordScreen({ navigation, route }: NewPasswordScre
             Create New Password
           </Text>
           <Text style={[styles.subtitle, dynamicStyles.subtitle]}>
-            Enter a strong password to secure your account.
+            Enter the verification code sent to {email} and choose a strong new password.
           </Text>
 
           <View style={styles.form}>
             <Text style={[styles.label, dynamicStyles.label]}>
+              Verification Code
+            </Text>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={[
+                  styles.input,
+                  dynamicStyles.input,
+                  codeError ? styles.inputError : null
+                ]}
+                placeholder="Enter 6-digit code"
+                placeholderTextColor={isDarkMode ? '#666' : '#999'}
+                value={code}
+                onChangeText={(t) => { setCode(t); if (codeError) setCodeError(''); }}
+                keyboardType="number-pad"
+                autoCapitalize="none"
+                returnKeyType="next"
+              />
+            </View>
+            {codeError ? (
+              <Text style={styles.errorText}>{codeError}</Text>
+            ) : null}
+
+            <Text style={[styles.label, dynamicStyles.label, { marginTop: 16 }]}>
               New Password
             </Text>
             <View style={styles.inputContainer}>

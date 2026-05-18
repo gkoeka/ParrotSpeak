@@ -23,9 +23,10 @@ export default function HomeScreen() {
 
   useEffect(() => {
     // Check if user has preview access expiring within 24 hours
-    if (user?.previewExpiresAt && user?.hasUsedPreview) {
+    const metadata = user?.publicMetadata as any;
+    if (metadata?.previewExpiresAt && metadata?.hasUsedPreview) {
       const now = new Date();
-      const previewExpiry = new Date(user.previewExpiresAt);
+      const previewExpiry = new Date(metadata.previewExpiresAt);
       const hoursRemaining = Math.floor((previewExpiry.getTime() - now.getTime()) / (1000 * 60 * 60));
       
       // Show warning if preview is active and expiring within 24 hours
@@ -40,9 +41,10 @@ export default function HomeScreen() {
   };
 
   const getPreviewHoursRemaining = () => {
-    if (!user?.previewExpiresAt) return 0;
+    const metadata = user?.publicMetadata as any;
+    if (!metadata?.previewExpiresAt) return 0;
     const now = new Date();
-    const previewExpiry = new Date(user.previewExpiresAt);
+    const previewExpiry = new Date(metadata.previewExpiresAt);
     return Math.floor((previewExpiry.getTime() - now.getTime()) / (1000 * 60 * 60));
   };
 

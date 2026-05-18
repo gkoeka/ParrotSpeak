@@ -174,7 +174,7 @@ export default function ProfileScreen() {
           <View style={styles.infoItem}>
             <Text style={[styles.infoLabel, isDarkMode && styles.infoLabelDark]}>Account type</Text>
             <Text style={[styles.infoValue, isDarkMode && styles.infoValueDark]}>
-              {user?.subscriptionStatus || 'Free'}
+              {(user?.publicMetadata as any)?.subscriptionStatus || 'Free'}
             </Text>
           </View>
         </View>

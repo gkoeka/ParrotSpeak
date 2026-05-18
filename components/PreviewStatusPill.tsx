@@ -8,12 +8,13 @@ export default function PreviewStatusPill() {
   const { user } = useUser();
 
   // Only show for users with active preview access
-  if (!user?.previewExpiresAt || !user?.hasUsedPreview) {
+  const metadata = user?.publicMetadata as any;
+  if (!metadata?.previewExpiresAt || !metadata?.hasUsedPreview) {
     return null;
   }
 
   const now = new Date();
-  const previewExpiry = new Date(user.previewExpiresAt);
+  const previewExpiry = new Date(metadata.previewExpiresAt);
   const isPreviewActive = previewExpiry > now;
 
   if (!isPreviewActive) {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Platform, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -277,7 +277,14 @@ export default function SettingsScreen() {
           </View>
         </View>
         
-        <TouchableOpacity style={styles.logoutButton} onPress={signOut}>
+        <TouchableOpacity style={styles.logoutButton} onPress={async () => {
+          try {
+            await signOut();
+          } catch (err) {
+            console.error('Sign out failed:', err);
+            Alert.alert('Sign Out Failed', 'Could not sign out. Please try again.');
+          }
+        }}>
           <Ionicons name="log-out-outline" size={24} color="#fff" style={styles.logoutIcon} />
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>

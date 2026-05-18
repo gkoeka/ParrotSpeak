@@ -46,7 +46,7 @@ export type RootStackParamList = {
   TermsConditions: undefined;
   PerformanceTest: undefined;
   PasswordReset: { token?: string };
-  NewPassword: { token: string };
+  NewPassword: { email: string };
 };
 
 // Create stack navigator
