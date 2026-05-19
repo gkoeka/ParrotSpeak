@@ -1,6 +1,6 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm install --legacy-peer-deps"
+buildCommand = "npm install --omit=dev --legacy-peer-deps"
 
 [deploy]
 startCommand = "npx tsx server/index.ts"
