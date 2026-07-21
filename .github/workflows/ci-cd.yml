@@ -7,8 +7,8 @@ on:
     branches: [ main ]
 
 jobs:
-  test-web:
-    name: Test Web Application
+  test-backend:
+    name: Test Backend API
     runs-on: ubuntu-latest
     
     services:
@@ -38,10 +38,13 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-  #  - name: TypeScript type checking
-  #    run: npm run type-check
+    - name: TypeScript type checking
+      run: npm run type-check
 
-    - name: Build web application
+    - name: Lint
+      run: npx eslint .
+
+    - name: Build backend API
       run: npm run build
 
     - name: Database schema validation
@@ -52,9 +55,15 @@ jobs:
         npm run db:seed
 
   test-mobile:
-    name: Test Mobile Application
+    name: Test Mobile App (Expo)
     runs-on: ubuntu-latest
-    
+
+    # NOTE: this is a mobile-native-only app. The mobile app lives at the repo
+    # root (same package.json as the backend), not in a separate `mobile-app/`
+    # subdirectory — a previous version of this job assumed a monorepo layout
+    # that doesn't match this repo and silently no-op'd/failed as a result.
+    # There is intentionally no web build/export step here: ParrotSpeak has no
+    # supported web target.
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -68,17 +77,17 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
-    - name: Install mobile dependencies
-      working-directory: ./mobile-app
-      run: npm install --legacy-peer-deps
+    - name: TypeScript type checking (mobile)
+      run: npm run type-check
 
- #   - name: TypeScript type checking (mobile)
- #     working-directory: ./mobile-app
- #     run: npx tsc --noEmit
-
-    - name: Test mobile build (web)
-      working-directory: ./mobile-app
-      run: npx expo export:web
+    # Non-blocking for now: expo-doctor currently reports 6 pre-existing issues
+    # (unused expo-router with missing peer deps, eas-cli installed as a
+    # project dependency, several Expo support-package version mismatches,
+    # an app.config.js/prebuild conflict, and outdated Expo-ecosystem
+    # packages). Surfaced here for visibility; flip to blocking once fixed.
+    - name: Validate Expo project config
+      run: npx expo-doctor
+      continue-on-error: true
 
   security-scan:
     name: Security Scan
@@ -106,7 +115,7 @@ jobs:
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
-    needs: [test-web, test-mobile, security-scan]
+    needs: [test-backend, test-mobile, security-scan]
     if: github.ref == 'refs/heads/develop'
     
     steps:
@@ -137,7 +146,7 @@ jobs:
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [test-web, test-mobile, security-scan]
+    needs: [test-backend, test-mobile, security-scan]
     if: github.ref == 'refs/heads/main'
     environment: production
     

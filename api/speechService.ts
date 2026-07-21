@@ -118,23 +118,20 @@ export async function pickPreferredVoice(langCodeFull: string): Promise<VoiceSel
 
 // Text-to-speech functionality with voice profile support
 export async function speakText(
-  text: string, 
-  languageCode: string, 
+  text: string,
+  languageCode: string,
   voiceProfile?: VoiceProfile | null,
   onDone?: () => void
 ): Promise<void> {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // Check if speech module is available
-      if (!isSpeechAvailable) {
-        console.log('Speech module not available:', text);
-        if (onDone) onDone();
-        resolve();
-        return;
-      }
+  // Check if speech module is available
+  if (!isSpeechAvailable) {
+    console.log('Speech module not available:', text);
+    if (onDone) onDone();
+    return;
+  }
 
-      // Map language codes to proper locale codes for speech synthesis
-      const speechLanguageMap: { [key: string]: string } = {
+  // Map language codes to proper locale codes for speech synthesis
+  const speechLanguageMap: { [key: string]: string } = {
         'sl': 'sl-SI',  // Slovenian
         'is': 'is-IS',  // Icelandic
         'fil': 'fil-PH', // Filipino
@@ -196,59 +193,62 @@ export async function speakText(
         'ga': 'ga-IE',
         'eu': 'eu-ES',
         'gl': 'gl-ES',
-        'cy': 'cy-GB'
-      };
-      
-      // Use mapped language code or fallback to provided code
-      const mappedLanguageCode = speechLanguageMap[languageCode] || languageCode;
-      
-      // Use pickPreferredVoice to select best available voice
-      const voiceSelection = await pickPreferredVoice(mappedLanguageCode);
-      
-      // Log voice selection (always log for debugging, but fallbacks are logged once)
-      if (voiceSelection.fallbackLevel === 'none') {
-        console.log(`[TTS] voice {requested=${mappedLanguageCode}, chosen=${voiceSelection.chosen}, level=none}`);
-      }
-      
-      // Use voice profile settings if provided, otherwise use defaults
-      const options = {
-        language: voiceSelection.fallbackLevel === 'default' ? 'en-US' : mappedLanguageCode,
-        pitch: voiceProfile?.pitch ?? 1.0,
-        rate: voiceProfile?.rate ?? 0.9,
-        voice: voiceSelection.chosen, // Track which voice was used
-        onDone: () => {
-          // Log audio route when TTS completes
-          logAudioRouteStatus('TTS complete');
-          if (onDone) onDone();
-          resolve();
-        },
-        onError: (error: any) => {
-          console.error(`Speech synthesis error for language ${mappedLanguageCode}:`, error);
-          // Ignore interruption errors as they are expected when stopping speech
-          if (error && error.toString().includes('interrupted')) {
-            resolve();
-          } else {
-            reject(error);
-          }
-        },
-        onStart: () => {
-          // Log audio route when TTS starts
-          logAudioRouteStatus('TTS start');
-        }
-      };
-      
-      // Start speaking with the given options
-      try {
-        Speech.speak(text, options);
-      } catch (ttsError) {
-        console.error('❌ TTS API error:', ttsError);
-        // Don't throw - TTS failure shouldn't break the pipeline
-        console.warn('⚠️ TTS failed but continuing pipeline');
+    'cy': 'cy-GB'
+  };
+
+  // Use mapped language code or fallback to provided code
+  const mappedLanguageCode = speechLanguageMap[languageCode] || languageCode;
+
+  // Use pickPreferredVoice to select best available voice
+  const voiceSelection = await pickPreferredVoice(mappedLanguageCode);
+
+  // Log voice selection (always log for debugging, but fallbacks are logged once)
+  if (voiceSelection.fallbackLevel === 'none') {
+    console.log(`[TTS] voice {requested=${mappedLanguageCode}, chosen=${voiceSelection.chosen}, level=none}`);
+  }
+
+  // Speech.speak() is callback-based; wrap just that part in a Promise.
+  // (Previously this whole function body ran inside `new Promise(async ...)`,
+  // an async Promise executor — a known anti-pattern since a throw inside it
+  // doesn't reliably reject the outer promise. Only this section actually
+  // needs the callback→Promise conversion; the executor below is synchronous.)
+  return new Promise<void>((resolve, reject) => {
+    // Use voice profile settings if provided, otherwise use defaults
+    const options = {
+      language: voiceSelection.fallbackLevel === 'default' ? 'en-US' : mappedLanguageCode,
+      pitch: voiceProfile?.pitch ?? 1.0,
+      rate: voiceProfile?.rate ?? 0.9,
+      voice: voiceSelection.chosen, // Track which voice was used
+      onDone: () => {
+        // Log audio route when TTS completes
+        logAudioRouteStatus('TTS complete');
         if (onDone) onDone();
         resolve();
+      },
+      onError: (error: any) => {
+        console.error(`Speech synthesis error for language ${mappedLanguageCode}:`, error);
+        // Ignore interruption errors as they are expected when stopping speech
+        if (error && error.toString().includes('interrupted')) {
+          resolve();
+        } else {
+          reject(error);
+        }
+      },
+      onStart: () => {
+        // Log audio route when TTS starts
+        logAudioRouteStatus('TTS start');
       }
-    } catch (error) {
-      reject(error);
+    };
+
+    // Start speaking with the given options
+    try {
+      Speech.speak(text, options);
+    } catch (ttsError) {
+      console.error('❌ TTS API error:', ttsError);
+      // Don't throw - TTS failure shouldn't break the pipeline
+      console.warn('⚠️ TTS failed but continuing pipeline');
+      if (onDone) onDone();
+      resolve();
     }
   });
 }

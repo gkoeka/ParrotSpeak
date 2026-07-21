@@ -466,10 +466,6 @@ const styles = StyleSheet.create({
     color: '#3366FF',
     fontWeight: '600',
   },
-  billingToggleContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
   billingToggle: {
     flexDirection: 'row',
     backgroundColor: '#e9ecef',

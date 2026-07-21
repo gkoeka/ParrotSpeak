@@ -290,9 +290,9 @@ function validateExtraArgs(args: string[], scenarioId: string): { valid: boolean
   ];
   
   // Valid flag patterns - no parent directory traversal allowed
-  const FLAG_PATTERN = /^--[a-zA-Z0-9-]+(=[a-zA-Z0-9_\-\/]+)?$/;  // No dots in values
+  const FLAG_PATTERN = /^--[a-zA-Z0-9-]+(=[a-zA-Z0-9_\-/]+)?$/;  // No dots in values
   const SHORT_FLAG_PATTERN = /^-[a-zA-Z0-9]$/;
-  const FILE_PATH_PATTERN = /^[a-zA-Z0-9_\-\/]+\.(ts|js|json|mjs|cjs)?$/;  // Only forward paths with extensions
+  const FILE_PATH_PATTERN = /^[a-zA-Z0-9_\-/]+\.(ts|js|json|mjs|cjs)?$/;  // Only forward paths with extensions
   
   for (const arg of args) {
     // Check length

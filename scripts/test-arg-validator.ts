@@ -43,9 +43,9 @@ function validateExtraArgs(args: string[], scenarioId: string): { valid: boolean
   ];
   
   // Valid flag patterns
-  const FLAG_PATTERN = /^--[a-zA-Z0-9-]+(=[a-zA-Z0-9_\-\.\/]+)?$/;
+  const FLAG_PATTERN = /^--[a-zA-Z0-9-]+(=[a-zA-Z0-9_\-./]+)?$/;
   const SHORT_FLAG_PATTERN = /^-[a-zA-Z0-9]$/;
-  const FILE_PATH_PATTERN = /^[a-zA-Z0-9_\-\.\/]+$/;
+  const FILE_PATH_PATTERN = /^[a-zA-Z0-9_\-./]+$/;
   
   for (const arg of args) {
     // Check length
