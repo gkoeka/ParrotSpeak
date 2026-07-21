@@ -5,6 +5,7 @@
 
 import { Platform, Alert } from 'react-native';
 import * as IAP from 'react-native-iap';
+import { reportError } from '../utils/errorReporting';
 
 // Product IDs for different subscription types
 export const PRODUCT_IDS = {
@@ -199,6 +200,7 @@ export class InAppPurchaseService {
       
     } catch (error) {
       console.error('Purchase validation error:', error);
+      reportError(error, { platform: Platform.OS, productId: purchase?.productId });
       Alert.alert('Validation Error', 'Unable to validate your purchase. Please contact support.');
     }
   }

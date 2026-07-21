@@ -13,6 +13,7 @@ import { determineSpeaker, getTargetLanguage } from '../utils/languageDetection'
 import { PipelineStatus } from './StatusPill';
 import { metricsTracker } from '../utils/metricsTracker';
 import { normalizeLanguageCode } from '../utils/languageNormalization';
+import { reportError } from '../utils/errorReporting';
 
 interface VoiceInputControlsProps {
   onMessage: (message: {
@@ -476,6 +477,7 @@ export default function VoiceInputControls({
       
     } catch (error) {
       console.error('❌ Error processing audio:', error);
+      reportError(error, { sourceLanguage, targetLanguage, recordingDuration });
       const errorMsg = error instanceof Error ? error.message : 'Failed to process audio';
       setError(errorMsg);
       

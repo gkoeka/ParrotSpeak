@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { reportError } from "../utils/errorReporting";
 interface TranslationResponse {
   translation: string;
   originalText: string;
@@ -61,7 +62,8 @@ Respond in JSON format with the following structure:
     };
   } catch (error) {
     console.error("Translation error:", error);
-    
+    reportError(error, { sourceLanguage, targetLanguage, textLength: text.length });
+
     // Check for quota exceeded/rate limit errors
     if (error instanceof Error && 
         (error.message.includes('quota') || 

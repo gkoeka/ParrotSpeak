@@ -1,3 +1,7 @@
+// Must be the first import: Sentry needs to initialize before anything else.
+import "./instrument";
+
+import * as Sentry from "@sentry/node";
 import express, { type Request, Response, NextFunction } from "express";
 import rateLimit from "express-rate-limit";
 import slowDown from "express-slow-down";
@@ -89,6 +93,9 @@ app.use((req, res, next) => {
   setupAuth(app);
   
   const server = await registerRoutes(app);
+
+  // Sentry must see errors before the app's own final error handler responds.
+  Sentry.setupExpressErrorHandler(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

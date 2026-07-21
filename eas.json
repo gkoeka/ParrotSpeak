@@ -11,7 +11,8 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev",
         "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "1019059465821-uf4emi73l2nugqcq4g3fpdrln272oghh.apps.googleusercontent.com.apps.googleusercontent.com",
-        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_d2hvbGUtZG9scGhpbi01Mi5jbGVyay5hY2NvdW50cy5kZXYk"
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_d2hvbGUtZG9scGhpbi01Mi5jbGVyay5hY2NvdW50cy5kZXYk",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://cdb564d11b9563def7a9d04f4b79fd89@o4511770624131072.ingest.us.sentry.io/4511770632192000"
       }
     },
     "production": {
@@ -19,7 +20,8 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev",
         "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "1019059465821-cd87brn1vui4058erkmn49msq8l2nbjs.apps.googleusercontent.com.apps.googleusercontent.com",
-        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_d2hvbGUtZG9scGhpbi01Mi5jbGVyay5hY2NvdW50cy5kZXYk"
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_d2hvbGUtZG9scGhpbi01Mi5jbGVyay5hY2NvdW50cy5kZXYk",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://cdb564d11b9563def7a9d04f4b79fd89@o4511770624131072.ingest.us.sentry.io/4511770632192000"
       }
     }
   },

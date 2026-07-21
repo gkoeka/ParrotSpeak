@@ -6,10 +6,14 @@ import { createStackNavigator } from "@react-navigation/stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ClerkProvider, ClerkLoaded } from "@clerk/clerk-expo";
 import { tokenCache } from "./utils/clerkTokenCache";
+import { initErrorReporting, wrapRootComponent } from "./utils/errorReporting";
 import {
   configureNavigationBar,
   logNavigationBarStatus,
 } from "./utils/navigationBarConfig";
+
+// As early as possible, before anything else renders.
+initErrorReporting();
 
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
@@ -177,7 +181,7 @@ function AppContent() {
   );
 }
 
-export default function App() {
+function App() {
   return (
     <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
       <ClerkLoaded>
@@ -196,3 +200,7 @@ export default function App() {
     </ClerkProvider>
   );
 }
+
+// Sentry.wrap adds an error boundary around the whole app plus automatic
+// navigation breadcrumbs — this is why it wraps the outermost component.
+export default wrapRootComponent(App);

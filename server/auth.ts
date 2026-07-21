@@ -12,6 +12,7 @@ import { eq } from "drizzle-orm";
 
 // Import the standardized User type
 import { User as UserType } from "@shared/schema";
+import { reportError } from "./utils/errorReporting";
 
 // Extend Express types to use consistent camelCase schema
 declare global {
@@ -170,6 +171,7 @@ export async function requireSubscription(req: Request, res: any, next: any) {
     next();
   } catch (error) {
     console.error('Error checking subscription status:', error);
+    reportError(error, { userId: user?.id });
     return res.status(500).json({ message: 'Failed to verify subscription' });
   }
 }

@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { reportError } from '../utils/errorReporting';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -120,7 +121,8 @@ export async function transcribeAudio(audioBuffer: Buffer, language?: string): P
     }
   } catch (error) {
     console.error('OpenAI transcription error:', error);
-    
+    reportError(error, { audioBytes: audioBuffer.length, languageHint: language });
+
     // Re-throw with more specific error messages
     if (error instanceof Error) {
       if (error.message.includes('API key')) {

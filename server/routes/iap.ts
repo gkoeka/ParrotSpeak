@@ -8,6 +8,7 @@ import { requireAuth } from '../auth';
 import { db } from '../../db';
 import { users } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
+import { reportError, reportMessage } from '../utils/errorReporting';
 
 const router = Router();
 
@@ -78,6 +79,7 @@ async function validateGooglePlayReceipt(receipt: string, productId: string, pur
     
     if (!serviceAccountKey) {
       console.error('[IAP] GOOGLE_PLAY_SERVICE_ACCOUNT_KEY is not configured — rejecting purchase validation (fail closed)');
+      reportMessage('IAP: GOOGLE_PLAY_SERVICE_ACCOUNT_KEY not configured — a real purchase was just rejected', 'error');
       return {
         valid: false,
         error: 'Purchase validation is not configured on this server (missing Google Play credentials)'
@@ -133,6 +135,7 @@ async function validateGooglePlayReceipt(receipt: string, productId: string, pur
 
   } catch (error) {
     console.error('Google Play validation error:', error);
+    reportError(error, { platform: 'google', productId });
     return {
       valid: false,
       error: 'Failed to validate Google Play receipt'
@@ -156,6 +159,7 @@ async function validateAppStoreReceipt(receipt: string, productId: string): Prom
     
     if (!appStorePassword) {
       console.error('[IAP] APP_STORE_SHARED_SECRET is not configured — rejecting purchase validation (fail closed)');
+      reportMessage('IAP: APP_STORE_SHARED_SECRET not configured — a real purchase was just rejected', 'error');
       return {
         valid: false,
         error: 'Purchase validation is not configured on this server (missing App Store shared secret)'
@@ -228,6 +232,7 @@ async function validateAppStoreReceipt(receipt: string, productId: string): Prom
 
   } catch (error) {
     console.error('App Store validation error:', error);
+    reportError(error, { platform: 'apple', productId });
     return {
       valid: false,
       error: 'Failed to validate App Store receipt'

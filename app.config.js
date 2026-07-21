@@ -46,6 +46,24 @@ module.exports = {
 
   web: { favicon: "./assets/favicon.png" },
 
+  // TODO: fill in your Sentry org/project slugs (from the Sentry dashboard
+  // URL, sentry.io/organizations/<ORG-SLUG>/projects/<PROJECT-SLUG>/) plus a
+  // SENTRY_AUTH_TOKEN as an EAS secret, to enable automatic source-map
+  // upload during EAS builds. Without these, Sentry.init() still works and
+  // errors still report — you just get minified stack traces instead of
+  // real file/line numbers for release builds. Local dev via Metro doesn't
+  // need this at all (dev bundles aren't minified).
+  plugins: [
+    [
+      "@sentry/react-native/expo",
+      {
+        url: "https://sentry.io/",
+        project: "TODO-project-slug",
+        organization: "TODO-org-slug"
+      }
+    ]
+  ],
+
   extra: {
     eas: { projectId: "432bc810-3ba5-4443-ac0d-25978617b7e5" }
   }
