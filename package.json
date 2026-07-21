@@ -20,7 +20,6 @@
     "@expo/vector-icons": "14.1.0",
     "@hookform/resolvers": "^5.1.1",
     "@jridgewell/trace-mapping": "^0.3.25",
-    "@neondatabase/serverless": "^0.10.4",
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-native-google-signin/google-signin": "^15.0.0",
     "@react-native-masked-view/masked-view": "0.3.2",
@@ -29,6 +28,7 @@
     "@react-navigation/stack": "^7.4.4",
     "@sendgrid/mail": "^8.1.5",
     "@sentry/node": "^10.67.0",
+    "@sentry/react-native": "~6.14.0",
     "@stripe/react-stripe-js": "^3.8.1",
     "@stripe/stripe-js": "^7.7.0",
     "@tanstack/react-query": "^5.60.5",
@@ -90,6 +90,7 @@
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-local": "^1.0.0",
+    "postgres": "^3.4.9",
     "qrcode": "^1.5.4",
     "react": "19.0.0",
     "react-native": "0.79.5",
@@ -104,8 +105,7 @@
     "uuid": "^11.1.0",
     "ws": "^8.18.1",
     "zod": "^3.23.8",
-    "zod-validation-error": "^3.4.0",
-    "@sentry/react-native": "~6.14.0"
+    "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
     "@types/connect-pg-simple": "^7.0.3",

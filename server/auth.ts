@@ -7,7 +7,6 @@ import { db } from "../db";
 import { users } from "@shared/schema";
 import { verifyPassword, findOrCreateGoogleUser, getUserById } from "./services/auth.js";
 import connectPgSimple from "connect-pg-simple";
-import { pool } from "../db";
 import { eq } from "drizzle-orm";
 
 // Import the standardized User type
@@ -33,7 +32,12 @@ export function setupAuth(app: Express) {
   // Configure session middleware
   const sessionOptions: session.SessionOptions = {
     store: new PgSession({
-      pool,
+      // connect-pg-simple manages its own internal pg.Pool from this
+      // connection string — it needs the pg-compatible interface, which
+      // the app's own Drizzle client (postgres-js, since the Neon->Supabase
+      // driver swap) no longer provides. This is independent of Drizzle's
+      // connection and works with any standard Postgres connection string.
+      conString: process.env.DATABASE_URL,
       tableName: 'sessions', // Uses the sessions table defined in schema.ts
       createTableIfMissing: true
     }),

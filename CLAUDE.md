@@ -58,7 +58,7 @@ npx tsx scripts/test-injection-prevention.ts
 
 **2. Backend API (Node.js/Express)** — `server/`
 - Entry: `server/index.ts` → `server/routes.ts`
-- DB access via `db/index.ts` (Drizzle ORM + Neon PostgreSQL)
+- DB access via `db/index.ts` (Drizzle ORM + `postgres-js`, provider-agnostic — see "Database & Hosting Infrastructure" for current migration status)
 - Schema: `shared/schema.ts` (path alias `@shared/*`)
 - Auth: **two systems coexist** — Clerk is current/primary (see Auth section below); a legacy Passport.js session system (`server/auth.ts`: `LocalStrategy`, `GoogleStrategy`, `express-session`) and `server/middleware/jwt-auth.ts` are also still fully wired into the Express app at startup. `requireAuth` (`server/auth.ts`) accepts either a valid Clerk token or a legacy Passport session. Don't assume the legacy path is dead without checking — it hasn't been formally removed.
 - Auto-runs SQL migrations from `server/db/migrations/` on startup
@@ -115,7 +115,31 @@ Clerk (`@clerk/clerk-expo` client, `@clerk/backend` server) is the current, prim
 
 ## Billing
 
-Native store IAP (`react-native-iap`) via `services/iapService.ts` + `server/routes/iap.ts` — **not** Clerk billing, and **not** Stripe (Stripe packages are in `package.json` but unused anywhere in the code; don't reach for them by habit). Plans are hardcoded in `screens/PricingScreen.tsx`: Premium Access $9.99/mo or $99/yr, plus one-time Traveler Passes (7/30/90/180 days, $4.99–$69.99). See Known Issues for a real gap in receipt validation.
+Native store IAP (`react-native-iap`) via `services/iapService.ts` + `server/routes/iap.ts` — **not** Clerk billing, and **not** Stripe (Stripe packages are in `package.json` but unused anywhere in the code; don't reach for them by habit). Plans are hardcoded in `screens/PricingScreen.tsx`: Premium Access $9.99/mo or $99/yr, plus one-time Traveler Passes (7/30/90/180 days, $4.99–$69.99). Receipt validation fails closed on missing store credentials (fixed — see Known Issues history).
+
+## Database & Hosting Infrastructure — migration in progress
+
+**Planned sequence:** Supabase (database) → Railway (server hosting) → audit for remaining Replit references → Row Level Security, deferred until production testing.
+
+**Done:**
+- `db/index.ts` now uses **`postgres` (postgres-js) + `drizzle-orm/postgres-js`** instead of Neon's proprietary serverless driver — this is Supabase's own documented recommendation, and (unlike the old driver) it's portable to any standard Postgres connection string, not locked to one provider. `@neondatabase/serverless` has been fully removed from `package.json` (confirmed zero remaining references anywhere in the codebase before removing it).
+- `server/auth.ts`'s legacy Passport session store (`connect-pg-simple`) no longer shares Drizzle's `pool` object (postgres-js isn't `pg`-API-compatible, which the Neon driver's `Pool` happened to be) — it now uses `connect-pg-simple`'s own `conString` option, which manages its own independent connection. No behavior change, just decoupled from Drizzle's client.
+- `drizzle.config.ts` and `db/seed.ts` needed no changes — they were already driver-agnostic (just consume a connection string / the shared `db` export).
+- Verified: `npm run type-check`, `npx eslint .`, and `npm run build` all pass clean after this swap.
+
+**Also done (2026-07-20):**
+- A real Supabase project exists. Its **Direct Connection** string (Project Settings → Database → Connection string, not the pooler — pooler is for serverless, this is a long-running Express server) is set as `DATABASE_URL` in a local, gitignored `.env` file. Note: the password contains characters (`&`, `#`) that must be percent-encoded in the connection string or URL parsing silently breaks (`#` in particular gets read as a URL fragment delimiter and truncates the host/port/path).
+- Schema pushed successfully via `npm run db:push` and verified against the live database: all 10 tables exist (`users`, `conversations`, `messages`, `sessions`, `voice_profiles`, `speech_settings`, `usage_statistics`, `user_feedback`, `conversation_patterns`, `admin_auth_tokens`).
+- Connection independently verified working via a direct query (`select version()`), not just assumed from the migration script succeeding.
+
+**Not yet done:**
+- This `DATABASE_URL` is only set locally — it has **not** been added to whatever hosts this app's server process in production (still Replit at present; see below), so the deployed backend is still pointed at Neon until that's updated too.
+- Server hosting is still Replit; Railway migration hasn't started.
+- The Replit hardcoded-URL cleanup (`api/config.ts`, `api/envConfig.ts`, `api/envConfig.js`, `eas.json`, others — see Known Issues) hasn't started; planned as an explicit audit pass after the Railway move, not bundled into it.
+- **Row Level Security (RLS)**: explicitly deferred until production testing, not before. Not required for the app to function (the mobile client only ever talks to the Express backend, never directly to the database) — it's planned as defense-in-depth given this codebase already produced one real authorization bug (the `X-Demo-Mode` bypass, since fixed). When it happens: needs the backend to set a per-request session variable identifying the authenticated user (`SET LOCAL app.user_id = ...` per transaction), since Clerk isn't wired into Supabase's own `auth.uid()`; the connection must use Supabase's `service_role` credential so normal backend operation isn't itself blocked by RLS's default deny-all.
+- **Auth stays on Clerk** throughout all of this — Supabase is for data only.
+
+If you're picking up work on this: check `git log` / this section for the latest status before assuming any part of this migration is further along (or less far along) than described here — update this section in the same commit as any progress.
 
 ## Environment Variables
 
@@ -123,9 +147,11 @@ Mobile env vars use `EXPO_PUBLIC_` prefix (set in `eas.json` per build profile �
 - `EXPO_PUBLIC_API_URL` — Backend URL
 - `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` — Clerk publishable key (currently a `pk_test_...` key in `eas.json`, including in the `production` profile)
 - `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` — Google OAuth client ID
+- `EXPO_PUBLIC_SENTRY_DSN` — mobile crash/error reporting (`utils/errorReporting.ts`); set in `.env.local` (gitignored) and both `eas.json` build profiles. DSNs are meant to be public/embeddable — this is not a secret in the way a real API key is.
 
 Server env vars, confirmed by grepping actual `process.env.*` reads in `server/`, `shared/`, `db/`:
-- `DATABASE_URL` — Neon PostgreSQL connection string
+- `DATABASE_URL` — any standard Postgres connection string (driver is now provider-agnostic `postgres-js`); **migrating to Supabase, see "Database & Hosting Infrastructure" above** — don't assume which provider without checking
+- `SENTRY_DSN` — backend crash/error reporting (`server/instrument.ts`); if unset, backend error reporting is silently disabled (logs a warning, doesn't crash)
 - `OPENAI_API_KEY` — For Whisper (STT) + GPT-4o (translation)
 - `CLERK_SECRET_KEY` — Clerk server-side verification
 - `SESSION_SECRET`, `JWT_SECRET` — legacy Passport/session auth (still active, see Auth section)

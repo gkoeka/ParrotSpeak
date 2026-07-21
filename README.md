@@ -32,7 +32,7 @@ This README describes what's actually implemented and running today. For a deepe
 
 **Backend** (`server/`)
 - Node.js + Express + TypeScript
-- PostgreSQL (Neon) via Drizzle ORM
+- PostgreSQL via Drizzle ORM — currently Neon, **migrating to Supabase** (database only; auth stays on Clerk). See `CLAUDE.md` for current status before assuming either is live.
 - Clerk (`@clerk/backend`) for auth verification, syncing Clerk identities into the app's own `users` table
 - OpenAI Whisper (`whisper-1`) for speech-to-text, OpenAI GPT-4o for translation — both called server-side only, never from the client
 - `react-native-iap` receipt validation against Apple/Google servers
@@ -42,7 +42,7 @@ This README describes what's actually implemented and running today. For a deepe
 
 ### Prerequisites
 - Node.js 18+
-- A PostgreSQL database (Neon recommended)
+- A PostgreSQL database — a Supabase project (in progress as the new standard, see `CLAUDE.md`) or Neon
 - An OpenAI API key
 - A Clerk application (publishable + secret key)
 - Apple Developer + Google Play Developer accounts, for IAP and app store builds
