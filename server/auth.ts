@@ -132,22 +132,6 @@ export function setupAuth(app: Express) {
 // Middleware to check if user is authenticated
 // Supports both Clerk JWT tokens (set by clerkAuthMiddleware) and legacy Passport sessions
 export function requireAuth(req: Request, res: any, next: any) {
-  const isDemoMode = req.headers['x-demo-mode'] === 'true';
-
-  if (isDemoMode) {
-    console.log('[Auth] Demo mode access granted');
-    req.user = {
-      id: 1,
-      email: 'demo@parrotspeak.com',
-      firstName: 'Demo',
-      lastName: 'User',
-      subscriptionStatus: 'active',
-      subscriptionTier: 'premium'
-    } as Express.User;
-    next();
-    return;
-  }
-
   if (!req.user && !req.isAuthenticated()) {
     return res.status(401).json({ message: 'Authentication required' });
   }
@@ -161,14 +145,7 @@ export async function requireSubscription(req: Request, res: any, next: any) {
   }
   
   const user = req.user;
-  
-  // Allow demo user for development/testing
-  if (user.email === 'demo@parrotspeak.com') {
-    console.log('[Auth] Demo user access granted for testing');
-    next();
-    return;
-  }
-  
+
   // Get fresh subscription data from database to avoid session cache issues
   try {
     const { db } = await import("@db");

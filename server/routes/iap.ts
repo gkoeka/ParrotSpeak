@@ -77,9 +77,11 @@ async function validateGooglePlayReceipt(receipt: string, productId: string, pur
     const packageName = process.env.GOOGLE_PLAY_PACKAGE_NAME || 'com.parrotspeak.app';
     
     if (!serviceAccountKey) {
-      console.log('Google Play credentials not configured, using development mode');
-      // For development/testing before app store setup
-      return createMockValidation('google');
+      console.error('[IAP] GOOGLE_PLAY_SERVICE_ACCOUNT_KEY is not configured — rejecting purchase validation (fail closed)');
+      return {
+        valid: false,
+        error: 'Purchase validation is not configured on this server (missing Google Play credentials)'
+      };
     }
 
     // Real Google Play validation using Google Play Developer API
@@ -131,13 +133,6 @@ async function validateGooglePlayReceipt(receipt: string, productId: string, pur
 
   } catch (error) {
     console.error('Google Play validation error:', error);
-    
-    // If credentials not set up yet, fall back to development mode
-    if (error instanceof Error && (error.message?.includes('credentials') || error.message?.includes('auth'))) {
-      console.log('Falling back to development mode - set up Google Play credentials for production');
-      return createMockValidation('google');
-    }
-    
     return {
       valid: false,
       error: 'Failed to validate Google Play receipt'
@@ -160,9 +155,11 @@ async function validateAppStoreReceipt(receipt: string, productId: string): Prom
     const appStorePassword = process.env.APP_STORE_SHARED_SECRET;
     
     if (!appStorePassword) {
-      console.log('App Store credentials not configured, using development mode');
-      // For development/testing before app store setup
-      return createMockValidation('apple');
+      console.error('[IAP] APP_STORE_SHARED_SECRET is not configured — rejecting purchase validation (fail closed)');
+      return {
+        valid: false,
+        error: 'Purchase validation is not configured on this server (missing App Store shared secret)'
+      };
     }
 
     // Real App Store validation using Apple's receipt validation API
@@ -231,13 +228,6 @@ async function validateAppStoreReceipt(receipt: string, productId: string): Prom
 
   } catch (error) {
     console.error('App Store validation error:', error);
-    
-    // If credentials not set up yet, fall back to development mode
-    if (error instanceof Error && (error.message?.includes('password') || error.message?.includes('secret'))) {
-      console.log('Falling back to development mode - set up App Store shared secret for production');
-      return createMockValidation('apple');
-    }
-    
     return {
       valid: false,
       error: 'Failed to validate App Store receipt'
@@ -363,21 +353,5 @@ router.get('/subscription', requireAuth, async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
-/**
- * Create mock validation for development/testing
- */
-function createMockValidation(platform: 'google' | 'apple') {
-  console.log(`Creating mock validation for ${platform} (development mode)`);
-  
-  const mockExpiresAt = new Date();
-  mockExpiresAt.setMonth(mockExpiresAt.getMonth() + 1); // 1 month from now
-  
-  return {
-    valid: true,
-    expiresAt: mockExpiresAt,
-    error: undefined
-  };
-}
 
 export default router;

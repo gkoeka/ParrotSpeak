@@ -11,8 +11,7 @@ const requestHeaders = {
 
 // Common headers for JSON requests
 const jsonHeaders = {
-  'Content-Type': 'application/json',
-  'X-Demo-Mode': 'true' // Enable demo mode for testing
+  'Content-Type': 'application/json'
 };
 
 // Comprehensive language service using the server API endpoint
