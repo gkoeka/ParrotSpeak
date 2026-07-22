@@ -163,9 +163,12 @@ export async function createPasswordResetToken(email: string, originUrl: string)
     const emailSent = await sendPasswordResetEmail(user.email!, token, resetUrl);
     
     if (!emailSent) {
-      // For development, log the reset link when email fails
-      console.log("Development Mode - Password Reset Link:");
-      console.log(generateMockResetEmail(user.email!, token, resetUrl));
+      if (process.env.NODE_ENV === 'development') {
+        console.log("Development Mode - Password Reset Link:");
+        console.log(generateMockResetEmail(user.email!, token, resetUrl));
+      } else {
+        console.error("Password reset email failed to send for user id:", user.id);
+      }
     }
     
     return { success: true, message: "If an account with that email exists, a password reset link has been sent." };
