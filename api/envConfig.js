@@ -10,7 +10,7 @@ function getAPIBaseURL() {
   const envURL = process.env.EXPO_PUBLIC_API_URL;
   
   // Default URLs for different environments
-  const REPLIT_URL = "https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev";
+  const REPLIT_URL = "https://app.parrotspeak.com";
   const LOCALHOST_URL = "http://localhost:5000";
   
   // If environment variable is set, use it

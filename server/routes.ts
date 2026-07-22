@@ -1469,7 +1469,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const isProd = process.env.NODE_ENV === 'production';
   const allowedOrigins = new Set([
     // Production domains
-    'https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev',
     'https://parrotspeak.com',
     'https://www.parrotspeak.com',
     'https://app.parrotspeak.com',
@@ -1513,7 +1512,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Additional host validation for production
       if (isProd && host) {
         const allowedHosts = [
-          '40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev',
           'parrotspeak.com',
           'www.parrotspeak.com',
           'app.parrotspeak.com'

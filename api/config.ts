@@ -1,7 +1,7 @@
 // Mobile-compatible API configuration using environment variables
 // React Native/Expo only supports process.env with EXPO_PUBLIC_ prefix
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "https://40e9270e-7819-4d9e-8fa8-ccb157c79dd9-00-luj1g8wui2hi.worf.replit.dev";
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "https://app.parrotspeak.com";
 
 const API_CONFIG = {
   baseURL: API_BASE_URL,
