@@ -7,7 +7,7 @@ class FullStoryService {
     this.fullstoryApiKey = process.env.FULLSTORY_API_KEY || null;
     
     if (this.fullstoryApiKey) {
-      console.log('FullStory initialized successfully with API key:', this.fullstoryApiKey.substring(0, 8) + '...');
+      console.log('FullStory initialized successfully');
     } else {
       console.warn('FullStory API key not found - session recording disabled');
     }

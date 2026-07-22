@@ -5,12 +5,12 @@
 // This is a format migration, not a rules rewrite: scope and severities match
 // the old config, with one deliberate change noted inline below.
 
-const js = require('@eslint/js');
-const tsParser = require('@typescript-eslint/parser');
-const tsPlugin = require('@typescript-eslint/eslint-plugin');
-const globals = require('globals');
+import js from '@eslint/js';
+import tsParser from '@typescript-eslint/parser';
+import tsPlugin from '@typescript-eslint/eslint-plugin';
+import globals from 'globals';
 
-module.exports = [
+export default [
   {
     // Mirrors the old ignorePatterns, scoped to keep linting on this repo's
     // actual TS/TSX app source and out of build output, native folders, and

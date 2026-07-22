@@ -111,7 +111,7 @@ class TranslationCache {
           this.cachePrefix + cacheKey,
           JSON.stringify(entry)
         );
-        console.log(`💾 Cached translation: "${key.text}" → "${translation}"`);
+        console.log(`💾 Cached translation (${key.text.length} chars)`);
       } catch (error) {
         console.error('Cache write error:', error);
       }

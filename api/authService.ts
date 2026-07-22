@@ -185,24 +185,6 @@ export async function validateSession(): Promise<any | null> {
   return await getCurrentUser();
 }
 
-export async function requestPasswordReset(email: string): Promise<boolean> {
-  const response = await safeFetch(`${API_BASE_URL}/api/auth/request-reset`, {
-    method: "POST",
-    body: JSON.stringify({ email }),
-  });
-  if (!response) return false;
-  return response.ok;
-}
-
-export async function resetPassword(token: string, newPassword: string): Promise<boolean> {
-  const response = await safeFetch(`${API_BASE_URL}/api/auth/reset-password`, {
-    method: "POST",
-    body: JSON.stringify({ token, newPassword }),
-  });
-  if (!response) return false;
-  return response.ok;
-}
-
 export function checkSubscriptionAccess(user: any): boolean {
   // TODO: check user.subscription etc
   return !!user && !!user.subscription && user.subscription.active;

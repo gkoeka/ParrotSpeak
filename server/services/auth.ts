@@ -2,8 +2,6 @@ import { db } from "../../db";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
-import { sendPasswordResetEmail, generateMockResetEmail } from "./email";
 
 /**
  * Generates a password hash
@@ -123,105 +121,6 @@ export async function findOrCreateGoogleUser(
     .returning();
   
   return newUser;
-}
-
-/**
- * Creates a password reset token and sends reset email
- * @param email User email
- * @param originUrl Base URL for the reset link
- * @returns Success status
- */
-export async function createPasswordResetToken(email: string, originUrl: string): Promise<{ success: boolean; message: string }> {
-  try {
-    // Get user by email
-    const user = await getUserByEmail(email);
-    
-    // If user doesn't exist, pretend success for security
-    if (!user) {
-      return { success: true, message: "If an account with that email exists, a password reset link has been sent." };
-    }
-    
-    // Generate reset token
-    const token = crypto.randomBytes(32).toString('hex');
-    const tokenExpiry = new Date();
-    tokenExpiry.setMinutes(tokenExpiry.getMinutes() + 30); // Token valid for 30 minutes
-    
-    // Update user with reset token
-    await db
-      .update(users)
-      .set({
-        resetToken: token,
-        resetTokenExpiry: tokenExpiry,
-        updatedAt: new Date()
-      })
-      .where(eq(users.id, user.id));
-    
-    // Build reset URL
-    const resetUrl = `${originUrl}/password-reset`;
-    
-    // Send password reset email
-    const emailSent = await sendPasswordResetEmail(user.email!, token, resetUrl);
-    
-    if (!emailSent) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log("Development Mode - Password Reset Link:");
-        console.log(generateMockResetEmail(user.email!, token, resetUrl));
-      } else {
-        console.error("Password reset email failed to send for user id:", user.id);
-      }
-    }
-    
-    return { success: true, message: "If an account with that email exists, a password reset link has been sent." };
-  } catch (error) {
-    console.error("Error creating password reset token:", error);
-    return { success: false, message: "Failed to process password reset request. Please try again later." };
-  }
-}
-
-/**
- * Resets a user's password using a valid token
- * @param token Reset token
- * @param newPassword New password
- * @returns Success status
- */
-export async function resetPassword(token: string, newPassword: string): Promise<{ success: boolean; message: string }> {
-  try {
-    // Find user with this token and valid expiry
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.resetToken, token));
-    
-    // Check if user exists and token is valid
-    if (!user || !user.resetTokenExpiry) {
-      return { success: false, message: "Invalid or expired reset token." };
-    }
-    
-    // Check if token is expired
-    const now = new Date();
-    if (now > user.resetTokenExpiry) {
-      return { success: false, message: "This reset token has expired. Please request a new password reset." };
-    }
-    
-    // Hash the new password
-    const hashedPassword = await hashPassword(newPassword);
-    
-    // Update the user's password and clear the reset token
-    await db
-      .update(users)
-      .set({
-        password: hashedPassword,
-        resetToken: null,
-        resetTokenExpiry: null,
-        updatedAt: new Date()
-      })
-      .where(eq(users.id, user.id));
-    
-    return { success: true, message: "Password successfully reset." };
-  } catch (error) {
-    console.error("Error resetting password:", error);
-    return { success: false, message: "Failed to reset password. Please try again later." };
-  }
 }
 
 /**

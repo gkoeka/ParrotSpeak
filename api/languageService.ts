@@ -212,14 +212,14 @@ export async function translateText(
     
     if (cachedTranslation) {
       const cacheTime = Date.now() - startTime;
-      console.log(`⚡ Translation from cache in ${cacheTime}ms: "${text}" → "${cachedTranslation}"`);
+      console.log(`⚡ Translation from cache in ${cacheTime}ms (${text.length} chars)`);
       return {
         translation: cachedTranslation,
         originalText: text,
       };
     }
     
-    console.log(`🌍 Translating "${text}" from ${sourceLanguage} to ${targetLanguage}`);
+    console.log(`🌍 Translating ${text.length} chars from ${sourceLanguage} to ${targetLanguage}`);
     
     // Add timeout for Translation API calls
     const controller = new AbortController();
@@ -246,7 +246,7 @@ export async function translateText(
     
     const data = await response.json();
     const totalTime = Date.now() - startTime;
-    console.log(`✅ Translation successful in ${totalTime}ms:`, data.translation);
+    console.log(`✅ Translation successful in ${totalTime}ms (${data.translation.length} chars)`);
     
     // Cache the translation
     await translationCache.set(cacheKey, data.translation);

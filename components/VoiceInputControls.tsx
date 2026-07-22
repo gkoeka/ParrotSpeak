@@ -316,7 +316,7 @@ export default function VoiceInputControls({
         transcription = transcriptionResult;
       }
       
-      console.log('Transcription:', transcription);
+      console.log(`Transcription received (${transcription.length} chars)`);
       if (detectedLang) {
         console.log('Raw detected language:', detectedLang);
         // Normalize the language code (e.g., "german" → "de")
@@ -421,7 +421,7 @@ export default function VoiceInputControls({
         metricsCollector.endTimer('translate');
       }
       
-      console.log('Translation:', translationResult.translation);
+      console.log(`Translation received (${translationResult.translation.length} chars)`);
       
       // Step 4: Create message with speaker info
       const message = {

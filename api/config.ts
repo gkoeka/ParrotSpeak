@@ -25,8 +25,6 @@ export const ENDPOINTS = {
     APPLE: "/api/auth/apple",
     LOGOUT: "/api/auth/logout",
     USER: "/api/auth/user",
-    REQUEST_RESET: "/api/auth/request-reset",
-    RESET_PASSWORD: "/api/auth/reset-password",
   },
   
   // Conversation endpoints

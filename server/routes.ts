@@ -806,63 +806,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Password reset endpoints
-  app.post("/api/auth/request-reset", async (req: Request, res: Response) => {
-    try {
-      const { email } = req.body;
-      
-      if (!email) {
-        return res.status(400).json({ error: 'Email is required' });
-      }
-
-      const { createPasswordResetToken } = await import('./services/auth');
-      const originUrl = `${req.protocol}://${req.get('host')}`;
-      const result = await createPasswordResetToken(email, originUrl);
-      
-      if (result.success) {
-        res.json({ 
-          success: true, 
-          message: result.message 
-        });
-      } else {
-        res.status(400).json({ error: result.message });
-      }
-    } catch (error) {
-      console.error('Password reset request error:', error);
-      res.status(500).json({ error: 'Failed to process password reset request' });
-    }
-  });
-
-  app.post("/api/auth/reset-password", async (req: Request, res: Response) => {
-    try {
-      const { token, newPassword } = req.body;
-      
-      if (!token || !newPassword) {
-        return res.status(400).json({ error: 'Token and new password are required' });
-      }
-
-      // Validate password strength
-      if (newPassword.length < 8) {
-        return res.status(400).json({ error: 'Password must be at least 8 characters long' });
-      }
-
-      const { resetPassword } = await import('./services/auth');
-      const result = await resetPassword(token, newPassword);
-      
-      if (result.success) {
-        res.json({ 
-          success: true, 
-          message: result.message 
-        });
-      } else {
-        res.status(400).json({ error: result.message });
-      }
-    } catch (error) {
-      console.error('Password reset error:', error);
-      res.status(500).json({ error: 'Failed to reset password' });
-    }
-  });
-
   app.get('/api/auth/user', (req: Request, res: Response) => {
     if (req.user) {
       res.json({ 
@@ -1051,7 +994,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const transcriptionResult = await transcribeAudio(audioBuffer, language);
       
       const processingTime = Date.now() - startTime;
-      console.log(`✅ Transcription successful in ${processingTime}ms:`, transcriptionResult.text.substring(0, 50) + '...');
+      console.log(`✅ Transcription successful in ${processingTime}ms (${transcriptionResult.text.length} chars)`);
       
       // Check if manual mode mismatch should prevent translation
       let shouldPreventTranslation = false;
@@ -1135,7 +1078,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const translationResult = await translateText(text, sourceLanguage, targetLanguage);
       
       const processingTime = Date.now() - startTime;
-      console.log(`✅ Translation successful in ${processingTime}ms:`, translationResult.translation.substring(0, 50) + '...');
+      console.log(`✅ Translation successful in ${processingTime}ms (${translationResult.translation.length} chars)`);
       
       // Add performance headers
       res.set('X-Processing-Time', processingTime.toString());
@@ -1612,13 +1555,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ws.on('message', async (message: string) => {
       try {
         const data = JSON.parse(message);
-        console.log('WebSocket message received:', data);
-        
+        console.log(`WebSocket message received: type=${data.type}`);
+
         if (data.type === 'translate') {
           const { conversationId, text, sourceLanguage, targetLanguage } = data;
           // Use authenticated user ID from the connection, not from the message
           const userId = authenticatedUserId;
-          console.log('Translation request:', { conversationId, text, sourceLanguage, targetLanguage, userId });
+          console.log(`Translation request: conversationId=${conversationId}, ${text?.length ?? 0} chars, ${sourceLanguage} -> ${targetLanguage}, userId=${userId}`);
           
           try {
             // 🔒 CRITICAL: Check subscription status before allowing translation
@@ -1648,7 +1591,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Perform translation
             console.log('Starting translation...');
             const translationResult = await translateText(text, sourceLanguage, targetLanguage);
-            console.log('Translation completed:', translationResult);
+            console.log(`Translation completed: ${translationResult.translation.length} chars`);
             
             // Save the translated message
             const translatedMessageId = await storage.saveMessage(

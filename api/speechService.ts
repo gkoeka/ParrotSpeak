@@ -1015,7 +1015,7 @@ export async function processRecording(
     // Send to transcription API with auto-detect state
     const transcriptionResult = await recognizeSpeech(audioBase64, languageCode, autoDetectEnabled, expectedLanguage);
     
-    console.log('Transcription successful:', transcriptionResult);
+    console.log(`Transcription successful (${transcriptionResult?.text?.length ?? 0} chars, language: ${transcriptionResult?.language})`);
     return transcriptionResult;
   } catch (error) {
     console.error('Error processing recording:', error);

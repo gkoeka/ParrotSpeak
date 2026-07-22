@@ -95,13 +95,13 @@ export async function transcribeAudio(audioBuffer: Buffer, language?: string): P
       if (typeof transcription === 'object' && 'text' in transcription) {
         transcriptionText = (transcription as any).text || '';
         detectedLanguage = (transcription as any).language;
-        console.log('OpenAI transcription successful:', transcriptionText.substring(0, 50) + '...');
+        console.log(`OpenAI transcription successful (${transcriptionText.length} chars)`);
         if (detectedLanguage) {
           console.log('Detected language:', detectedLanguage);
         }
       } else {
         transcriptionText = String(transcription);
-        console.log('OpenAI transcription successful:', transcriptionText.substring(0, 50) + '...');
+        console.log(`OpenAI transcription successful (${transcriptionText.length} chars)`);
       }
 
       // Clean up temporary file
