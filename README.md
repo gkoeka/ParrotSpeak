@@ -32,7 +32,8 @@ This README describes what's actually implemented and running today. For a deepe
 
 **Backend** (`server/`)
 - Node.js + Express + TypeScript
-- PostgreSQL via Drizzle ORM — currently Neon, **migrating to Supabase** (database only; auth stays on Clerk). See `CLAUDE.md` for current status before assuming either is live.
+- PostgreSQL via Drizzle ORM — Supabase (auth stays on Clerk; Supabase is for data only)
+- Deployed on Railway at `app.parrotspeak.com` (see `CLAUDE.md` for hosting details and build gotchas if standing this up again)
 - Clerk (`@clerk/backend`) for auth verification, syncing Clerk identities into the app's own `users` table
 - OpenAI Whisper (`whisper-1`) for speech-to-text, OpenAI GPT-4o for translation — both called server-side only, never from the client
 - `react-native-iap` receipt validation against Apple/Google servers
@@ -42,7 +43,7 @@ This README describes what's actually implemented and running today. For a deepe
 
 ### Prerequisites
 - Node.js 18+
-- A PostgreSQL database — a Supabase project (in progress as the new standard, see `CLAUDE.md`) or Neon
+- A Supabase project (Postgres) — connect via the **Session Pooler** connection string, not Direct Connection; see `CLAUDE.md` for why
 - An OpenAI API key
 - A Clerk application (publishable + secret key)
 - Apple Developer + Google Play Developer accounts, for IAP and app store builds
@@ -133,7 +134,7 @@ See `CLAUDE.md` for the full architecture breakdown, including known dead code p
 
 Rate limiting, security headers (`helmet`), input validation, and injection-prevention tests are in place and covered by the scripts above and by `.github/workflows/security-tests.yml`. Report vulnerabilities to security@parrotspeak.com rather than filing a public issue.
 
-**Not yet in place:** production crash/error reporting (no Sentry/equivalent wired), CI type-checking and linting (currently disabled — see `CLAUDE.md`), and closed-by-default IAP receipt validation (currently fails open if store credentials are unset). These are tracked as open items, not assumed to be handled.
+Crash/error reporting (Sentry, mobile + backend), CI type-checking/linting, and closed-by-default IAP receipt validation are all wired up — see `CLAUDE.md`'s "Known Issues & Landmines" for exact status and any caveats before assuming a given piece is fully configured in a specific environment. **Not yet in place:** Row Level Security on the Supabase database — deferred, tracked as an open item in `CLAUDE.md`.
 
 ## Contributing
 
