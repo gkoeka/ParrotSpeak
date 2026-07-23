@@ -6,7 +6,7 @@ This README describes what's actually implemented and running today. For a deepe
 
 ## What it does
 
-- **Turn-based voice translation** — tap to record, automatic silence-based stop, transcribe → translate → speak back. This is the core (and currently only) live translation flow.
+- **Turn-based voice translation** — tap to record, automatic silence-based stop, transcribe → translate → speak back. This is the core (and currently only) live translation flow. **Note:** the "speak back" (TTS) step has a known bug as of 2026-07-22 — it can silently fail to produce audio for some target languages even though transcription and translation succeed; see `CLAUDE.md`'s "Known Issues & Landmines."
 - **Culturally-aware translation** — GPT-4o is prompted to preserve tone and slang and to translate naturally, not literally, with explicit dialect handling for Spanish (Spain vs. Latin America) and Portuguese (Brazil vs. Portugal).
 - **Auto-detect speakers** — optionally detects which of two configured participants is talking (by spoken language) and flips translation direction automatically, turn to turn.
 - **65 supported languages**, each flagged for speech-to-text/text-to-speech support; languages without speech support fall back to a text-entry box.

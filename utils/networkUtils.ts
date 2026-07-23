@@ -60,24 +60,27 @@ export function getAPIInfo() {
  * Enhanced fetch with better error handling for mobile
  */
 export async function mobileFetch(url: string, options: RequestInit = {}): Promise<Response> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-  
+  // Respect a caller-supplied signal/timeout (e.g. recognizeSpeech's 30s, translateText's 20s)
+  // instead of silently overriding it — only fall back to our own default when the caller didn't set one.
+  const hasOwnSignal = !!options.signal;
+  const controller = hasOwnSignal ? null : new AbortController();
+  const timeout = hasOwnSignal ? null : setTimeout(() => controller!.abort(), 15000); // 15 second default
+
   try {
     const response = await fetch(url, {
       ...options,
       credentials: 'include', // Important for session-based auth
-      signal: controller.signal,
+      signal: hasOwnSignal ? options.signal : controller!.signal,
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,
       },
     });
-    
-    clearTimeout(timeout);
+
+    if (timeout) clearTimeout(timeout);
     return response;
   } catch (error) {
-    clearTimeout(timeout);
+    if (timeout) clearTimeout(timeout);
     
     if (error instanceof Error) {
       if (error.name === 'AbortError') {

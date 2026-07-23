@@ -2,7 +2,7 @@ import { Language } from '../types';
 import { API_BASE_URL } from '../api/config';
 import { mobileFetch } from '../utils/networkUtils';
 import { translationCache } from '../utils/translationCache';
-import { authenticatedFetch } from '../utils/apiHelpers';
+import { getAuthToken } from './authToken';
 
 // Headers for mobile API requests
 const requestHeaders = {
@@ -13,6 +13,14 @@ const requestHeaders = {
 const jsonHeaders = {
   'Content-Type': 'application/json'
 };
+
+// Headers for endpoints that require Clerk auth (transcribe, translate)
+async function getAuthedHeaders(): Promise<Record<string, string>> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+}
 
 // Comprehensive language service using the server API endpoint
 export async function getLanguages(): Promise<Language[]> {
@@ -153,8 +161,9 @@ export async function recognizeSpeech(
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
     
-    const response = await authenticatedFetch(`${API_BASE_URL}/api/transcribe`, {
+    const response = await mobileFetch(`${API_BASE_URL}/api/transcribe`, {
       method: 'POST',
+      headers: await getAuthedHeaders(),
       body: JSON.stringify({
         audio: audioBase64,
         language: languageCode,
@@ -227,7 +236,7 @@ export async function translateText(
     
     const response = await mobileFetch(`${API_BASE_URL}/api/translate`, {
       method: 'POST',
-      headers: jsonHeaders,
+      headers: await getAuthedHeaders(),
       body: JSON.stringify({
         text,
         sourceLanguage,

@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -n --rawfile readme /Users/gregkoeka/parrotspeak/README.md --rawfile prd /Users/gregkoeka/parrotspeak/PRD.md '{hookSpecificOutput:{hookEventName:\"SessionStart\", additionalContext: (\"# README.md\\n\\n\" + $readme + \"\\n\\n# PRD.md (local snapshot)\\n\\n\" + $prd)}}' 2>/dev/null",
+            "timeout": 10,
+            "statusMessage": "Loading README.md and PRD.md..."
+          }
+        ]
+      }
+    ]
+  }
+}

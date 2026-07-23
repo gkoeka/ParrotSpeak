@@ -36,6 +36,7 @@ export interface VoiceProfile {
 interface VoiceSelectionResult {
   requested: string;
   chosen: string;
+  chosenLanguage: string;
   fallbackLevel: 'none' | 'base' | 'default';
 }
 
@@ -47,32 +48,34 @@ export async function pickPreferredVoice(langCodeFull: string): Promise<VoiceSel
       return {
         requested: langCodeFull,
         chosen: 'system',
+        chosenLanguage: 'en-US',
         fallbackLevel: 'default'
       };
     }
 
     // Get available voices
     const voices = await Speech.getAvailableVoicesAsync();
-    
+
     // 1. Try exact match (e.g., "pt-BR", "en-AU")
-    const exactMatch = voices.find(voice => 
+    const exactMatch = voices.find(voice =>
       voice.language.toLowerCase() === langCodeFull.toLowerCase()
     );
-    
+
     if (exactMatch) {
       return {
         requested: langCodeFull,
         chosen: exactMatch.identifier || exactMatch.language,
+        chosenLanguage: exactMatch.language,
         fallbackLevel: 'none'
       };
     }
-    
+
     // 2. Try base language match (e.g., "pt" for "pt-BR")
     const baseLang = langCodeFull.split('-')[0].toLowerCase();
-    const baseMatch = voices.find(voice => 
+    const baseMatch = voices.find(voice =>
       voice.language.toLowerCase().startsWith(baseLang)
     );
-    
+
     if (baseMatch) {
       // Log fallback once per language per app launch
       const fallbackKey = `${langCodeFull}_base`;
@@ -80,37 +83,43 @@ export async function pickPreferredVoice(langCodeFull: string): Promise<VoiceSel
         console.log(`[TTS] fallback {requested=${langCodeFull}, chosen=${baseMatch.identifier || baseMatch.language}, level=base}`);
         loggedFallbacks.add(fallbackKey);
       }
-      
+
       return {
         requested: langCodeFull,
         chosen: baseMatch.identifier || baseMatch.language,
+        // Must match the chosen voice's own locale, not the originally-requested one —
+        // passing a voice identifier alongside a mismatched `language` (e.g. an es-US
+        // voice with language: 'es-MX') makes Android's TTS engine reject the call outright.
+        chosenLanguage: baseMatch.language,
         fallbackLevel: 'base'
       };
     }
-    
+
     // 3. Use system default (usually English)
-    const defaultVoice = voices.find(voice => 
+    const defaultVoice = voices.find(voice =>
       voice.language.toLowerCase().startsWith('en')
     ) || voices[0]; // Fallback to first available voice
-    
+
     // Log fallback once per language per app launch
     const fallbackKey = `${langCodeFull}_default`;
     if (!loggedFallbacks.has(fallbackKey)) {
       console.log(`[TTS] fallback {requested=${langCodeFull}, chosen=${defaultVoice?.identifier || 'system'}, level=default}`);
       loggedFallbacks.add(fallbackKey);
     }
-    
+
     return {
       requested: langCodeFull,
       chosen: defaultVoice?.identifier || 'en-US',
+      chosenLanguage: defaultVoice?.language || 'en-US',
       fallbackLevel: 'default'
     };
-    
+
   } catch (error) {
     console.error('Error selecting voice:', error);
     return {
       requested: langCodeFull,
       chosen: 'en-US',
+      chosenLanguage: 'en-US',
       fallbackLevel: 'default'
     };
   }
@@ -215,7 +224,9 @@ export async function speakText(
   return new Promise<void>((resolve, reject) => {
     // Use voice profile settings if provided, otherwise use defaults
     const options = {
-      language: voiceSelection.fallbackLevel === 'default' ? 'en-US' : mappedLanguageCode,
+      // Must match voiceSelection.chosen's actual locale (not necessarily mappedLanguageCode) —
+      // see the comment in pickPreferredVoice's base-match branch for why.
+      language: voiceSelection.chosenLanguage,
       pitch: voiceProfile?.pitch ?? 1.0,
       rate: voiceProfile?.rate ?? 0.9,
       voice: voiceSelection.chosen, // Track which voice was used
