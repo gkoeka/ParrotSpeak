@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-*Last refreshed against `main` @ `823126b` following the Railway/Supabase hosting migration. If you make an architectural change (auth, billing, pipeline, hosting), update this file in the same commit.*
+*Last refreshed against `main` @ `872e17e` following the 2026-07-24 session (TTS fix, pricing/Terms cleanup, Replit decommission). If you make an architectural change (auth, billing, pipeline, hosting), update this file in the same commit.*
 
 ## Project Overview
 
