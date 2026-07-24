@@ -13,18 +13,18 @@ const OPENAI_MODEL = "gpt-4o";
 // Initialize OpenAI client
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-export async function translateText(
+// Extracted so scripts/compare-translation-models.ts can test against the exact
+// production prompt instead of a hand-copied approximation that could drift from it.
+export function buildTranslationPrompt(
   text: string,
   sourceLanguage: string,
   targetLanguage: string
-): Promise<TranslationResponse> {
-  try {
-    // Simplify language codes for the prompt (e.g., "en-US" to "English")
-    const sourceLanguageName = getLanguageName(sourceLanguage);
-    const targetLanguageName = getLanguageName(targetLanguage);
+): string {
+  // Simplify language codes for the prompt (e.g., "en-US" to "English")
+  const sourceLanguageName = getLanguageName(sourceLanguage);
+  const targetLanguageName = getLanguageName(targetLanguage);
 
-    // Create a prompt for the translation that emphasizes context, tone, and cultural nuances
-    const prompt = `
+  return `
 You are an expert real-time translator who perfectly understands cultural context, slang, tone, and regional dialects.
 
 Translate the following text from ${sourceLanguageName} to ${targetLanguageName}:
@@ -43,6 +43,15 @@ Respond in JSON format with the following structure:
   "notes": "any special notes about cultural context or nuances (if applicable)"
 }
 `;
+}
+
+export async function translateText(
+  text: string,
+  sourceLanguage: string,
+  targetLanguage: string
+): Promise<TranslationResponse> {
+  try {
+    const prompt = buildTranslationPrompt(text, sourceLanguage, targetLanguage);
 
     const response = await openai.chat.completions.create({
       model: OPENAI_MODEL,

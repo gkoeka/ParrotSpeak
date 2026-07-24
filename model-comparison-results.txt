@@ -1,0 +1,320 @@
+
+================================================================================
+EN->ES-419 casual slang
+  en-US -> es-419: "Dude, that concert was totally lit, I'm still buzzing from it."
+================================================================================
+
+[gpt-4o] (3538ms, $0.001335)
+  translation: Amigo, ese concierto estuvo increíble, todavía estoy emocionado.
+  notes: The word 'lit' is translated to 'increíble' to convey the excitement and high energy of the event, which is a common way to express something was amazing or awesome in Spanish. 'Buzzing' is translated to 'emocionado' to capture the lingering excitement and energy from the concert. The tone remains casual and friendly, fitting the original context.
+
+[gpt-4o-mini] (1732ms, $0.000070)
+  translation: ¡Bro, ese concierto estuvo increíble, todavía estoy en la nube por eso!
+  notes: In Latin American Spanish, 'bro' is commonly used among friends, similar to 'dude' in English. 'Increíble' captures the excitement of 'lit,' and 'estar en la nube' conveys the feeling of still being high on the experience.
+
+================================================================================
+EN->ES-ES vs ES-419 dialect distinction (same source text)
+  en-US -> es-ES: "Can you grab your stuff and let's go, the bus leaves in five minutes."
+================================================================================
+
+[gpt-4o] (1585ms, $0.001275)
+  translation: ¿Puedes recoger tus cosas y vámonos? El autobús sale en cinco minutos.
+  notes: The tone is casual and friendly, suitable for a conversation between friends or family. 'Grab your stuff' is translated to 'recoger tus cosas,' which maintains the informal tone. 'Let's go' is translated as 'vámonos,' a common and natural expression in Spanish for urging someone to leave quickly.
+
+[gpt-4o-mini] (1440ms, $0.000068)
+  translation: ¿Puedes recoger tus cosas y vámonos? El autobús sale en cinco minutos.
+  notes: The translation maintains a casual and friendly tone, appropriate for a conversation among friends or peers. The phrase 'vámonos' is a common way to say 'let's go' in Spanish, making it sound natural to native speakers.
+
+================================================================================
+EN->FR formal register
+  en-US -> fr-FR: "We regret to inform you that your application has not been successful at this time."
+================================================================================
+
+[gpt-4o] (1399ms, $0.001102)
+  translation: Nous regrettons de vous informer que votre candidature n'a pas été retenue cette fois-ci.
+  notes: The translation maintains a formal tone, which is appropriate for this type of communication. The phrase 'cette fois-ci' is used to imply that there may be future opportunities, which is a common nuance in such messages.
+
+[gpt-4o-mini] (1302ms, $0.000066)
+  translation: Nous avons le regret de vous informer que votre candidature n'a pas été retenue pour le moment.
+  notes: The translation maintains a formal tone appropriate for a rejection letter, which is common in professional contexts in France. The phrase 'nous avons le regret de vous informer' is a standard way to convey regret in formal communication.
+
+================================================================================
+EN->PT-BR idiom
+  en-US -> pt-BR: "It's raining cats and dogs out there, we should wait it out."
+================================================================================
+
+[gpt-4o] (1138ms, $0.001130)
+  translation: Está chovendo canivetes lá fora, melhor esperarmos passar.
+  notes: The English idiom 'It's raining cats and dogs' is translated to 'Está chovendo canivetes' in Brazilian Portuguese, which is a common expression used to describe heavy rain. This translation maintains the casual and friendly tone of the original sentence.
+
+[gpt-4o-mini] (1539ms, $0.000073)
+  translation: Está chovendo muito lá fora, melhor a gente esperar passar.
+  notes: The phrase 'it's raining cats and dogs' is an English idiom meaning it's raining heavily. In Portuguese, saying 'está chovendo muito' conveys the same meaning without using a direct translation of the idiom, which wouldn't make sense in Brazilian Portuguese. The tone remains casual and friendly.
+
+================================================================================
+EN->JA politeness level (asking a stranger for directions)
+  en-US -> ja-JP: "Excuse me, could you tell me how to get to the train station?"
+================================================================================
+
+[gpt-4o] (1521ms, $0.001245)
+  translation: すみません、駅への行き方を教えていただけますか？
+  notes: The phrase is translated in a polite and formal manner, which is appropriate for asking directions from a stranger in Japan. The use of 'すみません' is a common way to politely get someone's attention, and '教えていただけますか' is a respectful way to ask for information.
+
+[gpt-4o-mini] (1609ms, $0.000066)
+  translation: すみませんが、駅までの行き方を教えていただけますか？
+  notes: The translation maintains a polite and formal tone, which is appropriate for asking for directions in Japanese culture. Using 'すみませんが' (sumimasen ga) is a common way to start a request politely.
+
+================================================================================
+ES-419->EN slang round-trip
+  es-419 -> en-US: "Ese carro está bien chido, ¿cuánto te costó?"
+================================================================================
+
+[gpt-4o] (1553ms, $0.000995)
+  translation: That car is really cool, how much did it cost you?
+  notes: The term 'chido' is Mexican slang for 'cool' or 'awesome,' often used in informal and friendly contexts. The translation maintains the casual and friendly tone of the original Spanish text.
+
+[gpt-4o-mini] (1176ms, $0.000055)
+  translation: That car is really cool, how much did it cost you?
+  notes: The term 'chido' is Mexican slang that means 'cool' or 'awesome.' The tone is casual and friendly, typical of informal conversations among peers.
+
+================================================================================
+TOTALS across all test cases
+================================================================================
+gpt-4o: $0.007083 total, 10734ms total, 1789ms avg
+gpt-4o-mini: $0.000398 total, 8798ms total, 1466ms avg
+
+gpt-4o-mini cost savings on this run: 94.4%
+
+################################################################################
+RUN 2: idiom-focused - top 10 languages by speakers + top 10 travel-destination languages
+Run at: 2026-07-24T22:08:10.671Z
+################################################################################
+
+================================================================================
+EN->ZH-CN (Mandarin, top by speakers + travel destination)
+  en-US -> zh-CN: "Don't count your chickens before they hatch."
+================================================================================
+
+[gpt-4o] (2050ms, $0.001257)
+  translation: 不要过早乐观。
+  notes: The English proverb 'Don't count your chickens before they hatch' is translated to '不要过早乐观' in Mandarin, which literally means 'Don't be optimistic too early.' This translation captures the essence of the original saying, advising against assuming success before it is certain. The tone is casual and the phrase is commonly understood in Chinese culture, similar to the English version.
+
+[gpt-4o-mini] (1225ms, $0.000050)
+  translation: 不要过早下结论。
+  notes: This phrase conveys the idea of not assuming success before it actually happens. The translation maintains a similar cautionary tone and is commonly understood in Mandarin-speaking cultures.
+
+================================================================================
+EN->HI-IN (Hindi, top by speakers)
+  en-US -> hi-IN: "The early bird catches the worm."
+================================================================================
+
+[gpt-4o] (1238ms, $0.001170)
+  translation: जो जल्दी उठता है, वही फायदा उठाता है।
+  notes: The phrase 'The early bird catches the worm' is a proverb emphasizing the benefits of being early or prompt. In Hindi, the translation captures the essence of taking advantage of opportunities by being proactive. The tone remains friendly and the cultural context is preserved as it's a widely understood concept in both languages.
+
+[gpt-4o-mini] (1920ms, $0.000070)
+  translation: जो जल्दी उठता है, उसे ही सफलता मिलती है।
+  notes: This translation captures the essence of the original proverb, emphasizing the importance of being proactive and taking initiative. The phrase 'सफलता मिलती है' (achieves success) conveys a similar meaning to 'catches the worm,' which may not directly translate in Hindi but fits culturally.
+
+================================================================================
+EN->ES-419 (Spanish, Latin America - top by speakers)
+  en-US -> es-419: "Actions speak louder than words."
+================================================================================
+
+[gpt-4o] (993ms, $0.000985)
+  translation: Las acciones dicen más que las palabras.
+  notes: This phrase is a common saying in both English and Spanish, conveying the idea that what people do is more important than what they say. The translation maintains the original tone and is widely understood across Spanish-speaking countries in Latin America.
+
+[gpt-4o-mini] (1458ms, $0.000054)
+  translation: Las acciones hablan más que las palabras.
+  notes: This translation is widely understood across Spanish-speaking countries in Latin America. It maintains a formal tone and conveys the same meaning as the original phrase, emphasizing the importance of actions over mere words.
+
+================================================================================
+EN->ES-ES (Spanish, Spain - travel destination)
+  en-US -> es-ES: "Break a leg out there tonight!"
+================================================================================
+
+[gpt-4o] (1871ms, $0.001672)
+  translation: ¡Mucha mierda esta noche!
+  notes: The phrase 'Break a leg' is an idiomatic expression used to wish someone good luck, especially in performance contexts. In Spanish-speaking cultures, a similar expression used in theatrical contexts is '¡Mucha mierda!', which literally translates to 'a lot of shit'. This phrase originates from the idea that a successful show would attract a large audience, who would arrive in carriages, leaving behind a lot of manure. It is important to note that while this phrase might sound crude, it is a well-understood and accepted way to wish someone good luck in a performance setting.
+
+[gpt-4o-mini] (1383ms, $0.000063)
+  translation: ¡Mucha suerte esta noche!
+  notes: The phrase 'break a leg' is an idiom used to wish someone good luck, especially in performances. In Spanish-speaking cultures, '¡Mucha suerte!' is a common way to express this sentiment, and it sounds natural and friendly to native speakers.
+
+================================================================================
+EN->FR-FR (French, top by speakers + travel destination)
+  en-US -> fr-FR: "That's the last straw, I'm done waiting around."
+================================================================================
+
+[gpt-4o] (1145ms, $0.001210)
+  translation: C'est la goutte d'eau qui fait déborder le vase, j'en ai assez d'attendre.
+  notes: The phrase 'C'est la goutte d'eau qui fait déborder le vase' is a common French expression equivalent to 'the last straw' in English, conveying a sense of finality and frustration. The tone remains casual and relatable, suitable for informal contexts.
+
+[gpt-4o-mini] (1712ms, $0.000072)
+  translation: C'est la goutte d'eau qui fait déborder le vase, j'en ai assez d'attendre.
+  notes: The phrase 'la goutte d'eau qui fait déborder le vase' is a common French expression that conveys reaching a breaking point, similar to 'the last straw' in English. The tone remains casual and conveys frustration, which aligns with the original message.
+
+================================================================================
+EN->AR-SA (Arabic, top by speakers)
+  en-US -> ar-SA: "It's not rocket science, just follow the instructions."
+================================================================================
+
+[gpt-4o] (1525ms, $0.001217)
+  translation: الموضوع مش معقد، بس اتبع التعليمات.
+  notes: The phrase 'It's not rocket science' is an idiomatic expression in English used to indicate that something is not very difficult to understand. In Arabic, 'الموضوع مش معقد' conveys a similar meaning, suggesting that the task is simple. This translation maintains the casual and friendly tone of the original text.
+
+[gpt-4o-mini] (1368ms, $0.000060)
+  translation: ليس علم الصواريخ، فقط اتبع التعليمات.
+  notes: The phrase 'ليس علم الصواريخ' is a common Arabic expression used to indicate that something is not as complicated as it seems, similar to the English phrase. The translation maintains a casual and friendly tone.
+
+================================================================================
+EN->BN-BD (Bengali, top by speakers)
+  en-US -> bn-BD: "Better late than never, I'm glad you made it."
+================================================================================
+
+[gpt-4o] (2064ms, $0.001312)
+  translation: দেরি হলেও ক্ষতি নেই, তুমি আসতে পেরেছো দেখে ভালো লাগছে।
+  notes: The phrase 'Better late than never' is a common saying in English that emphasizes the importance of eventually completing a task or arriving, even if it's delayed. In Bengali, the translation captures this sentiment by implying that it's better to arrive late than not at all. The tone remains friendly and casual, suitable for informal situations.
+
+[gpt-4o-mini] (1733ms, $0.000068)
+  translation: দেরিতে আসা ভালো, কিন্তু না আসার চেয়ে। আমি খুশি তুমি এসেছো।
+  notes: The phrase 'better late than never' is translated to convey the same sentiment in Bengali, emphasizing that arriving late is preferable to not arriving at all. The tone remains friendly and casual, suitable for a conversational context.
+
+================================================================================
+EN->PT-BR (Portuguese, top by speakers)
+  en-US -> pt-BR: "That only happens once in a blue moon around here."
+================================================================================
+
+[gpt-4o] (1898ms, $0.001085)
+  translation: Isso só acontece uma vez na vida por aqui.
+  notes: The expression 'once in a blue moon' is translated to 'uma vez na vida' in Brazilian Portuguese, which conveys the idea of something happening very rarely. This maintains the casual and friendly tone of the original phrase while ensuring it sounds natural to native speakers.
+
+[gpt-4o-mini] (1483ms, $0.000062)
+  translation: Isso só acontece de vez em quando por aqui.
+  notes: The phrase 'once in a blue moon' is translated to a more common Brazilian expression that conveys rarity, as there isn't a direct equivalent in Portuguese that captures the same imagery. The translation maintains a casual tone, suitable for everyday conversation.
+
+================================================================================
+EN->RU-RU (Russian, top by speakers)
+  en-US -> ru-RU: "Don't beat around the bush, just tell me what happened."
+================================================================================
+
+[gpt-4o] (1303ms, $0.001155)
+  translation: Не ходи вокруг да около, просто скажи, что случилось.
+  notes: The phrase 'Не ходи вокруг да около' is a common Russian expression that captures the same meaning as 'Don't beat around the bush,' which means to avoid wasting time and get straight to the point. This translation maintains the casual and direct tone of the original sentence.
+
+[gpt-4o-mini] (1252ms, $0.000056)
+  translation: Не ходи вокруг да около, просто скажи, что произошло.
+  notes: The phrase 'не ходи вокруг да около' is a common Russian idiom that conveys the same meaning as the English expression, maintaining a casual and direct tone.
+
+================================================================================
+EN->UR (Urdu, top by speakers)
+  en-US -> ur: "Let's not beat a dead horse, we've made our decision."
+================================================================================
+
+[gpt-4o] (1612ms, $0.001225)
+  translation: چلو اب اس بات کو مزید نہ کھینچیں، ہم نے اپنا فیصلہ کر لیا ہے۔
+  notes: The phrase 'beat a dead horse' is an idiom meaning to waste time on something that has already been decided or resolved. In Urdu, the translation captures the essence of not prolonging a settled matter. The tone remains casual and direct, suitable for informal conversations.
+
+[gpt-4o-mini] (1582ms, $0.000059)
+  translation: چلو، بے وجہ بحث نہ کریں، ہم نے فیصلہ کر لیا ہے۔
+  notes: The phrase 'beat a dead horse' is translated to convey the idea of not unnecessarily prolonging a discussion. The tone remains casual and straightforward, suitable for a friendly conversation.
+
+================================================================================
+EN->IT-IT (Italian, travel destination)
+  en-US -> it-IT: "He's had a chip on his shoulder ever since he lost that game."
+================================================================================
+
+[gpt-4o] (1051ms, $0.001070)
+  translation: Ce l'ha con tutti da quando ha perso quella partita.
+  notes: The phrase 'a chip on his shoulder' is translated to 'ce l'ha con tutti,' which conveys a similar sense of holding a grudge or being resentful. This translation maintains the casual and slightly informal tone of the original sentence.
+
+[gpt-4o-mini] (1649ms, $0.000068)
+  translation: Da quando ha perso quella partita, ha sempre un peso sullo stomaco.
+  notes: The phrase 'a chip on his shoulder' is translated to 'un peso sullo stomaco' to convey a similar sense of lingering resentment or burden in Italian. This expression is more common and natural in Italian to describe someone who is harboring grievances.
+
+================================================================================
+EN->TR-TR (Turkish, travel destination)
+  en-US -> tr-TR: "That hotel costs an arm and a leg for one night."
+================================================================================
+
+[gpt-4o] (1502ms, $0.001105)
+  translation: Otelin bir gecelik ücreti el yakıyor.
+  notes: The phrase 'costs an arm and a leg' is translated to 'el yakıyor' in Turkish, which is a common expression used to describe something that is very expensive. It maintains the casual tone and conveys the same cultural nuance of high cost.
+
+[gpt-4o-mini] (1559ms, $0.000059)
+  translation: O otel bir gece için bir servet.
+  notes: The phrase 'costs an arm and a leg' is translated to 'bir servet', which conveys the same meaning of being very expensive in Turkish. This expression is commonly understood and used in informal contexts.
+
+================================================================================
+EN->TH-TH (Thai, travel destination)
+  en-US -> th-TH: "Just bite the bullet and ask her out already."
+================================================================================
+
+[gpt-4o] (1683ms, $0.001130)
+  translation: ทำใจกล้าแล้วชวนเธอออกไปเดทเลย
+  notes: The phrase 'bite the bullet' is translated to 'ทำใจกล้า' which captures the essence of taking a brave step despite hesitation. The tone remains casual and encouraging, suitable for friendly advice. The translation is natural and culturally appropriate for Thai speakers.
+
+[gpt-4o-mini] (1746ms, $0.000068)
+  translation: ลองทำใจแล้วชวนเธอไปเดทเถอะ
+  notes: The phrase 'bite the bullet' is translated to 'ทำใจ' which conveys the idea of mustering courage. The term 'ชวนเธอไปเดท' is a casual way to say 'ask her out' that sounds natural in Thai.
+
+================================================================================
+EN->DE-DE (German, travel destination)
+  en-US -> de-DE: "I'm feeling a bit under the weather today."
+================================================================================
+
+[gpt-4o] (1077ms, $0.001075)
+  translation: Ich fühle mich heute etwas angeschlagen.
+  notes: The phrase 'under the weather' is an idiomatic expression in English meaning to feel slightly ill. The German equivalent 'angeschlagen' conveys a similar sense of feeling unwell or not at full strength, maintaining the casual and friendly tone of the original sentence.
+
+[gpt-4o-mini] (1212ms, $0.000053)
+  translation: Ich fühle mich heute ein bisschen unwohl.
+  notes: The phrase 'unter der Wetter' is not commonly used in German. 'Unwohl' conveys a similar sense of feeling unwell in a casual and friendly tone.
+
+================================================================================
+EN->EL-GR (Greek, travel destination)
+  en-US -> el-GR: "We can kill two birds with one stone if we go today."
+================================================================================
+
+[gpt-4o] (1665ms, $0.001275)
+  translation: Μπορούμε να πετύχουμε δύο στόχους με μία κίνηση αν πάμε σήμερα.
+  notes: The English idiom 'kill two birds with one stone' is translated to a similar Greek expression 'πετύχουμε δύο στόχους με μία κίνηση', which conveys the idea of achieving two goals with one action. This maintains the casual and practical tone of the original sentence.
+
+[gpt-4o-mini] (1672ms, $0.000072)
+  translation: Μπορούμε να χτυπήσουμε δύο καρπούζια με μια μπαλιά αν πάμε σήμερα.
+  notes: The phrase 'χτυπήσουμε δύο καρπούζια με μια μπαλιά' is a Greek equivalent of the English idiom, meaning to achieve two goals with one action. It maintains a casual and friendly tone, suitable for everyday conversation.
+
+================================================================================
+EN->JA-JP (Japanese, travel destination)
+  en-US -> ja-JP: "Don't worry, this next part is a piece of cake."
+================================================================================
+
+[gpt-4o] (1043ms, $0.001205)
+  translation: 心配しないで、次の部分は簡単だよ。
+  notes: The phrase 'a piece of cake' is translated to '簡単だよ' which means 'it's easy' in Japanese. This maintains the casual and friendly tone of the original English sentence. The phrase is commonly understood and used in Japanese to convey the idea of something being easy or simple.
+
+[gpt-4o-mini] (1315ms, $0.000063)
+  translation: 心配しないで、次の部分は楽勝だよ。
+  notes: The phrase '楽勝' (rakushou) is a casual way to say something is easy or a 'piece of cake' in Japanese. The tone is friendly and reassuring, which matches the original intent.
+
+================================================================================
+EN->ID-ID (Indonesian, travel destination)
+  en-US -> id-ID: "When pigs fly, maybe he'll actually apologize."
+================================================================================
+
+[gpt-4o] (1580ms, $0.001435)
+  translation: Kalau sudah ada babi bisa terbang, mungkin dia baru akan minta maaf.
+  notes: The phrase 'when pigs fly' is an idiomatic expression used to indicate that something is very unlikely to happen. In Indonesian, the translation maintains the casual and slightly sarcastic tone of the original English phrase. The expression is understood in a similar way, even though it is not a common idiom in Indonesian. The translation is crafted to sound natural and convey the same sense of improbability.
+
+[gpt-4o-mini] (1390ms, $0.000075)
+  translation: Ketika babi terbang, mungkin dia akan benar-benar minta maaf.
+  notes: The phrase 'when pigs fly' is an idiomatic expression in English that means something is highly unlikely to happen. The translation maintains this idiomatic tone, and the phrase 'minta maaf' is a common way to say 'apologize' in Indonesian, making it sound natural to native speakers.
+
+================================================================================
+TOTALS across all test cases
+================================================================================
+gpt-4o: $0.020585 total, 25300ms total, 1488ms avg
+gpt-4o-mini: $0.001073 total, 25659ms total, 1509ms avg
+
+gpt-4o-mini cost savings on this run: 94.8%

@@ -216,52 +216,66 @@ export async function speakText(
     console.log(`[TTS] voice {requested=${mappedLanguageCode}, chosen=${voiceSelection.chosen}, level=none}`);
   }
 
-  // Speech.speak() is callback-based; wrap just that part in a Promise.
-  // (Previously this whole function body ran inside `new Promise(async ...)`,
-  // an async Promise executor — a known anti-pattern since a throw inside it
-  // doesn't reliably reject the outer promise. Only this section actually
-  // needs the callback→Promise conversion; the executor below is synchronous.)
-  return new Promise<void>((resolve, reject) => {
-    // Use voice profile settings if provided, otherwise use defaults
+  const pitch = voiceProfile?.pitch ?? 1.0;
+  const rate = voiceProfile?.rate ?? 0.9;
+
+  // Speak using only `language`, never an explicit `voice` identifier. Identifiers from
+  // getAvailableVoicesAsync() have proven unreliable to force on Android even for an exact
+  // locale match (2026-07-24: fr-FR — an exact match — still threw a synthesis error despite
+  // playing audio; 2026-07-22: a fallback-match identifier failed outright). Passing only
+  // `language` lets the OS engine pick a voice it actually knows is usable for that locale.
+  // Never rejects — TTS is best-effort; transcription/translation already succeeded by this
+  // point, so a synthesis failure must never fail the whole turn (previously it could — see
+  // git history — which also skipped the post-TTS recording cleanup in VoiceInputControls.tsx).
+  await new Promise<void>((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+
     const options = {
-      // Must match voiceSelection.chosen's actual locale (not necessarily mappedLanguageCode) —
-      // see the comment in pickPreferredVoice's base-match branch for why.
       language: voiceSelection.chosenLanguage,
-      pitch: voiceProfile?.pitch ?? 1.0,
-      rate: voiceProfile?.rate ?? 0.9,
-      voice: voiceSelection.chosen, // Track which voice was used
+      pitch,
+      rate,
       onDone: () => {
-        // Log audio route when TTS completes
         logAudioRouteStatus('TTS complete');
-        if (onDone) onDone();
-        resolve();
+        finish();
       },
       onError: (error: any) => {
-        console.error(`Speech synthesis error for language ${mappedLanguageCode}:`, error);
         // Ignore interruption errors as they are expected when stopping speech
         if (error && error.toString().includes('interrupted')) {
-          resolve();
-        } else {
-          reject(error);
+          finish();
+          return;
         }
+        if (settled) {
+          // Some Android TTS engines fire a stray/duplicate onError after a successful
+          // onDone for the same utterance - non-actionable, don't log it as a real failure.
+          console.log('[TTS] ignored late callback after utterance already completed');
+          return;
+        }
+        console.error(
+          `[TTS] synthesis error {requested=${mappedLanguageCode}, chosenLanguage=${voiceSelection.chosenLanguage}, level=${voiceSelection.fallbackLevel}}:`,
+          JSON.stringify(error, Object.getOwnPropertyNames(error ?? {}))
+        );
+        console.warn('[TTS] giving up - continuing without audio playback');
+        finish();
       },
       onStart: () => {
-        // Log audio route when TTS starts
         logAudioRouteStatus('TTS start');
       }
     };
 
-    // Start speaking with the given options
     try {
       Speech.speak(text, options);
     } catch (ttsError) {
       console.error('❌ TTS API error:', ttsError);
-      // Don't throw - TTS failure shouldn't break the pipeline
-      console.warn('⚠️ TTS failed but continuing pipeline');
-      if (onDone) onDone();
-      resolve();
+      finish();
     }
   });
+
+  if (onDone) onDone();
 }
 
 // Check if speech is currently playing

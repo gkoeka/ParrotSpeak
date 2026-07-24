@@ -91,6 +91,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Static files and uploads
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
+  // Publicly hosted privacy policy - required by app store review (Google Play's
+  // "App content" declarations won't accept a rollout, even to internal testing,
+  // without a live URL here; an in-app-only screen doesn't satisfy that requirement).
+  app.get('/privacy', (req: Request, res: Response) => {
+    res.sendFile(path.join(process.cwd(), 'docs/legal-pdfs/privacy-policy.html'));
+  });
+
   // Root route - always redirect to mobile preview
   app.get('/', (req: Request, res: Response, next: NextFunction) => {
     // Always redirect to mobile app preview unless explicitly requesting webapp

@@ -154,6 +154,10 @@ export default function ConversationScreen() {
     return flagMap[code] || '🌍';
   };
 
+  const getLanguageName = (code: string) => {
+    return allLanguages.find((lang) => lang.code === code)?.name || code;
+  };
+
   useEffect(() => {
     const loadLanguagePreferences = async () => {
       if (!conversationId && !preferencesLoaded) {
@@ -453,8 +457,8 @@ export default function ConversationScreen() {
                     isDarkMode && styles.languagePairDark,
                   ]}
                 >
-                  {getFlagEmoji(message.fromLanguage)} {message.fromLanguage} →{' '}
-                  {getFlagEmoji(message.toLanguage)} {message.toLanguage}
+                  {getFlagEmoji(message.fromLanguage)} {getLanguageName(message.fromLanguage)} →{' '}
+                  {getFlagEmoji(message.toLanguage)} {getLanguageName(message.toLanguage)}
                 </Text>
               </View>
             );
@@ -487,9 +491,9 @@ export default function ConversationScreen() {
                     sourceLanguage: message.fromLanguage,
                     targetLanguage: message.toLanguage,
                     title: `${getFlagEmoji(message.fromLanguage)} ${
-                      message.fromLanguage
+                      getLanguageName(message.fromLanguage)
                     } → ${getFlagEmoji(message.toLanguage)} ${
-                      message.toLanguage
+                      getLanguageName(message.toLanguage)
                     }`,
                   }),
                 });
