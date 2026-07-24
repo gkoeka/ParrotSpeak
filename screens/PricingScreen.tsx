@@ -75,7 +75,7 @@ export default function PricingScreen() {
     {
       id: 'week',
       name: '1 Week Pass',
-      price: 4.99,
+      price: 9.99,
       interval: 'one-time',
       duration: '7 days',
       description: 'Perfect for short trips',
@@ -91,7 +91,7 @@ export default function PricingScreen() {
     {
       id: 'month',
       name: '1 Month Pass',
-      price: 14.99,
+      price: 19.99,
       interval: 'one-time',
       duration: '30 days',
       description: 'Ideal for extended travel',

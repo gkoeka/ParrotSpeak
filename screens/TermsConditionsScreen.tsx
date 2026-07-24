@@ -48,7 +48,7 @@ export default function TermsConditionsScreen() {
 
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
         <Text style={[styles.lastUpdated, isDarkMode && styles.lastUpdatedDark]}>
-          Last updated: August 15, 2025
+          Last updated: July 24, 2026
         </Text>
 
         <Text style={[styles.description, isDarkMode && styles.descriptionDark]}>
@@ -56,15 +56,23 @@ export default function TermsConditionsScreen() {
         </Text>
 
         <Text style={[styles.sectionTitle, isDarkMode && styles.sectionTitleDark]}>
-          Subscription Plans:
+          Premium Subscription (auto-renewing):
         </Text>
 
         <View style={styles.bulletList}>
-          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Weekly: $4.99 (7 days)</Text>
-          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Monthly: $9.99 (30 days)</Text>
-          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• 3-Month: $39.99 (90 days)</Text>
-          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• 6-Month: $69.99 (180 days)</Text>
-          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Annual: $99.00 (365 days)</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Monthly: $9.99/month</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• Annual: $99.00/year</Text>
+        </View>
+
+        <Text style={[styles.sectionTitle, isDarkMode && styles.sectionTitleDark]}>
+          Traveler Passes (one-time purchase, does not auto-renew):
+        </Text>
+
+        <View style={styles.bulletList}>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• 1 Week Pass: $9.99 (7 days)</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• 1 Month Pass: $19.99 (30 days)</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• 3 Month Pass: $39.99 (90 days)</Text>
+          <Text style={[styles.bulletPoint, isDarkMode && styles.bulletPointDark]}>• 6 Month Pass: $69.99 (180 days)</Text>
         </View>
 
         <Text style={[styles.sectionTitle, isDarkMode && styles.sectionTitleDark]}>

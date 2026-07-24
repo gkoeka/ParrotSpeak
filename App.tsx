@@ -35,7 +35,6 @@ import AnalyticsScreen from "./screens/AnalyticsScreen";
 import SettingsScreen from "./screens/SettingsScreen";
 import AuthScreen from "./screens/AuthScreen";
 import ProfileScreen from "./screens/ProfileScreen";
-import SubscriptionPlansScreen from "./screens/SubscriptionPlansScreen";
 import PasswordResetScreen from "./screens/PasswordResetScreen";
 import NewPasswordScreen from "./screens/NewPasswordScreen";
 import FeedbackScreen from "./screens/FeedbackScreen";
@@ -61,7 +60,6 @@ export type RootStackParamList = {
   Analytics: undefined;
   Settings: undefined;
   Profile: undefined;
-  SubscriptionPlans: undefined;
   Pricing: undefined;
   Checkout: { plan: string; amount: number; interval: string };
   Feedback: undefined;

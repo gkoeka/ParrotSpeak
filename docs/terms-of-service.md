@@ -1,6 +1,6 @@
 # Terms of Service
 
-**Last updated: July 14, 2025**
+**Last updated: July 24, 2026**
 
 ## 1. Acceptance of Terms
 By accessing or using ParrotSpeak ("the Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, do not use the Service.
@@ -22,12 +22,17 @@ ParrotSpeak is an AI-powered voice translation application that enables real-tim
 ## 4. Subscription Terms
 
 ### 4.1 Subscription Plans
-ParrotSpeak offers various subscription plans:
-- Weekly: $4.99 (7 days)
-- Monthly: $9.99 (30 days)
-- 3-Month: $39.99 (90 days)
-- 6-Month: $69.99 (180 days)
-- Annual: $99.00 (365 days)
+ParrotSpeak offers a Premium Subscription (auto-renewing) and one-time, non-renewing Traveler Passes:
+
+**Premium Subscription (auto-renewing):**
+- Monthly: $9.99/month
+- Annual: $99.00/year
+
+**Traveler Passes (one-time purchase, does not auto-renew):**
+- 1 Week Pass: $9.99 (7 days)
+- 1 Month Pass: $19.99 (30 days)
+- 3 Month Pass: $39.99 (90 days)
+- 6 Month Pass: $69.99 (180 days)
 
 ### 4.2 Billing and Payment
 - All purchases are processed through app store billing (Google Play Store or Apple App Store)

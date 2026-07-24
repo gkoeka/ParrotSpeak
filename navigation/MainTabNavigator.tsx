@@ -13,7 +13,6 @@ import ConversationsListScreen from '../screens/ConversationsListScreen';
 import AnalyticsScreen from '../screens/AnalyticsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import SubscriptionPlansScreen from '../screens/SubscriptionPlansScreen';
 import PricingScreen from '../screens/PricingScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
 import FeedbackScreen from '../screens/FeedbackScreen';
@@ -45,7 +44,6 @@ export type HistoryStackParamList = {
 export type SettingsStackParamList = {
   Settings: undefined;
   Profile: undefined;
-  SubscriptionPlans: undefined;
   Pricing: undefined;
   Checkout: { plan: string; amount: number; interval: string };
   Analytics: undefined;
@@ -111,7 +109,6 @@ function SettingsStackNavigator() {
     >
       <SettingsStack.Screen name="Settings" component={SettingsScreen} />
       <SettingsStack.Screen name="Profile" component={ProfileScreen} />
-      <SettingsStack.Screen name="SubscriptionPlans" component={SubscriptionPlansScreen} />
       <SettingsStack.Screen name="Pricing" component={PricingScreen} />
       <SettingsStack.Screen name="Checkout" component={CheckoutScreen} />
       <SettingsStack.Screen name="Analytics" component={AnalyticsScreen} />
