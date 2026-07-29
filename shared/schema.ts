@@ -1,7 +1,7 @@
-import { pgTable, text, serial, boolean, timestamp, numeric, decimal, integer, json, jsonb, varchar, index } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, boolean, timestamp, numeric, decimal, integer, json, jsonb, varchar, index, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 // Session table for authentication
 export const sessions = pgTable("sessions", {
@@ -338,3 +338,34 @@ export const adminAuthTokensRelations = relations(adminAuthTokens, ({ one }) => 
 export const insertAdminAuthTokenSchema = createInsertSchema(adminAuthTokens);
 export type InsertAdminAuthToken = z.infer<typeof insertAdminAuthTokenSchema>;
 export type AdminAuthToken = typeof adminAuthTokens.$inferSelect;
+
+// Per-turn conversation performance metrics (speech-to-text/translate/TTS timing).
+// Written via raw SQL from server/services/simple-metrics.ts, not through this
+// Drizzle table object directly — kept here so the table is tracked by drizzle-kit
+// and shows up in type-checked schema tooling. Column types (native uuid, no FK
+// constraints) mirror the original design in server/db/migrations/2025_01_create_conversation_metrics.sql;
+// note conversation_id/user_id can't carry real FKs since conversations.id/users.id
+// aren't uuid-typed columns.
+export const conversationMetrics = pgTable("conversation_metrics", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  conversationId: uuid("conversation_id").notNull(),
+  turnId: uuid("turn_id"),
+  userId: uuid("user_id"),
+  recordMs: integer("record_ms"),
+  fileBytes: integer("file_bytes"),
+  whisperMs: integer("whisper_ms"),
+  translateMs: integer("translate_ms"),
+  ttsMs: integer("tts_ms"),
+  detectedLang: text("detected_lang"),
+  targetLang: text("target_lang"),
+  voiceUsed: text("voice_used"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  wasCompleted: boolean("was_completed").default(false),
+  totalMessages: integer("total_messages").default(0),
+}, (table) => ({
+  conversationIdx: index("idx_conv_metrics_conversation").on(table.conversationId, table.createdAt),
+}));
+
+export const insertConversationMetricSchema = createInsertSchema(conversationMetrics);
+export type InsertConversationMetric = z.infer<typeof insertConversationMetricSchema>;
+export type ConversationMetric = typeof conversationMetrics.$inferSelect;

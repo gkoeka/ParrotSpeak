@@ -3,6 +3,7 @@ import { API_BASE_URL } from '../api/config';
 import { mobileFetch } from '../utils/networkUtils';
 import { translationCache } from '../utils/translationCache';
 import { getAuthToken } from './authToken';
+import { FALLBACK_LANGUAGES } from '../shared/fallbackLanguages';
 
 // Headers for mobile API requests
 const requestHeaders = {
@@ -56,57 +57,8 @@ export async function getLanguages(): Promise<Language[]> {
   } catch (error) {
     console.error('Error fetching languages from API:', error);
     
-    // Fallback to essential languages if API fails
-    return [
-      {
-        code: "en",
-        name: "English",
-        country: "United States",
-        flag: "https://flagcdn.com/us.svg",
-        nativeName: "English",
-        speechSupported: true,
-        speechToTextSupported: true,
-        textToSpeechSupported: true,
-        translationQuality: 'high',
-        popularity: 10
-      },
-      {
-        code: "es",
-        name: "Spanish",
-        country: "Spain",
-        flag: "https://flagcdn.com/es.svg",
-        nativeName: "Español",
-        speechSupported: true,
-        speechToTextSupported: true,
-        textToSpeechSupported: true,
-        translationQuality: 'high',
-        popularity: 9
-      },
-      {
-        code: "fr",
-        name: "French",
-        country: "France",
-        flag: "https://flagcdn.com/fr.svg",
-        nativeName: "Français",
-        speechSupported: true,
-        speechToTextSupported: true,
-        textToSpeechSupported: true,
-        translationQuality: 'high',
-        popularity: 8
-      },
-      {
-        code: "de",
-        name: "German",
-        country: "Germany",
-        flag: "https://flagcdn.com/de.svg",
-        nativeName: "Deutsch",
-        speechSupported: true,
-        speechToTextSupported: true,
-        textToSpeechSupported: true,
-        translationQuality: 'high',
-        popularity: 7
-      }
-    ];
+    // Fallback to the shared minimal language list if the API is unreachable
+    return FALLBACK_LANGUAGES;
   }
 }
 
@@ -139,13 +91,8 @@ export async function getLanguagesWithSpeechSupport(): Promise<Language[]> {
   } catch (error) {
     console.error('Error fetching speech-supported languages:', error);
     
-    // Fallback to major languages with confirmed speech support
-    return [
-      { code: "en", name: "English", nativeName: "English", speechSupported: true },
-      { code: "es", name: "Spanish", nativeName: "Español", speechSupported: true },
-      { code: "fr", name: "French", nativeName: "Français", speechSupported: true },
-      { code: "de", name: "German", nativeName: "Deutsch", speechSupported: true }
-    ];
+    // Fallback to the shared minimal language list (all entries have speech support)
+    return FALLBACK_LANGUAGES;
   }
 }
 

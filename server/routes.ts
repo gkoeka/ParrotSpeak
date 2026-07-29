@@ -18,6 +18,7 @@ import { requireAuth, requireSubscription, checkSubscriptionStatus } from "./aut
 import * as mfaService from "./services/mfa";
 import { db } from "@db";
 import { users, conversations, messages, userFeedback } from "@shared/schema";
+import { FALLBACK_LANGUAGES } from "@shared/fallbackLanguages";
 import { InternalAnalyticsService } from "./services/internal-analytics";
 import { SimpleMetricsService } from "./services/simple-metrics";
 import { eq } from "drizzle-orm";
@@ -582,32 +583,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error loading language configurations:', error);
       
-      // Fallback to basic language list if configuration fails
-      const basicLanguages = [
-        { code: 'en', name: 'English', nativeName: 'English', country: 'United States', flag: 'https://flagcdn.com/us.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 10 },
-        { code: 'es', name: 'Spanish', nativeName: 'Español', country: 'Spain', flag: 'https://flagcdn.com/es.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 9 },
-        { code: 'fr', name: 'French', nativeName: 'Français', country: 'France', flag: 'https://flagcdn.com/fr.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 8 },
-        { code: 'de', name: 'German', nativeName: 'Deutsch', country: 'Germany', flag: 'https://flagcdn.com/de.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 7 },
-        { code: 'it', name: 'Italian', nativeName: 'Italiano', country: 'Italy', flag: 'https://flagcdn.com/it.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 6 },
-        { code: 'pt', name: 'Portuguese', nativeName: 'Português', country: 'Brazil', flag: 'https://flagcdn.com/br.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 6 },
-        { code: 'ja', name: 'Japanese', nativeName: '日本語', country: 'Japan', flag: 'https://flagcdn.com/jp.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 8 },
-        { code: 'ko', name: 'Korean', nativeName: '한국어', country: 'South Korea', flag: 'https://flagcdn.com/kr.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 7 },
-        { code: 'zh', name: 'Chinese', nativeName: '中文', country: 'China', flag: 'https://flagcdn.com/cn.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 9 },
-        { code: 'ru', name: 'Russian', nativeName: 'Русский', country: 'Russia', flag: 'https://flagcdn.com/ru.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 7 },
-        { code: 'ar', name: 'Arabic', nativeName: 'العربية', country: 'Saudi Arabia', flag: 'https://flagcdn.com/sa.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 8 },
-        { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', country: 'India', flag: 'https://flagcdn.com/in.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'high', popularity: 8 },
-        { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', country: 'Netherlands', flag: 'https://flagcdn.com/nl.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'medium', popularity: 5 },
-        { code: 'pl', name: 'Polish', nativeName: 'Polski', country: 'Poland', flag: 'https://flagcdn.com/pl.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'medium', popularity: 5 },
-        { code: 'tr', name: 'Turkish', nativeName: 'Türkçe', country: 'Turkey', flag: 'https://flagcdn.com/tr.svg', speechSupported: true, speechToTextSupported: true, textToSpeechSupported: true, translationQuality: 'medium', popularity: 5 }
-      ];
-      
+      // Fallback to the shared minimal language list if the full configuration fails to load
       res.json({
-        languages: basicLanguages,
+        languages: FALLBACK_LANGUAGES,
         meta: {
-          total: basicLanguages.length,
-          withSpeechSupport: basicLanguages.length,
+          total: FALLBACK_LANGUAGES.length,
+          withSpeechSupport: FALLBACK_LANGUAGES.length,
           withoutSpeechSupport: 0,
-          filtered: basicLanguages.length,
+          filtered: FALLBACK_LANGUAGES.length,
           fallback: true
         }
       });

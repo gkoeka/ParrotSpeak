@@ -134,7 +134,7 @@ See `CLAUDE.md` for the full architecture breakdown, including known dead code p
 
 Rate limiting, security headers (`helmet`), input validation, and injection-prevention tests are in place and covered by the scripts above and by `.github/workflows/security-tests.yml`. Report vulnerabilities to security@parrotspeak.com rather than filing a public issue.
 
-Crash/error reporting (Sentry, mobile + backend), CI type-checking/linting, and closed-by-default IAP receipt validation are all wired up — see `CLAUDE.md`'s "Known Issues & Landmines" for exact status and any caveats before assuming a given piece is fully configured in a specific environment. **Not yet in place:** Row Level Security on the Supabase database — deferred, tracked as an open item in `CLAUDE.md`.
+Crash/error reporting (Sentry, mobile + backend), CI type-checking/linting, closed-by-default IAP receipt validation, and Row Level Security on the Supabase database are all wired up — see `CLAUDE.md`'s "Known Issues & Landmines" for exact status and any caveats before assuming a given piece is fully configured in a specific environment.
 
 ## Contributing
 
