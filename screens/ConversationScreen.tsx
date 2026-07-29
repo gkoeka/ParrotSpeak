@@ -20,6 +20,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useParticipants } from '../contexts/ParticipantsContext';
 import { Ionicons } from '@expo/vector-icons';
 import { API_BASE_URL } from '../api/config';
+import { getAuthToken } from '../api/authToken';
 import { getSupportedLanguages } from '../constants/languageConfiguration';
 import { LanguagePreferencesStorage } from '../utils/languagePreferences';
 import { configureNavigationBar } from '../utils/navigationBarConfig';
@@ -214,11 +215,15 @@ export default function ConversationScreen() {
       setIsLoading(true);
       setError(null);
 
+      const token = await getAuthToken();
       const response = await fetch(
         `${API_BASE_URL}/api/conversations/${conversationId}`,
         {
           credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
         }
       );
 

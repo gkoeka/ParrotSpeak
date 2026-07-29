@@ -164,10 +164,9 @@ export const storage = {
     return updated;
   },
   
-  async getConversations(userId?: number) {
-    const whereClause = userId ? eq(conversations.userId, userId) : undefined;
+  async getConversations(userId: number) {
     const conversationList = await db.query.conversations.findMany({
-      where: whereClause,
+      where: eq(conversations.userId, userId),
       orderBy: [desc(conversations.updatedAt)],
       with: {
         messages: true
@@ -234,15 +233,25 @@ export const storage = {
     return messageId;
   },
   
-  async deleteConversation(id: string) {
+  async deleteConversation(id: string, userId: number) {
+    // Only delete if this conversation actually belongs to userId - returns
+    // false (no-op) rather than deleting someone else's conversation.
+    const [owned] = await db.select({ id: conversations.id })
+      .from(conversations)
+      .where(and(eq(conversations.id, id), eq(conversations.userId, userId)));
+
+    if (!owned) {
+      return false;
+    }
+
     // Delete all messages first due to foreign key constraint
     await db.delete(messages)
       .where(eq(messages.conversationId, id));
-    
+
     // Then delete the conversation
     await db.delete(conversations)
       .where(eq(conversations.id, id));
-    
+
     return true;
   },
   
@@ -290,10 +299,9 @@ export const storage = {
   },
 
   // Voice profile management
-  async getVoiceProfiles(userId?: number) {
-    const whereClause = userId ? eq(voiceProfiles.userId, userId) : undefined;
+  async getVoiceProfiles(userId: number) {
     return db.query.voiceProfiles.findMany({
-      where: whereClause,
+      where: eq(voiceProfiles.userId, userId),
       orderBy: [desc(voiceProfiles.isDefault), voiceProfiles.name]
     });
   },
@@ -419,47 +427,41 @@ export const storage = {
   },
 
   // Speech settings management
-  async getSpeechSettings(userId?: number) {
-    // Get settings for specific user or first record if no user specified
-    const whereClause = userId ? eq(speechSettings.userId, userId) : undefined;
+  async getSpeechSettings(userId: number) {
     const settings = await db.query.speechSettings.findFirst({
-      where: whereClause
+      where: eq(speechSettings.userId, userId)
     });
-    
+
     if (settings) {
       return settings;
     }
 
     // If no settings exist for user, create default settings
-    if (userId) {
-      // Get the default voice profile for this user
-      const defaultProfile = await db.query.voiceProfiles.findFirst({
-        where: eq(voiceProfiles.userId, userId) && eq(voiceProfiles.isDefault, true)
-      });
+    // Get the default voice profile for this user
+    const defaultProfile = await db.query.voiceProfiles.findFirst({
+      where: and(eq(voiceProfiles.userId, userId), eq(voiceProfiles.isDefault, true))
+    });
 
-      const [newSettings] = await db.insert(speechSettings)
-        .values({
-          id: uuidv4(),
-          userId: userId,
-          autoPlay: true,
-          useProfileForLanguage: true,
-          defaultProfileId: defaultProfile?.id || null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        })
-        .returning();
-        
-      return newSettings;
-    }
+    const [newSettings] = await db.insert(speechSettings)
+      .values({
+        id: uuidv4(),
+        userId: userId,
+        autoPlay: true,
+        useProfileForLanguage: true,
+        defaultProfileId: defaultProfile?.id || null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      })
+      .returning();
 
-    return null;
+    return newSettings;
   },
 
   async updateSpeechSettings(updates: {
     autoPlay?: boolean;
     useProfileForLanguage?: boolean;
     defaultProfileId?: string | null;
-  }, userId?: number) {
+  }, userId: number) {
     // Get settings or create if they don't exist
     const settings = await this.getSpeechSettings(userId);
 
@@ -469,12 +471,8 @@ export const storage = {
 
     // If updating default profile, ensure it exists and belongs to user
     if (updates.defaultProfileId) {
-      const whereClause = userId 
-        ? and(eq(voiceProfiles.id, updates.defaultProfileId), eq(voiceProfiles.userId, userId))
-        : eq(voiceProfiles.id, updates.defaultProfileId);
-        
       const profileExists = await db.query.voiceProfiles.findFirst({
-        where: whereClause
+        where: and(eq(voiceProfiles.id, updates.defaultProfileId), eq(voiceProfiles.userId, userId))
       });
 
       if (!profileExists) {

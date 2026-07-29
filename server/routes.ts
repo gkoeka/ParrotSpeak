@@ -237,19 +237,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API Routes
-  app.get('/api/conversations', async (req: Request, res: Response) => {
+  app.get('/api/conversations', requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
-      
-      // For authenticated users, check subscription status
-      if (userId) {
-        const { hasSubscription } = await checkSubscriptionStatus(userId);
-        if (!hasSubscription) {
-          // Return empty array for expired/inactive users to hide conversation history
-          return res.json([]);
-        }
+      const userId = req.user!.id;
+
+      const { hasSubscription } = await checkSubscriptionStatus(userId);
+      if (!hasSubscription) {
+        // Return empty array for expired/inactive users to hide conversation history
+        return res.json([]);
       }
-      
+
       const conversations = await storage.getConversations(userId);
       res.json(conversations);
     } catch (error) {
@@ -283,12 +280,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/conversations/:id', requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
+      const userId = req.user!.id;
       const conversation = await storage.getConversation(req.params.id);
-      if (!conversation) {
+      if (!conversation || conversation.userId !== userId) {
+        // Same 404 whether the conversation doesn't exist or belongs to someone
+        // else - don't confirm to a caller that a given ID exists at all.
         return res.status(404).json({ message: 'Conversation not found' });
       }
-      
+
       // Group messages by pairs (user message + translation response)
       const pairedMessages: any[] = [];
       const processedMessages = conversation.messages || [];
@@ -366,8 +365,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const conversationId = req.params.id;
-      const userId = req.user?.id;
+      const userId = req.user!.id;
       const startTime = Date.now();
+
+      const conversation = await storage.getConversation(conversationId);
+      if (!conversation || conversation.userId !== userId) {
+        return res.status(404).json({ message: 'Conversation not found' });
+      }
 
       // Save the original message
       const messageId = await storage.saveMessage(
@@ -436,9 +440,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/conversations/:id', async (req: Request, res: Response) => {
+  app.delete('/api/conversations/:id', requireAuth, async (req: Request, res: Response) => {
     try {
-      await storage.deleteConversation(req.params.id);
+      const deleted = await storage.deleteConversation(req.params.id, req.user!.id);
+      if (!deleted) {
+        return res.status(404).json({ message: 'Conversation not found' });
+      }
       res.status(204).send();
     } catch (error) {
       console.error('Delete conversation error:', error);
@@ -447,9 +454,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Voice profiles routes
-  app.get('/api/voice-profiles', async (req: Request, res: Response) => {
+  app.get('/api/voice-profiles', requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
+      const userId = req.user!.id;
       const profiles = await storage.getVoiceProfiles(userId);
       res.json(profiles);
     } catch (error) {
@@ -459,9 +466,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Speech settings routes
-  app.get('/api/speech-settings', async (req: Request, res: Response) => {
+  app.get('/api/speech-settings', requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
+      const userId = req.user!.id;
       const settings = await storage.getSpeechSettings(userId);
       res.json(settings);
     } catch (error) {

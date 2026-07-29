@@ -8,11 +8,12 @@ import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../App';
 import { API_BASE_URL } from '../api/config';
+import { getAuthToken } from '../api/authToken';
 
 type ProfileNavigationProp = StackNavigationProp<RootStackParamList, 'Profile'>;
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
   const { isDarkMode } = useTheme();
   const navigation = useNavigation<ProfileNavigationProp>();
   const [name, setName] = useState(user?.name || '');
@@ -44,7 +45,7 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await logout();
+              await signOut();
               navigation.navigate('Auth');
             } catch (error) {
               Alert.alert('Error', 'Failed to sign out');
@@ -67,17 +68,19 @@ export default function ProfileScreen() {
           onPress: async () => {
             setDeleteLoading(true);
             try {
+              const token = await getAuthToken();
               const response = await fetch(`${API_BASE_URL}/api/user/delete`, {
                 method: 'DELETE',
                 headers: {
                   'Content-Type': 'application/json',
+                  ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
                 credentials: 'include',
               });
 
               if (response.ok) {
                 Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
-                await logout();
+                await signOut();
                 navigation.navigate('Auth');
               } else {
                 throw new Error('Failed to delete account');

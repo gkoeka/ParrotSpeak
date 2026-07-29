@@ -1,4 +1,4 @@
-import { SecureStorage } from './secureStorage';
+import { getAuthToken } from '../api/authToken';
 import { API_BASE_URL } from '../config/api';
 
 interface FetchOptions extends RequestInit {
@@ -6,18 +6,18 @@ interface FetchOptions extends RequestInit {
 }
 
 /**
- * Enhanced fetch wrapper with automatic JWT token handling and retry logic
+ * Enhanced fetch wrapper with automatic Clerk token handling
  */
 export async function authenticatedFetch(
-  url: string, 
+  url: string,
   options: FetchOptions = {}
 ): Promise<Response> {
   const { requireAuth = true, ...fetchOptions } = options;
-  
+
   // Get auth token if required
   let token: string | null = null;
   if (requireAuth) {
-    token = await SecureStorage.getAuthToken();
+    token = await getAuthToken();
   }
   
   // Set up headers
@@ -36,48 +36,6 @@ export async function authenticatedFetch(
     headers,
     credentials: 'include',
   });
-  
-  // Handle 401 errors by clearing the token
-  if (response.status === 401 && requireAuth) {
-    console.log('Authentication failed, clearing token');
-    await SecureStorage.clearAuthToken();
-    await SecureStorage.clearUserData();
-  }
-  
+
   return response;
-}
-
-/**
- * Parse JWT token to check expiration
- */
-export function isTokenExpired(token: string): boolean {
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const expiry = payload.exp * 1000; // Convert to milliseconds
-    return Date.now() > expiry;
-  } catch (error) {
-    console.error('Error parsing token:', error);
-    return true; // Assume expired if can't parse
-  }
-}
-
-/**
- * Check and refresh token if needed
- */
-export async function validateAndRefreshToken(): Promise<string | null> {
-  const token = await SecureStorage.getAuthToken();
-  
-  if (!token) {
-    return null;
-  }
-  
-  // Check if token is expired
-  if (isTokenExpired(token)) {
-    console.log('Token expired, clearing auth');
-    await SecureStorage.clearAuthToken();
-    await SecureStorage.clearUserData();
-    return null;
-  }
-  
-  return token;
 }

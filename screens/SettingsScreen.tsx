@@ -21,7 +21,7 @@ type SettingsNavigationProp = CompositeNavigationProp<
 
 export default function SettingsScreen() {
   const navigation = useNavigation<SettingsNavigationProp>();
-  const { logout, user } = useAuth();
+  const { signOut, user } = useAuth();
   const { isDarkMode, toggleDarkMode } = useTheme();
 
   const { participants, setAutoDetectSpeakers } = useParticipants();
@@ -276,7 +276,7 @@ export default function SettingsScreen() {
           </View>
         </View>
         
-        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+        <TouchableOpacity style={styles.logoutButton} onPress={signOut}>
           <Ionicons name="log-out-outline" size={24} color="#fff" style={styles.logoutIcon} />
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>

@@ -6,6 +6,7 @@
 import { Platform, Alert } from 'react-native';
 import * as IAP from 'react-native-iap';
 import { reportError } from '../utils/errorReporting';
+import { getAuthToken } from '../api/authToken';
 
 // Product IDs for different subscription types
 export const PRODUCT_IDS = {
@@ -173,10 +174,12 @@ export class InAppPurchaseService {
   private async validatePurchase(purchase: any): Promise<void> {
     try {
       const { API_BASE_URL } = await import('../api/config');
+      const token = await getAuthToken();
       const response = await fetch(`${API_BASE_URL}/api/validate-purchase`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         credentials: 'include',
         body: JSON.stringify({
