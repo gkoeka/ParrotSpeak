@@ -1,143 +1,31 @@
-import passport from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
-import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import { Express, Request } from "express";
-import session from "express-session";
-import { db } from "../db";
-import { users } from "@shared/schema";
-import { verifyPassword, findOrCreateGoogleUser, getUserById } from "./services/auth.js";
-import connectPgSimple from "connect-pg-simple";
-import { eq } from "drizzle-orm";
-
-// Import the standardized User type
-import { User as UserType } from "@shared/schema";
+import { Request } from "express";
 import { reportError } from "./utils/errorReporting";
+import { User as UserType } from "@shared/schema";
 
-// Extend Express types to use consistent camelCase schema
+// Extend Express types to use consistent camelCase schema.
+// This used to come from @types/passport's own ambient declarations
+// (which also added `user` to Request); now that Passport is gone,
+// both pieces need to be declared here directly.
 declare global {
   namespace Express {
-    // Use the standardized User type from schema
-    // All properties use camelCase naming convention
-    interface User extends UserType {
-      // Express sessions don't need password field for security
+    // Use the standardized User type from schema, minus password
+    interface User extends Omit<UserType, 'password'> {
+      // Express requests don't need password field for security
       password?: never;
     }
+    interface Request {
+      user?: User;
+    }
   }
 }
 
-export function setupAuth(app: Express) {
-  // Set up session store with PostgreSQL
-  const PgSession = connectPgSimple(session);
-  
-  // Configure session middleware
-  const sessionOptions: session.SessionOptions = {
-    store: new PgSession({
-      // connect-pg-simple manages its own internal pg.Pool from this
-      // connection string — it needs the pg-compatible interface, which
-      // the app's own Drizzle client (postgres-js, since the Neon->Supabase
-      // driver swap) no longer provides. This is independent of Drizzle's
-      // connection and works with any standard Postgres connection string.
-      conString: process.env.DATABASE_URL,
-      tableName: 'sessions', // Uses the sessions table defined in schema.ts
-      createTableIfMissing: true
-    }),
-    secret: (() => {
-      if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
-        throw new Error('SESSION_SECRET environment variable is required in production');
-      }
-      return process.env.SESSION_SECRET || 'parrot-speak-dev-secret-change-in-production';
-    })(),
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === 'production',
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-    }
-  };
-
-  // Initialize session
-  app.use(session(sessionOptions));
-  app.use(passport.initialize());
-  app.use(passport.session());
-
-  // Configure local strategy for email/password login
-  passport.use(new LocalStrategy(
-    { usernameField: 'email' },
-    async (email, password, done) => {
-      try {
-        // Find user by email
-        const user = await db.query.users.findFirst({
-          where: eq(users.email, email)
-        });
-
-        if (!user || !user.password) {
-          return done(null, false, { message: 'Invalid email or password' });
-        }
-
-        // Verify password
-        const isValidPassword = await verifyPassword(password, user.password);
-        if (!isValidPassword) {
-          return done(null, false, { message: 'Invalid email or password' });
-        }
-
-        // Password is valid, return user without password
-        const { password: _, ...userWithoutPassword } = user;
-        return done(null, userWithoutPassword as Express.User);
-      } catch (error) {
-        return done(error);
-      }
-    }
-  ));
-
-  // Configure Google strategy if credentials provided
-  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-    passport.use(new GoogleStrategy({
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "/api/auth/google/callback",
-      scope: ['profile', 'email']
-    }, async (accessToken, refreshToken, profile, done) => {
-      try {
-        const user = await findOrCreateGoogleUser(profile.id, profile);
-        // Remove password for security before creating session user
-        const { password: _, ...sessionUser } = user;
-        return done(null, sessionUser as Express.User);
-      } catch (error) {
-        return done(error);
-      }
-    }));
-  }
-
-  // User serialization and deserialization for sessions
-  passport.serializeUser((user, done) => {
-    done(null, user.id);
-  });
-
-  passport.deserializeUser(async (id: number, done) => {
-    try {
-      const user = await getUserById(id);
-      // Remove password for security before creating session user
-      const { password: _, ...sessionUser } = user || {};
-      done(null, sessionUser as Express.User);
-    } catch (error) {
-      done(error);
-    }
-  });
-
-  // Authentication middleware to protect routes
-  app.use((req, res, next) => {
-    // Make isAuthenticated available to all templates/views
-    res.locals.isAuthenticated = req.isAuthenticated();
-    res.locals.user = req.user;
-    next();
-  });
-}
+// req.user is populated by clerkAuthMiddleware (server/middleware/clerk-auth.ts)
+// for any Clerk-authenticated request. This file only gates access on that -
+// there is no separate session/login system here.
 
 // Middleware to check if user is authenticated
-// Supports both Clerk JWT tokens (set by clerkAuthMiddleware) and legacy Passport sessions
 export function requireAuth(req: Request, res: any, next: any) {
-  if (!req.user && !req.isAuthenticated()) {
+  if (!req.user) {
     return res.status(401).json({ message: 'Authentication required' });
   }
   next();
@@ -145,10 +33,10 @@ export function requireAuth(req: Request, res: any, next: any) {
 
 // Middleware to check subscription status
 export async function requireSubscription(req: Request, res: any, next: any) {
-  if (!req.isAuthenticated()) {
+  if (!req.user) {
     return res.status(401).json({ message: 'Authentication required' });
   }
-  
+
   const user = req.user;
 
   // Get fresh subscription data from database to avoid session cache issues
@@ -156,22 +44,22 @@ export async function requireSubscription(req: Request, res: any, next: any) {
     const { db } = await import("@db");
     const { users } = await import("@shared/schema");
     const { eq } = await import("drizzle-orm");
-    
+
     const freshUser = await db.query.users.findFirst({
       where: eq(users.id, user.id)
     });
-    
+
     if (!freshUser) {
       return res.status(403).json({ message: 'User not found' });
     }
-    
+
     // Check subscription status with fresh data from database
     const { hasValidAccess } = await import("./services/auth.js");
-    
+
     if (!hasValidAccess(freshUser)) {
       return res.status(403).json({ message: 'Active subscription or preview access required' });
     }
-    
+
     next();
   } catch (error) {
     console.error('Error checking subscription status:', error);
@@ -186,25 +74,25 @@ export async function checkSubscriptionStatus(userId: number): Promise<{ hasSubs
     const { db } = await import("@db");
     const { users } = await import("@shared/schema");
     const { eq } = await import("drizzle-orm");
-    
+
     const user = await db.query.users.findFirst({
       where: eq(users.id, userId)
     });
-    
+
     if (!user) {
       return { hasSubscription: false, error: 'User not found' };
     }
-    
+
     // Check if user has active subscription
     if (!user.subscriptionStatus || user.subscriptionStatus !== 'active') {
       return { hasSubscription: false, error: 'Active subscription required' };
     }
-    
+
     // Check if subscription has expired
     if (user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt) < new Date()) {
       return { hasSubscription: false, error: 'Subscription has expired' };
     }
-    
+
     return { hasSubscription: true };
   } catch (error) {
     console.error('Error checking subscription status:', error);

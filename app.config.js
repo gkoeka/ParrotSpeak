@@ -15,7 +15,9 @@ module.exports = {
     resizeMode: "contain",
     backgroundColor: "#ffffff"
   },
-  updates: { fallbackToCacheTimeout: 0 },
+  // OTA updates deliberately disabled (see CLAUDE.md) - a store build won't
+  // pick up JS-only changes without a new build.
+  updates: { enabled: false, fallbackToCacheTimeout: 0 },
   assetBundlePatterns: ["**/*"],
 
   ios: {

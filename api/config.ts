@@ -17,16 +17,6 @@ export { API_BASE_URL, API_CONFIG };
 
 // API Endpoints
 export const ENDPOINTS = {
-  // Auth endpoints
-  AUTH: {
-    LOGIN: "/api/auth/login",
-    REGISTER: "/api/auth/register",
-    GOOGLE: "/api/auth/google",
-    APPLE: "/api/auth/apple",
-    LOGOUT: "/api/auth/logout",
-    USER: "/api/auth/user",
-  },
-  
   // Conversation endpoints
   CONVERSATIONS: {
     LIST: "/api/conversations",

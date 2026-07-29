@@ -1,27 +1,6 @@
 import { db } from "../../db";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import bcrypt from "bcryptjs";
-
-/**
- * Generates a password hash
- * @param password Plain text password
- * @returns Hashed password
- */
-export async function hashPassword(password: string): Promise<string> {
-  const salt = await bcrypt.genSalt(10);
-  return bcrypt.hash(password, salt);
-}
-
-/**
- * Verifies a password against a hash
- * @param password Plain text password
- * @param hashedPassword Stored hashed password
- * @returns Boolean indicating if password matches
- */
-export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  return bcrypt.compare(password, hashedPassword);
-}
 
 /**
  * Gets a user by ID
@@ -33,94 +12,8 @@ export async function getUserById(id: number) {
     .select()
     .from(users)
     .where(eq(users.id, id));
-  
+
   return user;
-}
-
-/**
- * Gets a user by email
- * @param email User email
- * @returns User object or undefined
- */
-export async function getUserByEmail(email: string) {
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, email));
-  
-  return user;
-}
-
-/**
- * Finds or creates a user with Google credentials
- * @param googleId Google ID
- * @param googleProfile Google profile
- * @returns User object
- */
-export async function findOrCreateGoogleUser(
-  googleId: string,
-  googleProfile: {
-    email?: string;
-    displayName?: string;
-    photos?: Array<{ value: string }>;
-    name?: { givenName?: string; familyName?: string };
-  }
-) {
-  // First, check if user exists with this Google ID
-  const [existingUser] = await db
-    .select()
-    .from(users)
-    .where(eq(users.googleId, googleId));
-  
-  if (existingUser) {
-    return existingUser;
-  }
-  
-  // Then, check if user exists with this email
-  if (googleProfile.email) {
-    const [emailUser] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, googleProfile.email));
-    
-    if (emailUser) {
-      // Link Google ID to existing account
-      const [updatedUser] = await db
-        .update(users)
-        .set({
-          googleId,
-          profileImageUrl: googleProfile.photos?.[0]?.value || emailUser.profileImageUrl,
-          updatedAt: new Date()
-        })
-        .where(eq(users.id, emailUser.id))
-        .returning();
-      
-      return updatedUser;
-    }
-  }
-  
-  // Create new user with 3-day preview access
-  const previewExpiresAt = new Date();
-  previewExpiresAt.setDate(previewExpiresAt.getDate() + 3); // 3 days from now
-
-  const [newUser] = await db
-    .insert(users)
-    .values({
-      email: googleProfile.email || null,
-      googleId,
-      firstName: googleProfile.name?.givenName || '',
-      lastName: googleProfile.name?.familyName || null,
-      profileImageUrl: googleProfile.photos?.[0]?.value || null,
-      emailVerified: true,
-      previewExpiresAt,
-      previewStartedAt: new Date(),
-      hasUsedPreview: true,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    })
-    .returning();
-  
-  return newUser;
 }
 
 /**
@@ -132,7 +25,7 @@ export function hasValidPreviewAccess(user: any): boolean {
   if (!user.previewExpiresAt || user.hasUsedPreview === false) {
     return false;
   }
-  
+
   const now = new Date();
   return now < new Date(user.previewExpiresAt);
 }
@@ -147,147 +40,7 @@ export function hasValidAccess(user: any): boolean {
   if (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'lifetime') {
     return true;
   }
-  
+
   // Check preview access
   return hasValidPreviewAccess(user);
-}
-
-/**
- * Gets preview expiry warning status
- * @param user User object
- * @returns Object with warning status and hours remaining
- */
-export function getPreviewWarningStatus(user: any): { shouldShowWarning: boolean; hoursRemaining: number } {
-  if (!hasValidPreviewAccess(user)) {
-    return { shouldShowWarning: false, hoursRemaining: 0 };
-  }
-  
-  const now = new Date();
-  const expiryTime = new Date(user.previewExpiresAt);
-  const msRemaining = expiryTime.getTime() - now.getTime();
-  const hoursRemaining = Math.floor(msRemaining / (1000 * 60 * 60));
-  
-  // Show warning if less than 24 hours remaining
-  return {
-    shouldShowWarning: hoursRemaining <= 24 && hoursRemaining > 0,
-    hoursRemaining
-  };
-}
-
-/**
- * Register a new user
- * @param userData User registration data
- * @returns Registered user
- */
-export async function registerUser(userData: {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName?: string;
-}) {
-  // Check if email already exists
-  const existingUserByEmail = await getUserByEmail(userData.email);
-  if (existingUserByEmail) {
-    throw new Error("Email is already in use");
-  }
-
-
-
-  // Hash the password
-  const hashedPassword = await hashPassword(userData.password);
-
-  // Set up 3-day preview access for new users
-  const previewExpiresAt = new Date();
-  previewExpiresAt.setDate(previewExpiresAt.getDate() + 3); // 3 days from now
-
-  // Create the user
-  const [newUser] = await db
-    .insert(users)
-    .values({
-      email: userData.email,
-      password: hashedPassword,
-      firstName: userData.firstName,
-      lastName: userData.lastName || null,
-      emailVerified: false,
-      previewExpiresAt,
-      previewStartedAt: new Date(),
-      hasUsedPreview: true,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    })
-    .returning();
-
-  // Remove password from the returned user object
-  const { password, ...userWithoutPassword } = newUser;
-  return userWithoutPassword;
-}
-
-/**
- * Login a user
- * @param credentials User login credentials
- * @returns Authenticated user
- */
-export async function loginUser(credentials: { email: string; password: string }) {
-  // Get user by email
-  const user = await getUserByEmail(credentials.email);
-  if (!user || !user.password) {
-    throw new Error("Invalid email or password");
-  }
-
-  // Verify password
-  const isPasswordValid = await verifyPassword(credentials.password, user.password);
-  if (!isPasswordValid) {
-    throw new Error("Invalid email or password");
-  }
-
-  // Remove password from the returned user object
-  const { password, ...userWithoutPassword } = user;
-  return userWithoutPassword;
-}
-
-/**
- * Creates a new admin user for testing purposes
- * @param email Email for the admin user
- * @param password Password for the admin user
- * @returns Created user or error message
- */
-export async function createAdminUser(email: string, password: string): Promise<{ success: boolean; message: string; user?: any }> {
-  try {
-    // Check if user already exists
-    const existingUser = await getUserByEmail(email);
-    if (existingUser) {
-      return { success: false, message: "User with this email already exists." };
-    }
-    
-    // Hash the password
-    const hashedPassword = await hashPassword(password);
-    
-    // Create the admin user
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        email,
-        password: hashedPassword,
-        firstName: "Admin",
-        lastName: "User",
-        emailVerified: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
-      .returning();
-    
-    return { 
-      success: true, 
-      message: "Admin user created successfully.", 
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName
-      }
-    };
-  } catch (error) {
-    console.error("Error creating admin user:", error);
-    return { success: false, message: "Failed to create admin user. Please try again later." };
-  }
 }
