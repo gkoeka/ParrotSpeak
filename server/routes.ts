@@ -652,7 +652,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Change password endpoint
+  app.delete('/api/user/delete', requireAuth, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteUser(req.user!.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting user account:', error);
+      res.status(500).json({ error: 'Failed to delete account' });
+    }
+  });
+
   // Analytics consent management
   app.get('/api/analytics/consent', requireAuth, async (req: Request, res: Response) => {
     try {

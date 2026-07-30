@@ -1,7 +1,7 @@
 import { db } from "@db";
-import { conversations, messages, voiceProfiles, speechSettings, users } from "@shared/schema";
+import { conversations, messages, voiceProfiles, speechSettings, users, userFeedback, adminAuthTokens, conversationPatterns } from "@shared/schema";
 import { CreateVoiceProfileInput, UpdateVoiceProfileInput } from "@shared/types/speech";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, or, inArray } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import { encryptUserData, decryptUserData } from "./services/encryption";
 
@@ -497,6 +497,40 @@ export const storage = {
     return db.query.users.findFirst({
       where: eq(users.id, userId)
     });
+  },
+
+  // Permanently deletes a user and everything owned by them. Order matters -
+  // children must go before the tables they reference due to FK constraints
+  // (none of these relations are set up with onDelete: cascade).
+  async deleteUser(userId: number) {
+    await db.transaction(async (tx) => {
+      const userConversations = await tx.select({ id: conversations.id })
+        .from(conversations)
+        .where(eq(conversations.userId, userId));
+      const conversationIds = userConversations.map(c => c.id);
+
+      if (conversationIds.length > 0) {
+        await tx.delete(conversationPatterns)
+          .where(inArray(conversationPatterns.conversationId, conversationIds));
+        await tx.delete(messages)
+          .where(inArray(messages.conversationId, conversationIds));
+      }
+
+      // speechSettings references voiceProfiles.defaultProfileId, so it must
+      // be deleted before voiceProfiles.
+      await tx.delete(speechSettings).where(eq(speechSettings.userId, userId));
+      await tx.delete(voiceProfiles).where(eq(voiceProfiles.userId, userId));
+      await tx.delete(conversations).where(eq(conversations.userId, userId));
+      await tx.delete(userFeedback).where(eq(userFeedback.userId, userId));
+      // Both userId (target) and adminId (requester) columns are notNull FKs
+      // to users.id, so any row naming this user in either role must go too.
+      await tx.delete(adminAuthTokens)
+        .where(or(eq(adminAuthTokens.userId, userId), eq(adminAuthTokens.adminId, userId)));
+
+      await tx.delete(users).where(eq(users.id, userId));
+    });
+
+    return true;
   },
 
   async updateUserSubscription(userId: number, updates: {
