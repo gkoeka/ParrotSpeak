@@ -2,7 +2,7 @@ import type { LanguageConfiguration } from '../constants/languageConfiguration';
 
 // Minimal emergency fallback used only when the full LANGUAGE_CONFIGURATIONS
 // list can't be loaded (server: dynamic import failure; client: network failure).
-// Entries are copied verbatim from constants/languageConfiguration.ts's en/es-ES/fr/de
+// Entries are copied verbatim from constants/languageConfiguration.ts's en/es-ES/fr-FR/de-DE
 // records — keep these in sync manually if those four entries ever change there,
 // so the fallback path never hands out a language code the rest of the app doesn't recognize.
 export const FALLBACK_LANGUAGES: LanguageConfiguration[] = [
@@ -33,9 +33,9 @@ export const FALLBACK_LANGUAGES: LanguageConfiguration[] = [
     popularity: 9
   },
   {
-    code: "fr",
-    name: "French",
-    nativeName: "Français",
+    code: "fr-FR",
+    name: "French (France)",
+    nativeName: "Français (France)",
     country: "France",
     flag: "https://flagcdn.com/fr.svg",
     speechSupported: true,
@@ -46,9 +46,9 @@ export const FALLBACK_LANGUAGES: LanguageConfiguration[] = [
     popularity: 8
   },
   {
-    code: "de",
-    name: "German",
-    nativeName: "Deutsch",
+    code: "de-DE",
+    name: "German (Germany)",
+    nativeName: "Deutsch (Deutschland)",
     country: "Germany",
     flag: "https://flagcdn.com/de.svg",
     speechSupported: true,

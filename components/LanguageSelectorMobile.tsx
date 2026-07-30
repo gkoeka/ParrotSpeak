@@ -66,9 +66,12 @@ export default function LanguageSelector({
   // Enhanced flag mapping for all languages
   const getFlagEmoji = (language: any) => {
     const flagMap: { [key: string]: string } = {
-      'en': '🇺🇸', 'es-ES': '🇪🇸', 'es-419': '🇲🇽', 'fr': '🇫🇷', 'de': '🇩🇪',
-      'it': '🇮🇹', 'pt-BR': '🇧🇷', 'pt': '🇵🇹', 'ru': '🇷🇺', 'zh': '🇨🇳',
-      'ja': '🇯🇵', 'ko': '🇰🇷', 'ar': '🇸🇦', 'hi': '🇮🇳', 'nl': '🇳🇱',
+      'en': '🇺🇸', 'es-ES': '🇪🇸', 'es-419': '🇲🇽',
+      'fr-FR': '🇫🇷', 'fr-BE': '🇧🇪', 'fr-CH': '🇨🇭',
+      'de-DE': '🇩🇪', 'de-AT': '🇦🇹', 'de-CH': '🇨🇭',
+      'it': '🇮🇹', 'pt-BR': '🇧🇷', 'pt-PT': '🇵🇹', 'ru': '🇷🇺', 'zh': '🇨🇳',
+      'ja': '🇯🇵', 'ko': '🇰🇷', 'ar': '🇸🇦', 'hi': '🇮🇳',
+      'nl-NL': '🇳🇱', 'nl-BE': '🇧🇪',
       'sv': '🇸🇪', 'no': '🇳🇴', 'da': '🇩🇰', 'fi': '🇫🇮', 'pl': '🇵🇱',
       'tr': '🇹🇷', 'he': '🇮🇱', 'th': '🇹🇭', 'vi': '🇻🇳', 'uk': '🇺🇦',
       'cs': '🇨🇿', 'sk': '🇸🇰', 'hu': '🇭🇺', 'ro': '🇷🇴', 'bg': '🇧🇬',

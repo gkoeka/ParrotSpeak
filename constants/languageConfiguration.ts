@@ -35,6 +35,9 @@ export const getFlagEmoji = (code: string): string => {
   if (code === 'pt-PT') return '🇵🇹'; // European Portuguese
   if (code === 'zh-CN') return '🇨🇳'; // Simplified Chinese
   if (code === 'zh-TW') return '🇹🇼'; // Traditional Chinese
+  if (code === 'fr-BE' || code === 'nl-BE') return '🇧🇪'; // Belgian French/Flemish - Unicode has no Flanders flag emoji, Belgium is the closest real emoji
+  if (code === 'fr-CH' || code === 'de-CH') return '🇨🇭'; // Swiss French/German
+  if (code === 'de-AT') return '🇦🇹'; // Austrian German
   
   // Handle generic Spanish
   if (baseCode === 'es') {
@@ -108,9 +111,9 @@ export const LANGUAGE_CONFIGURATIONS: LanguageConfiguration[] = [
     popularity: 9
   },
   {
-    code: "fr",
-    name: "French",
-    nativeName: "Français",
+    code: "fr-FR",
+    name: "French (France)",
+    nativeName: "Français (France)",
     country: "France",
     flag: "https://flagcdn.com/fr.svg",
     speechSupported: true,
@@ -121,9 +124,35 @@ export const LANGUAGE_CONFIGURATIONS: LanguageConfiguration[] = [
     popularity: 8
   },
   {
-    code: "de",
-    name: "German",
-    nativeName: "Deutsch",
+    code: "fr-BE",
+    name: "French (Belgium)",
+    nativeName: "Français (Belgique)",
+    country: "Belgium",
+    flag: "https://flagcdn.com/be.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'high',
+    popularity: 5
+  },
+  {
+    code: "fr-CH",
+    name: "French (Switzerland)",
+    nativeName: "Français (Suisse)",
+    country: "Switzerland",
+    flag: "https://flagcdn.com/ch.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'high',
+    popularity: 5
+  },
+  {
+    code: "de-DE",
+    name: "German (Germany)",
+    nativeName: "Deutsch (Deutschland)",
     country: "Germany",
     flag: "https://flagcdn.com/de.svg",
     speechSupported: true,
@@ -132,6 +161,32 @@ export const LANGUAGE_CONFIGURATIONS: LanguageConfiguration[] = [
     voiceGender: 'neutral',
     translationQuality: 'high',
     popularity: 7
+  },
+  {
+    code: "de-AT",
+    name: "German (Austria)",
+    nativeName: "Deutsch (Österreich)",
+    country: "Austria",
+    flag: "https://flagcdn.com/at.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'high',
+    popularity: 5
+  },
+  {
+    code: "de-CH",
+    name: "German (Switzerland)",
+    nativeName: "Deutsch (Schweiz)",
+    country: "Switzerland",
+    flag: "https://flagcdn.com/ch.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'high',
+    popularity: 5
   },
   {
     code: "it",
@@ -147,9 +202,9 @@ export const LANGUAGE_CONFIGURATIONS: LanguageConfiguration[] = [
     popularity: 6
   },
   {
-    code: "pt",
-    name: "Portuguese",
-    nativeName: "Português",
+    code: "pt-BR",
+    name: "Portuguese (Brazil)",
+    nativeName: "Português (Brasil)",
     country: "Brazil",
     flag: "https://flagcdn.com/br.svg",
     speechSupported: true,
@@ -158,6 +213,19 @@ export const LANGUAGE_CONFIGURATIONS: LanguageConfiguration[] = [
     voiceGender: 'neutral',
     translationQuality: 'high',
     popularity: 6
+  },
+  {
+    code: "pt-PT",
+    name: "Portuguese (Portugal)",
+    nativeName: "Português (Portugal)",
+    country: "Portugal",
+    flag: "https://flagcdn.com/pt.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'high',
+    popularity: 5
   },
   {
     code: "ja",
@@ -187,8 +255,8 @@ export const LANGUAGE_CONFIGURATIONS: LanguageConfiguration[] = [
   },
   {
     code: "zh",
-    name: "Chinese",
-    nativeName: "中文",
+    name: "Mandarin",
+    nativeName: "普通话",
     country: "China",
     flag: "https://flagcdn.com/cn.svg",
     speechSupported: true,
@@ -240,7 +308,7 @@ export const LANGUAGE_CONFIGURATIONS: LanguageConfiguration[] = [
 
   // Tier 2: Good quality languages with most speech support
   {
-    code: "nl",
+    code: "nl-NL",
     name: "Dutch",
     nativeName: "Nederlands",
     country: "Netherlands",
@@ -251,6 +319,19 @@ export const LANGUAGE_CONFIGURATIONS: LanguageConfiguration[] = [
     voiceGender: 'neutral',
     translationQuality: 'high',
     popularity: 5
+  },
+  {
+    code: "nl-BE",
+    name: "Flemish",
+    nativeName: "Vlaams",
+    country: "Belgium",
+    flag: "https://upload.wikimedia.org/wikipedia/commons/2/2b/Flag_of_Flanders.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'high',
+    popularity: 4
   },
   {
     code: "pl",
@@ -621,6 +702,71 @@ export const LANGUAGE_CONFIGURATIONS: LanguageConfiguration[] = [
     popularity: 4
   },
   {
+    code: "ta",
+    name: "Tamil",
+    nativeName: "தமிழ்",
+    country: "India",
+    flag: "https://flagcdn.com/in.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'medium',
+    popularity: 4
+  },
+  {
+    code: "mr",
+    name: "Marathi",
+    nativeName: "मराठी",
+    country: "India",
+    flag: "https://flagcdn.com/in.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'medium',
+    popularity: 4
+  },
+  {
+    code: "gu",
+    name: "Gujarati",
+    nativeName: "ગુજરાતી",
+    country: "India",
+    flag: "https://flagcdn.com/in.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'medium',
+    popularity: 4
+  },
+  {
+    code: "kn",
+    name: "Kannada",
+    nativeName: "ಕನ್ನಡ",
+    country: "India",
+    flag: "https://flagcdn.com/in.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'medium',
+    popularity: 4
+  },
+  {
+    code: "ml",
+    name: "Malayalam",
+    nativeName: "മലയാളം",
+    country: "India",
+    flag: "https://flagcdn.com/in.svg",
+    speechSupported: true,
+    speechToTextSupported: true,
+    textToSpeechSupported: true,
+    voiceGender: 'neutral',
+    translationQuality: 'medium',
+    popularity: 4
+  },
+  {
     code: "ur",
     name: "Urdu",
     nativeName: "اردو",
@@ -666,7 +812,7 @@ export const LANGUAGE_CONFIGURATIONS: LanguageConfiguration[] = [
     name: "Cantonese",
     nativeName: "廣東話",
     country: "Hong Kong",
-    flag: "https://flagcdn.com/hk.svg",
+    flag: "https://flagcdn.com/cn.svg",
     speechSupported: true,
     speechToTextSupported: true,
     textToSpeechSupported: true,
