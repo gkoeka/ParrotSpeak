@@ -4,18 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { useNavigation } from '@react-navigation/native';
-import type { StackNavigationProp } from '@react-navigation/stack';
-import type { RootStackParamList } from '../App';
 import { API_BASE_URL } from '../api/config';
 import { getAuthToken } from '../api/authToken';
-
-type ProfileNavigationProp = StackNavigationProp<RootStackParamList, 'Profile'>;
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const { isDarkMode } = useTheme();
-  const navigation = useNavigation<ProfileNavigationProp>();
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [loading, setLoading] = useState(false);
@@ -46,7 +40,11 @@ export default function ProfileScreen() {
           onPress: async () => {
             try {
               await signOut();
-              navigation.navigate('Auth');
+              // No manual navigation here - AuthContext's isSignedIn state
+              // drives AuthNavigator to swap to the signed-out tree (which is
+              // where the "Auth" screen lives) once Clerk's sign-out
+              // completes. Navigating here races that and fails, since
+              // "Auth" isn't mounted while still in the signed-in tree.
             } catch (error) {
               Alert.alert('Error', 'Failed to sign out');
             }
@@ -81,7 +79,6 @@ export default function ProfileScreen() {
               if (response.ok) {
                 Alert.alert('Account Deleted', 'Your account has been permanently deleted.');
                 await signOut();
-                navigation.navigate('Auth');
               } else {
                 throw new Error('Failed to delete account');
               }
