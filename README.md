@@ -9,7 +9,7 @@ This README describes what's actually implemented and running today. For a deepe
 - **Turn-based voice translation** — tap to record, automatic silence-based stop, transcribe → translate → speak back. This is the core (and currently only) live translation flow. Auth, transcription, translation, and the "speak back" (TTS) step are all confirmed working via live device testing as of 2026-07-24; see `CLAUDE.md`'s "Known Issues & Landmines" for the debugging history if this ever regresses.
 - **Culturally-aware translation** — GPT-4o is prompted to preserve tone and slang and to translate naturally, not literally, with explicit dialect handling for Spanish (Spain vs. Latin America) and Portuguese (Brazil vs. Portugal).
 - **Auto-detect speakers** — optionally detects which of two configured participants is talking (by spoken language) and flips translation direction automatically, turn to turn.
-- **65 supported languages**, each flagged for speech-to-text/text-to-speech support; languages without speech support fall back to a text-entry box.
+- **76 supported languages** (expanded from 65 on 2026-07-30, including regional variants like Flemish, Belgian/Swiss French, Austrian/Swiss German, and European Portuguese), each flagged for speech-to-text/text-to-speech support; languages without speech support fall back to a text-entry box.
 - **Conversation history** — past conversations are saved and browsable while a subscription is active.
 - **Translation feedback** — users can rate individual translations (0–5, plus a category).
 - **Subscription + traveler passes** — ongoing subscription or a fixed-length one-time pass, sold via native App Store / Play Store in-app purchase.
@@ -134,7 +134,7 @@ See `CLAUDE.md` for the full architecture breakdown, including known dead code p
 
 Rate limiting, security headers (`helmet`), input validation, and injection-prevention tests are in place and covered by the scripts above and by `.github/workflows/security-tests.yml`. Report vulnerabilities to security@parrotspeak.com rather than filing a public issue.
 
-Crash/error reporting (Sentry, mobile + backend), CI type-checking/linting, closed-by-default IAP receipt validation, and Row Level Security on the Supabase database are all wired up — see `CLAUDE.md`'s "Known Issues & Landmines" for exact status and any caveats before assuming a given piece is fully configured in a specific environment.
+Crash/error reporting (Sentry, mobile + backend), CI type-checking/linting, closed-by-default IAP receipt validation, and Row Level Security on the Supabase database are all wired up. Authentication is Clerk-only as of 2026-07-30 — a parallel legacy session-auth system that had been silently reachable from the public internet was found and removed; see `CLAUDE.md`'s "Known Issues & Landmines" for exact status and any caveats before assuming a given piece is fully configured in a specific environment.
 
 ## Contributing
 
