@@ -99,7 +99,7 @@ export async function getLanguagesWithSpeechSupport(): Promise<Language[]> {
 // Speech recognition function using the server API
 export async function recognizeSpeech(
   audioBase64: string,
-  languageCode: string,
+  languageHints?: string[],
   autoDetectEnabled?: boolean,
   expectedLanguage?: string
 ): Promise<any> {
@@ -107,13 +107,13 @@ export async function recognizeSpeech(
     // Add timeout for Whisper API calls
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-    
+
     const response = await mobileFetch(`${API_BASE_URL}/api/transcribe`, {
       method: 'POST',
       headers: await getAuthedHeaders(),
       body: JSON.stringify({
         audio: audioBase64,
-        language: languageCode,
+        languages: languageHints,
         autoDetectEnabled,
         expectedLanguage
       }),

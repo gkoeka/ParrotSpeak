@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { reportError } from "../utils/errorReporting";
+import { getLanguageByCode } from "../../constants/languageConfiguration";
 interface TranslationResponse {
   translation: string;
   originalText: string;
@@ -94,117 +95,10 @@ export async function translateText(
   }
 }
 
-// Helper function to convert language codes to language names
+// Look up a language's display name from the single canonical source
+// (constants/languageConfiguration.ts) instead of a separately maintained map here,
+// which had drifted out of sync with the app's actual supported codes (e.g. "en",
+// "zh", "nl-NL" all fell through to returning the raw code).
 function getLanguageName(languageCode: string): string {
-  const codeMap: Record<string, string> = {
-    // Original languages
-    "en-US": "English",
-    "en-GB": "British English",
-    "es-ES": "Spanish",
-    "fr-FR": "French",
-    "de-DE": "German",
-    "it-IT": "Italian",
-    "pt-BR": "Brazilian Portuguese",
-    "ja-JP": "Japanese",
-    "zh-CN": "Mandarin Chinese",
-    "ru-RU": "Russian",
-    "ar-SA": "Arabic",
-    "hi-IN": "Hindi",
-    "ko-KR": "Korean",
-    "cs-CZ": "Czech",
-    
-    // Next five languages
-    "bn-BD": "Bengali",
-    "id-ID": "Indonesian",
-    "tr-TR": "Turkish",
-    "vi-VN": "Vietnamese",
-    "th-TH": "Thai",
-    
-    // Popular backpacker and retirement destinations
-    "el-GR": "Greek",
-    "ms-MY": "Malay",
-    "ne-NP": "Nepali",
-    "tl-PH": "Filipino",
-    "es-CR": "Spanish (Costa Rican)",
-    
-    // Special languages
-    "xsr-NP": "Sherpa",
-    "sher": "Sherpa",
-    "dz": "Bhutanese (Dzongkha)",
-    "yue-HK": "Cantonese",
-    
-    // New languages batch 1
-    "fil": "Filipino",
-    "yue": "Cantonese",
-    "kk": "Kazakh",
-    "uz": "Uzbek",
-    "az": "Azerbaijani",
-    "si": "Sinhala",
-    "sl": "Slovenian",
-    "is": "Icelandic",
-    "mt": "Maltese",
-    "sq": "Albanian",
-    
-    // Indian languages
-    "ta-IN": "Tamil",
-    "te-IN": "Telugu",
-    "mr-IN": "Marathi",
-    "gu-IN": "Gujarati",
-    "ta": "Tamil",
-    "te": "Telugu",
-    "mr": "Marathi",
-    "gu": "Gujarati",
-    
-    // Eastern Europe
-    "pl-PL": "Polish",
-    "uk-UA": "Ukrainian",
-    "ro-RO": "Romanian",
-    "hu-HU": "Hungarian",
-    
-    // African Languages
-    "sw-KE": "Swahili",
-    "am-ET": "Amharic",
-    "ar-EG": "Arabic (Egyptian)",
-    "ar-MA": "Arabic (Moroccan)",
-    
-    // South/Central America
-    "pt-PT": "European Portuguese",
-    "qu-PE": "Quechua",
-    
-    // Middle East
-    "fa-IR": "Persian",
-    "he-IL": "Hebrew",
-    
-    // Scandinavia
-    "sv-SE": "Swedish",
-    "no-NO": "Norwegian",
-    "da-DK": "Danish",
-    
-    // Southeast Asia Additional
-    "km-KH": "Khmer",
-    "my-MM": "Burmese",
-    "lo-LA": "Lao",
-    
-    // Pacific Islands
-    "haw-US": "Hawaiian",
-    "fj-FJ": "Fijian",
-    
-    // Central Asia
-    "uz-UZ": "Uzbek",
-    "kk-KZ": "Kazakh"
-  };
-
-  // Check exact match first
-  if (codeMap[languageCode]) {
-    return codeMap[languageCode];
-  }
-  
-  // Check base language code without region
-  const baseCode = languageCode.split('-')[0];
-  if (codeMap[baseCode]) {
-    return codeMap[baseCode];
-  }
-  
-  // Fallback to the code itself
-  return languageCode;
+  return getLanguageByCode(languageCode)?.name || languageCode;
 }

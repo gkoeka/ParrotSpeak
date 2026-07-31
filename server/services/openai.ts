@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { reportError } from '../utils/errorReporting';
+import { normalizeLanguageCode } from '../../utils/languageNormalization';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -10,12 +11,16 @@ const openai = new OpenAI({
 });
 
 /**
- * Transcribe audio using OpenAI Whisper API
+ * Transcribe audio using OpenAI's gpt-transcribe model (the sole live transcription
+ * path - see server/services/translation.ts for the sole live translation path).
  * @param audioBuffer Buffer containing audio data
- * @param language Optional language code for transcription
- * @returns Promise<string> - Transcribed text
+ * @param languageHints Optional candidate languages to bias detection toward (e.g. a
+ *   conversation's two configured participant languages). This is a hint, not a hard
+ *   restriction - gpt-transcribe still auto-detects; passing the known candidates just
+ *   narrows the guess instead of picking from its full language space.
+ * @returns Promise<{ text: string; language?: string }>
  */
-export async function transcribeAudio(audioBuffer: Buffer, language?: string): Promise<{ text: string; language?: string }> {
+export async function transcribeAudio(audioBuffer: Buffer, languageHints?: string[]): Promise<{ text: string; language?: string }> {
   try {
     // Validate API key
     if (!process.env.OPENAI_API_KEY) {
@@ -35,79 +40,39 @@ export async function transcribeAudio(audioBuffer: Buffer, language?: string): P
       // Write audio buffer to temporary file
       fs.writeFileSync(tempFilePath, audioBuffer);
 
-      // Check the actual file type
-      console.log(`Audio file created: ${tempFilePath}, size: ${audioBuffer.length} bytes`);
-      console.log('First 20 bytes of audio buffer:', audioBuffer.subarray(0, 20));
-      
-      // For debugging: try to identify the actual format
-      const header = audioBuffer.subarray(0, 12).toString('hex');
-      console.log('Audio file header (hex):', header);
-
       // Create a readable stream from the file
       const audioStream = fs.createReadStream(tempFilePath);
 
-      // Convert language code to ISO-639-1 format if needed
-      const convertLanguageCode = (lang?: string): string | undefined => {
-        if (!lang) return undefined;
-        
-        // Common language code conversions
-        const languageMap: { [key: string]: string } = {
-          'en-us': 'en',
-          'en-gb': 'en',
-          'es-es': 'es',
-          'es-mx': 'es',
-          'fr-fr': 'fr',
-          'de-de': 'de',
-          'pt-br': 'pt',
-          'pt-pt': 'pt',
-          'zh-cn': 'zh',
-          'zh-tw': 'zh',
-          'ja-jp': 'ja',
-          'ko-kr': 'ko',
-          'it-it': 'it',
-          'ru-ru': 'ru',
-          'ar-sa': 'ar',
-          'hi-in': 'hi',
-          'th-th': 'th',
-          'vi-vn': 'vi'
-        };
-        
-        // If it's already in ISO-639-1 format (2 letters), return as is
-        if (lang.length === 2) return lang;
-        
-        // Convert from locale format to ISO-639-1
-        return languageMap[lang.toLowerCase()] || lang.split('-')[0];
-      };
+      const normalizedHints = languageHints
+        ?.map(hint => normalizeLanguageCode(hint))
+        .filter((hint): hint is string => !!hint);
 
-      // Transcribe using OpenAI Whisper SDK
-      // Use verbose_json format to get language detection
+      // gpt-transcribe: same /v1/audio/transcriptions endpoint as whisper-1, but takes
+      // a `languages` hint array and only supports response_format "json" (no
+      // verbose_json). The SDK's installed types (^4.104.0) predate this model, so the
+      // request body is cast to `any` - the runtime just forwards whatever properties
+      // are present into the multipart form (verified against node_modules/openai's
+      // actual create()/createForm() implementation), so this is safe despite the
+      // type gap.
       const transcription = await openai.audio.transcriptions.create({
         file: audioStream,
-        model: 'whisper-1',
-        // Don't specify language to allow auto-detection
-        response_format: 'verbose_json',
-      });
-      
-      // Handle verbose_json response
-      let transcriptionText: string;
-      let detectedLanguage: string | undefined;
-      
-      if (typeof transcription === 'object' && 'text' in transcription) {
-        transcriptionText = (transcription as any).text || '';
-        detectedLanguage = (transcription as any).language;
-        console.log(`OpenAI transcription successful (${transcriptionText.length} chars)`);
-        if (detectedLanguage) {
-          console.log('Detected language:', detectedLanguage);
-        }
-      } else {
-        transcriptionText = String(transcription);
-        console.log(`OpenAI transcription successful (${transcriptionText.length} chars)`);
+        model: 'gpt-transcribe',
+        response_format: 'json',
+        ...(normalizedHints?.length ? { languages: normalizedHints } : {}),
+      } as any);
+
+      const transcriptionText: string = (transcription as any).text || '';
+      const detectedLanguages = (transcription as any).languages as Array<{ code: string }> | undefined;
+      const detectedLanguage = detectedLanguages?.[0]?.code;
+
+      console.log(`OpenAI transcription successful (${transcriptionText.length} chars)`);
+      if (detectedLanguage) {
+        console.log('Detected language:', detectedLanguage);
       }
 
       // Clean up temporary file
       fs.unlinkSync(tempFilePath);
 
-      // Return both transcription and detected language
       return {
         text: transcriptionText.trim(),
         language: detectedLanguage
@@ -121,7 +86,7 @@ export async function transcribeAudio(audioBuffer: Buffer, language?: string): P
     }
   } catch (error) {
     console.error('OpenAI transcription error:', error);
-    reportError(error, { audioBytes: audioBuffer.length, languageHint: language });
+    reportError(error, { audioBytes: audioBuffer.length, languageHints });
 
     // Re-throw with more specific error messages
     if (error instanceof Error) {
@@ -135,56 +100,7 @@ export async function transcribeAudio(audioBuffer: Buffer, language?: string): P
         throw new Error('Invalid audio format or file error');
       }
     }
-    
+
     throw new Error('Speech recognition service temporarily unavailable');
-  }
-}
-
-/**
- * Translate text using OpenAI GPT-4
- * @param text Text to translate
- * @param sourceLanguage Source language code
- * @param targetLanguage Target language code
- * @returns Promise<string> - Translated text
- */
-export async function translateText(text: string, sourceLanguage: string, targetLanguage: string): Promise<string> {
-  try {
-    // Validate API key
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OpenAI API key is not configured');
-    }
-
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: `You are a professional translator. Translate the following text from ${sourceLanguage} to ${targetLanguage}. Only return the translated text, no explanations or additional content.`
-        },
-        {
-          role: 'user',
-          content: text
-        }
-      ],
-      max_tokens: 1000,
-      temperature: 0.1,
-    });
-
-    return response.choices[0]?.message?.content?.trim() || '';
-  } catch (error) {
-    console.error('OpenAI translation error:', error);
-    
-    // Re-throw with more specific error messages
-    if (error instanceof Error) {
-      if (error.message.includes('API key')) {
-        throw new Error('Invalid or missing OpenAI API key');
-      } else if (error.message.includes('quota') || error.message.includes('billing')) {
-        throw new Error('OpenAI API quota exceeded or billing issue');
-      } else if (error.message.includes('network') || error.message.includes('connect')) {
-        throw new Error('Network error connecting to OpenAI service');
-      }
-    }
-    
-    throw new Error('Translation service temporarily unavailable');
   }
 }

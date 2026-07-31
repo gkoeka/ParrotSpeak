@@ -697,12 +697,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/transcribe', requireAuth, requireSubscription, async (req: Request, res: Response) => {
     const startTime = Date.now();
     try {
-      const { audio, language, autoDetectEnabled, expectedLanguage } = req.body;
-      
+      const { audio, languages, autoDetectEnabled, expectedLanguage } = req.body;
+
       if (!audio) {
         return res.status(400).json({ message: 'Audio data is required' });
       }
-      
+
       // Import the working transcription service
       const { transcribeAudio } = await import('./services/openai');
       const { normalizeLanguageCode } = await import('../utils/languageNormalization');
@@ -740,7 +740,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`📊 Audio size: ${(audioBuffer.length / 1024).toFixed(2)}KB`);
       
       // Use the working transcription method that handles file I/O properly
-      const transcriptionResult = await transcribeAudio(audioBuffer, language);
+      const transcriptionResult = await transcribeAudio(audioBuffer, languages);
       
       const processingTime = Date.now() - startTime;
       console.log(`✅ Transcription successful in ${processingTime}ms (${transcriptionResult.text.length} chars)`);
@@ -901,24 +901,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: 'Audio data is required' });
         }
         
-        // Import optimized audio service
-        const { transcribeAudioOptimized } = await import('./services/optimizedAudio');
-        
+        // Use the same transcription service as production (/api/transcribe) so this
+        // benchmark reflects real behavior instead of a second, drifting implementation
+        const { transcribeAudio } = await import('./services/openai');
+
         // Convert Base64 audio data to buffer
         const audioBuffer = Buffer.from(audio, 'base64');
-        
+
         // Transcribe
-        const transcription = await transcribeAudioOptimized(audioBuffer, language);
-        
+        const transcriptionResult = await transcribeAudio(audioBuffer, language ? [language] : undefined);
+
         const processingTime = Date.now() - startTime;
-        
+
         // Add performance headers
         res.set('X-Processing-Time', processingTime.toString());
-        
+
         // Return the transcription
         res.json({
           type: 'audio',
-          text: transcription,
+          text: transcriptionResult.text,
           processingTime
         });
       } else {

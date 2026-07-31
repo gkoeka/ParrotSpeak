@@ -295,11 +295,14 @@ export default function VoiceInputControls({
       console.log('📝 Transcribing audio...');
       
       metricsCollector.startTimer('whisper');
-      // Don't pass language hint to allow Whisper to auto-detect the spoken language
-      // Pass auto-detect state and expected language for server-side validation
+      // Hint the transcription model with both configured participant languages
+      // (still auto-detects between them, doesn't force one) - the conversation is
+      // always between exactly these two languages, so narrowing the guess to them
+      // improves both raw accuracy and auto-detect-speaker-switching reliability.
+      // Pass auto-detect state and expected language for server-side validation.
       const transcriptionResult = await processRecording(
-        uri, 
-        '', 
+        uri,
+        [participants.A.lang, participants.B.lang],
         participants.autoDetectSpeakers,
         sourceLanguage // Expected language when auto-detect is OFF
       );
