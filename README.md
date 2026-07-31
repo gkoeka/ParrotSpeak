@@ -35,7 +35,7 @@ This README describes what's actually implemented and running today. For a deepe
 - PostgreSQL via Drizzle ORM — Supabase (auth stays on Clerk; Supabase is for data only)
 - Deployed on Railway at `app.parrotspeak.com` (see `CLAUDE.md` for hosting details and build gotchas if standing this up again)
 - Clerk (`@clerk/backend`) for auth verification, syncing Clerk identities into the app's own `users` table
-- OpenAI Whisper (`whisper-1`) for speech-to-text, OpenAI GPT-4o for translation — both called server-side only, never from the client
+- OpenAI `gpt-transcribe` for speech-to-text, OpenAI GPT-4o for translation — both called server-side only, never from the client
 - `react-native-iap` receipt validation against Apple/Google servers
 - Mixpanel + FullStory integrated for analytics (event definitions exist; see `CLAUDE.md` for current wiring status)
 
@@ -126,7 +126,7 @@ App.tsx
         └── SettingsTab  → SettingsScreen → Profile / Subscription / Analytics / ...
 ```
 
-Speech pipeline: record on-device → upload to backend → OpenAI Whisper (STT) → OpenAI GPT-4o (translation) → response returned to device → `expo-speech` speaks it (on-device, not a cloud voice API).
+Speech pipeline: record on-device → upload to backend → OpenAI `gpt-transcribe` (STT) → OpenAI GPT-4o (translation) → response returned to device → `expo-speech` speaks it (on-device, not a cloud voice API).
 
 See `CLAUDE.md` for the full architecture breakdown, including known dead code paths and duplicate implementations worth avoiding.
 
