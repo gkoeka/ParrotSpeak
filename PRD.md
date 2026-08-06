@@ -1,5 +1,7 @@
 # ParrotSpeak — As-Built PRD & Gap Analysis
 
+> **ARCHIVED 2026-08-06 — no longer maintained, do not treat as current.** This document is superseded: Part One's feature list has been folded into `README.md`'s "What it does" section, and Part Two's gap analysis is superseded by `CLAUDE.md`'s "Known Issues & Landmines" and "Roadmap" sections, which are what's actually kept current going forward. Kept here only as a historical snapshot (content frozen at 2026-07-30 — see the footer at the bottom of this file for its own revision history). Do not re-sync this from the claude.ai artifact referenced below, and do not add new findings here — file them in `CLAUDE.md` instead.
+
 *Product Requirements Document — As-Built.*
 Source: `github.com/gkoeka/ParrotSpeak`, branch `main` @ `9da5915` · Method: derived from code, not marketing copy or docs · Platforms: iOS & Android, Expo SDK 53 / React Native 0.79.
 

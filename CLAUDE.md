@@ -32,10 +32,14 @@ Prioritized 2026-08-06; check with the user before assuming this order is still 
 
 **4. Lower-priority tech debt (non-blocking)**
 - `MIXPANEL_TOKEN` (CI secret name) vs `MIXPANEL_PROJECT_TOKEN` (code reads this) mismatch — Mixpanel likely silently no-ops in the CI deploy step
-- Analytics events (`trackTranslation`, `trackSubscription`, etc. in `server/services/analytics.ts`) defined but never called anywhere outside that file
+- Analytics events (`trackTranslation`, `trackSubscription`, etc. in `server/services/analytics.ts`) defined but never called anywhere outside that file — Mixpanel/FullStory are fully integrated and ready (10 defined event types) but nothing invokes them
 - `expo-build.yml` still assumes a `mobile-app/` subdirectory that doesn't exist in this repo (the `ci-cd.yml` version of this was already fixed)
 - Several `docs/*.md` files (`store-preparation.md`, `app-store-complete-checklist.md`, `app-assets-needed.md`) have stale pricing/product-ID schemes that don't match the real ones in `screens/PricingScreen.tsx`/`services/iapService.ts`
 - `expo-av` flagged unmaintained by React Native Directory — deliberately left alone, too risky to touch this close to submission
+- No `test` script in `package.json` despite Jest being configured — the test suite exists but never runs in CI; oversight, not a design decision
+- ~990 ad hoc `console.log`/`console.error` call sites (verified 2026-07-21) remain outside the Sentry-covered paths — no structured-logging migration done
+- `stripe` package installed but never imported or called anywhere — not the actual payment rail (that's native IAP, see Billing section); dormant test-mode secret key was already rotated/invalidated 2026-07-22, but the dependency itself is still unused dead weight
+- Product-scope absences, not bugs: "Interpreter Mode" and a general-purpose "translate any text" screen don't exist anywhere in the code — read like originally-planned features never built, not regressions; worth a decision on whether they're still wanted
 
 ## Commands
 
