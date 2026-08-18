@@ -20,12 +20,14 @@ const { buildTranslationPrompt } = await import("../server/services/translation.
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const MODELS = ["gpt-4o", "gpt-4o-mini"] as const;
+const MODELS = ["gpt-4o", "gpt-4o-mini", "gpt-5.6-luna"] as const;
 
-// Per-1M-token pricing, USD, as of this writing - source: platform.openai.com/docs/pricing
+// Per-1M-token pricing, USD - re-verified 2026-08-18 against OpenAI's pricing page.
+// gpt-5.6-luna price reflects the 2026-07-30 cut ($0.20/$1.20, down from launch pricing).
 const PRICING: Record<(typeof MODELS)[number], { input: number; output: number }> = {
   "gpt-4o": { input: 2.5, output: 10 },
   "gpt-4o-mini": { input: 0.15, output: 0.6 },
+  "gpt-5.6-luna": { input: 0.2, output: 1.2 },
 };
 
 interface TestCase {
@@ -43,7 +45,9 @@ interface TestCase {
 // and Latin America dialects since that split matters for this app; other language overlaps
 // between the two lists (French, Mandarin) are tested once, with a fresh idiom vs. RUN 1 where
 // applicable, rather than skipped, to maximize idiom-handling data collected per run.
-const RUN_LABEL = "RUN 2: idiom-focused - top 10 languages by speakers + top 10 travel-destination languages";
+const RUN_LABEL =
+  "RUN 3: RUN 2's idiom set (top 10 languages by speakers + top 10 travel-destination languages) " +
+  "+ new EN<->ES-419 Colombian-slang set matching ParrotSpeak's actual daily real-world usage";
 
 const TEST_CASES: TestCase[] = [
   {
@@ -150,6 +154,69 @@ const TEST_CASES: TestCase[] = [
   },
 ];
 
+// Added 2026-08-18: real-world daily use case (EN<->ES-419, Colombia) rather than one-off
+// idiom generalities - covers Colombian-specific slang, bidirectional flow, and a
+// formal/informal register check, since that's the pairing ParrotSpeak's actual daily
+// user relies on. "Notes" in each case explain the slang for whoever is scoring the output.
+const COLOMBIAN_SLANG_CASES: TestCase[] = [
+  {
+    label: "ES-419->EN (Colombian slang: 'parce' = buddy/dude, casual greeting)",
+    text: "Parce, ¿todo bien o qué?",
+    sourceLanguage: "es-419",
+    targetLanguage: "en-US",
+  },
+  {
+    label: "ES-419->EN (Colombian slang: 'chimba' = awesome/cool)",
+    text: "Qué chimba de plan, nos vemos ahora mismo.",
+    sourceLanguage: "es-419",
+    targetLanguage: "en-US",
+  },
+  {
+    label: "ES-419->EN (Colombian idiom: 'dar papaya' = make yourself an easy target)",
+    text: "No dé papaya en la calle, guarde el celular.",
+    sourceLanguage: "es-419",
+    targetLanguage: "en-US",
+  },
+  {
+    label: "ES-419->EN (Colombian usage: 'tinto' = black coffee, 'regalar' used colloquially for 'give me')",
+    text: "¿Me regalas un tinto, porfa?",
+    sourceLanguage: "es-419",
+    targetLanguage: "en-US",
+  },
+  {
+    label: "ES-419->EN (Colombian slang: 'full' borrowed as an intensifier, like 'super')",
+    text: "Estoy full cansado, hoy no hago nada más.",
+    sourceLanguage: "es-419",
+    targetLanguage: "en-US",
+  },
+  {
+    label: "EN->ES-419 (travel/practical: haggling, 'ripped off')",
+    text: "Can you haggle the price a bit? I don't want to get ripped off.",
+    sourceLanguage: "en-US",
+    targetLanguage: "es-419",
+  },
+  {
+    label: "EN->ES-419 (travel/practical: 'sketchy' slang)",
+    text: "That street food stall looked sketchy, let's find somewhere else.",
+    sourceLanguage: "en-US",
+    targetLanguage: "es-419",
+  },
+  {
+    label: "EN->ES-419 (casual idiom: 'grab a bite')",
+    text: "I'm starving, let's grab a bite before the bus leaves.",
+    sourceLanguage: "en-US",
+    targetLanguage: "es-419",
+  },
+  {
+    label: "ES-419->EN (formal register check - should NOT come out casual)",
+    text: "¿Podría usted indicarme cómo llegar a la estación, por favor?",
+    sourceLanguage: "es-419",
+    targetLanguage: "en-US",
+  },
+];
+
+TEST_CASES.push(...COLOMBIAN_SLANG_CASES);
+
 async function run() {
   console.log("\n" + "#".repeat(80));
   console.log(`${RUN_LABEL}`);
@@ -159,6 +226,7 @@ async function run() {
   const totals: Record<(typeof MODELS)[number], { cost: number; ms: number }> = {
     "gpt-4o": { cost: 0, ms: 0 },
     "gpt-4o-mini": { cost: 0, ms: 0 },
+    "gpt-5.6-luna": { cost: 0, ms: 0 },
   };
 
   for (const testCase of TEST_CASES) {
@@ -171,11 +239,14 @@ async function run() {
 
     for (const model of MODELS) {
       const start = Date.now();
+      // gpt-5.6-luna rejects any non-default temperature ("Only the default (1) value is
+      // supported") - found live 2026-08-18 running this script. gpt-4o/gpt-4o-mini still
+      // accept the production 0.3 value, so this is per-model, not a blanket removal.
       const response = await openai.chat.completions.create({
         model,
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
-        temperature: 0.3,
+        ...(model === "gpt-5.6-luna" ? {} : { temperature: 0.3 }),
       });
       const ms = Date.now() - start;
 
@@ -205,9 +276,10 @@ async function run() {
       ).toFixed(0)}ms avg`
     );
   }
-  const savingsPct =
-    ((totals["gpt-4o"].cost - totals["gpt-4o-mini"].cost) / totals["gpt-4o"].cost) * 100;
-  console.log(`\ngpt-4o-mini cost savings on this run: ${savingsPct.toFixed(1)}%`);
+  for (const model of ["gpt-4o-mini", "gpt-5.6-luna"] as const) {
+    const savingsPct = ((totals["gpt-4o"].cost - totals[model].cost) / totals["gpt-4o"].cost) * 100;
+    console.log(`${model} cost savings vs. gpt-4o baseline on this run: ${savingsPct.toFixed(1)}%`);
+  }
 }
 
 run().catch((error) => {
